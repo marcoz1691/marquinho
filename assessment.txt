@@ -1,0 +1,121 @@
+Currency Conversion
+
+Assume we have the REST API for:
+- Adding a new Currency Exchange Rate
+- Updating an existing Currency Exchange Rate
+- Deleting an existing Currency Exchange Rate
+- Retrieving the Currency Exchange Rate for a source currency, a target currency, and a
+specific date.
+
+
+Test Plan: Currency Conversion APIs
+
+Objective:
+To verify the functionality of Currency Conversion APIs, including adding, updating, deleting, and retrieving exchange rates, ensuring accurate data processing.
+
+Preconditions:
+
+User must have access to the Currency Conversion module.
+The system should contain pre-existing exchange rates for testing updating and deleting functionalities.
+Test Environment:
+Testing to be conducted in a staging environment.
+
+Test Dependencies:
+Existing exchange rate data in the system.
+
+Test Cases:
+
+1. Add a New Currency Exchange Rate:
+
+Test Case 1: Successfully add a new exchange rate with valid input data.
+Input: Valid source currency, valid target currency, valid effective start date, valid exchange rate.
+Expected Output: The exchange rate is added successfully, and the system returns a success message.
+
+Test Case 2: Attempt to add an exchange rate with missing required fields.
+Input: Missing one or more required fields (source currency, target currency, effective start date, exchange rate).
+Expected Output: The system rejects the request and returns an error message indicating the missing fields.
+
+Test Case 3: Attempt to add an exchange rate with an invalid date format.
+Input: Invalid date format in the effective start date.
+Expected Output: The system rejects the request and returns an error message about the invalid date format.
+
+Test Case 4: Attempt to add an exchange rate with a negative exchange rate value.
+Input: Valid source currency, valid target currency, valid effective start date, exchange rate = -0.5.
+Expected Output: The system rejects the request and returns an error message indicating that the exchange rate value must be non-negative.
+
+Test Case 5: Attempt to add an exchange rate with a duplicate entry.
+Input: Valid source currency, valid target currency, valid effective start date, valid exchange rate.
+Expected Output: The system rejects the request and returns an error message indicating that a duplicate entry for the same source and target currencies already exists.
+
+Test Case 6: Attempt to add an exchange rate with an effective start date in the past.
+Input: Valid source currency, valid target currency, effective start date = yesterday, valid exchange rate.
+Expected Output: The system rejects the request and returns an error message indicating that the effective start date must be in the future or today.
+
+Test Case 7: Attempt to add an exchange rate with a future effective start date but missing target currency.
+Input: Valid source currency, missing target currency, effective start date = tomorrow, valid exchange rate.
+Expected Output: The system rejects the request and returns an error message indicating the missing target currency.
+
+Test Case 8: Attempt to add an exchange rate with non-existent source and target currencies.
+Input: Source currency = "ABC", target currency = "XYZ", valid effective start date, valid exchange rate.
+Expected Output: The system rejects the request and returns an error message indicating that the source or target currency does not exist.
+
+Test Case 9: Attempt to add an exchange rate with a very high exchange rate value.
+Input: Valid source currency, valid target currency, valid effective start date, exchange rate = 999999999.
+Expected Output: The system rejects the request and returns an error message indicating that the exchange rate value is too high.
+
+Test Case 10: Successfully add an exchange rate with the minimum allowed exchange rate value.
+Input: Valid source currency, valid target currency, valid effective start date, exchange rate = 0.
+Expected Output: The exchange rate is added successfully with the minimum allowed value, and the system returns a success message.
+
+
+2. Update an Existing Currency Exchange Rate:
+
+Test Case 11: Successfully update an existing exchange rate with valid input data.
+Input: Valid source currency, valid target currency, valid effective start date, valid updated exchange rate.
+Expected Output: The exchange rate is updated successfully, and the system returns a success message.
+
+Test Case 12: Attempt to update an exchange rate with an invalid date format.
+Input: Invalid date format in the effective start date during the update.
+Expected Output: The system rejects the request and returns an error message about the invalid date format.
+
+Test Case 13: Attempt to update a non-existent exchange rate.
+Input: Trying to update an exchange rate that does not exist.
+Expected Output: The system rejects the request and returns an error message indicating that the exchange rate does not exist.
+
+
+
+3. Delete an Existing Currency Exchange Rate:
+
+Test Case 14: Successfully delete an existing exchange rate.
+Input: Valid source currency, valid target currency, valid effective start date for an existing exchange rate.
+Expected Output: The exchange rate is deleted successfully, and the system returns a success message.
+
+Test Case 15: Attempt to delete a non-existent exchange rate.
+Input: Trying to delete an exchange rate that does not exist.
+Expected Output: The system rejects the request and returns an error message indicating that the exchange rate does not exist.
+
+
+
+4. Retrieve Currency Exchange Rate for Source Currency, Target Currency, and Specific Date:
+
+Test Case 16: Successfully retrieve the exchange rate for a valid source currency, target currency, and specific date.
+Input: Valid source currency, valid target currency, valid specific date.
+Expected Output: The system returns the correct exchange rate information for the specified source currency, target currency, and date.
+
+Test Case 17: Attempt to retrieve an exchange rate with missing source currency.
+Input: Missing source currency.
+Expected Output: The system rejects the request and returns an error message indicating the missing source currency.
+
+Test Case 18: Attempt to retrieve an exchange rate with missing target currency.
+Input: Missing target currency.
+Expected Output: The system rejects the request and returns an error message indicating the missing target currency.
+
+Test Case 19: Attempt to retrieve an exchange rate with an invalid date format.
+Input: Invalid date format in the specific date.
+Expected Output: The system rejects the request and returns an error message about the invalid date format.
+
+Test Case 20: Attempt to retrieve an exchange rate with a non-existent source currency.
+Input: Non-existent source currency.
+Expected Output: The system rejects the request and returns an error message indicating that the source currency does not exist.
+
+
