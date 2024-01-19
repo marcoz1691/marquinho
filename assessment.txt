@@ -118,4 +118,35 @@ Test Case 20: Attempt to retrieve an exchange rate with a non-existent source cu
 Input: Non-existent source currency.
 Expected Output: The system rejects the request and returns an error message indicating that the source currency does not exist.
 
+Automated Test Script for Retrieving Currency Exchange Rate: I used Java - Automation is not my effort, however investigating I can add this script: 
+@Test
+    public void testRetrieveExchangeRate() {
+        // Test data
+        String sourceCurrency = "USD";
+        String targetCurrency = "EUR";
+        String specificDate = "2024-01-18";
+
+        // Make the API request
+        Response response = RestAssured.given()
+                .param("source_currency", sourceCurrency)
+                .param("target_currency", targetCurrency)
+                .param("specific_date", specificDate)
+                .when()
+                .get(apiEndpoint);
+
+// Validate the response
+        int statusCode = response.getStatusCode();
+        Assert.assertEquals(statusCode, 200, "Failed to retrieve exchange rate. Status code: " + statusCode);
+
+// Validate the response content
+        String responseBody = response.getBody().asString();
+        Assert.assertTrue(responseBody.contains("source_currency"), "Response does not contain source_currency");
+        Assert.assertTrue(responseBody.contains("target_currency"), "Response does not contain target_currency");
+        Assert.assertTrue(responseBody.contains("exchange_rate"), "Response does not contain exchange_rate");
+        Assert.assertTrue(responseBody.contains("effective_start_date"), "Response does not contain effective_start_date");
+
+// Additional assertions based on expected data or business rules
+        Assert.assertEquals(response.jsonPath().getString("source_currency"), sourceCurrency);
+        Assert.assertEquals(response.jsonPath().getString("target_currency"), targetCurrency);
+        Assert.assertEquals(response.jsonPath().getString("effective_start_date"), specificDate);
 
