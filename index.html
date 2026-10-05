@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notaría Ecuador — Trámites, requisitos y tarifas</title>
+<meta name="description" content="Trámites notariales en Ecuador: requisitos, procesos paso a paso, tarifas 2026, notaría virtual, dirección, teléfonos y redes.">
+<meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Notaría Ecuador">
+<meta property="og:description" content="Fe pública, con claridad. Trámites, requisitos y tarifas.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/styles.css">
+<script>try{var t=localStorage.getItem("tema");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="nav" id="nav">
+  <div class="nav__in">
+    <a class="nav__brand" href="#inicio" id="brandName">Notaría</a>
+    <nav class="nav__links" id="menu" aria-label="Principal">
+      <a href="#servicios">Servicios</a>
+      <a href="#tramites">Trámites</a>
+      <a href="#calculadora">Tarifas</a>
+      <a href="#virtual">En línea</a>
+      <a href="#faq">Preguntas</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="nav__tools">
+      <button class="icon-btn" id="themeBtn" aria-label="Cambiar tema claro u oscuro" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="icon-btn nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="inicio">
+    <p class="eyebrow reveal" id="heroNotario">Servicio notarial</p>
+    <h1 class="reveal" id="heroTitle">Fe pública, con claridad.</h1>
+    <p class="lead reveal">Todos tus trámites notariales explicados paso a paso: requisitos, costos y tiempos. Presencial o en línea.</p>
+    <div class="cta reveal">
+      <a class="btn btn--primary" href="#tramites">Ver trámites</a>
+      <a class="btn btn--ghost" href="#contacto">Contacto</a>
+    </div>
+    <p class="hero__status reveal" id="estado" aria-live="polite"></p>
+  </section>
+
+  <section class="section" id="servicios">
+    <h2 class="reveal">Qué podemos hacer por ti.</h2>
+    <div class="grid" id="categorias"></div>
+  </section>
+
+  <section class="section section--alt" id="tramites">
+    <h2 class="reveal">Trámites, uno por uno.</h2>
+    <p class="sub reveal">Busca un trámite y revisa requisitos, pasos y costo.</p>
+    <div class="search reveal">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="buscar" type="search" placeholder="Buscar: poder, divorcio, compraventa…" aria-label="Buscar trámite" autocomplete="off">
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+    <div class="list" id="lista"></div>
+    <p class="empty" id="vacio" hidden>No encontramos ese trámite. Escríbenos y te ayudamos.</p>
+  </section>
+
+  <section class="section" id="calculadora">
+    <h2 class="reveal">Calcula tu costo.</h2>
+    <p class="sub reveal">Tarifas <span id="anioTarifa">2026</span> como porcentaje del Salario Básico Unificado (<span id="sbuTxt"></span>) más IVA.</p>
+    <form class="calc reveal" id="calc" onsubmit="return false">
+      <label>Trámite
+        <select id="calcTramite"></select>
+      </label>
+      <label id="calcQtyWrap">Cantidad <span id="calcUnit"></span>
+        <input id="calcQty" type="number" min="1" value="1" inputmode="numeric">
+      </label>
+      <div class="calc__out" aria-live="polite">
+        <div><span>Tasa</span><strong id="rBase">—</strong></div>
+        <div><span>IVA</span><strong id="rIva">—</strong></div>
+        <div class="calc__total"><span>Total</span><strong id="rTotal">—</strong></div>
+      </div>
+      <p class="note" id="calcNote"></p>
+    </form>
+  </section>
+
+  <section class="section section--alt" id="virtual">
+    <h2 class="reveal">Notaría virtual.</h2>
+    <p class="sub reveal">Desde diciembre de 2020 los actos notariales pueden hacerse por videoconferencia, con plena validez legal.</p>
+    <ol class="steps">
+      <li class="reveal"><b>1</b><h3>Escríbenos</h3><p>Cuéntanos qué trámite necesitas y envía tus documentos.</p></li>
+      <li class="reveal"><b>2</b><h3>Agenda</h3><p>Coordinamos fecha y hora de la videoconferencia.</p></li>
+      <li class="reveal"><b>3</b><h3>Firma en línea</h3><p>Verificamos tu identidad y firmas electrónicamente.</p></li>
+      <li class="reveal"><b>4</b><h3>Recibe tu documento</h3><p>Entrega digital o física, con validez legal.</p></li>
+    </ol>
+  </section>
+
+  <section class="section" id="faq">
+    <h2 class="reveal">Preguntas frecuentes.</h2>
+    <div class="list" id="faqList"></div>
+  </section>
+
+  <section class="section section--alt" id="contacto">
+    <h2 class="reveal">Visítanos.</h2>
+    <div class="contact">
+      <div class="contact__info reveal" id="contactInfo"></div>
+      <div class="contact__map reveal"><iframe id="mapa" title="Mapa de ubicación" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    </div>
+  </section>
+</main>
+
+<a class="wa" id="waBtn" href="#contacto" aria-label="Escribir por WhatsApp" hidden>
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.7-5.2A8.5 8.5 0 1 1 21 12Z"/></svg>
+</a>
+
+<footer class="foot">
+  <p id="footTxt"></p>
+  <p>Las tarifas y requisitos son referenciales y pueden variar según la normativa del Consejo de la Judicatura. Confirma con la notaría.</p>
+</footer>
+
+<script type="application/ld+json" id="ld"></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>

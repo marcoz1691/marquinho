@@ -1,0 +1,13 @@
+{
+  "_nota": "REEMPLAZAR los valores marcados con [EDITAR] por los datos reales de la notaría.",
+  "nombre": "Notaría [EDITAR: número y cantón]",
+  "notario": "[EDITAR: nombre del notario/a]",
+  "eslogan": "Fe pública, con claridad.",
+  "direccion": "[EDITAR: calle principal y secundaria], [EDITAR: ciudad], Ecuador",
+  "telefonos": ["[EDITAR: 02 000 0000]"],
+  "whatsapp": "",
+  "correo": "[EDITAR: correo@notaria.ec]",
+  "horario": { "dias": [1, 2, 3, 4, 5], "abre": "08:00", "cierra": "17:00", "texto": "Lunes a viernes, 08:00 – 17:00" },
+  "mapa": { "lat": -0.1807, "lng": -78.4678, "zoom": 16 },
+  "redes": { "instagram": "", "facebook": "", "linkedin": "", "tiktok": "", "x": "" }
+}
