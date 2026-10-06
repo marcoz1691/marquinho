@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Asistente | Notaría 41 de Quito</title>
+<meta name="description" content="Asistente de la Notaría 41 de Quito: requisitos, costos y solicitud de citas.">
+<meta name="theme-color" content="#F4F7F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1712" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/asistente.css">
+</head>
+<body class="ac">
+<aside class="ac-lado" id="lado" aria-label="Conversaciones">
+  <div class="ac-lado__top">
+    <a class="ac-marca" href="./"><img src="assets/logo/logo-notaria41-verde.svg" alt="" width="34" height="34"><span>Notaría 41</span></a>
+    <button class="ac-icono ac-solo-movil" id="cerrarLado" type="button" aria-label="Cerrar el menú"><i class="ph ph-x" aria-hidden="true"></i></button>
+  </div>
+  <button class="ac-nueva" id="nueva" type="button"><i class="ph ph-note-pencil" aria-hidden="true"></i>Nueva conversación</button>
+  <nav class="ac-historial" id="historial" aria-label="Historial"></nav>
+  <div class="ac-lado__pie">
+    <a href="./"><i class="ph ph-house" aria-hidden="true"></i>Volver a la página</a>
+    <a id="ladoWhatsapp" target="_blank" rel="noopener" hidden><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>Escribir por WhatsApp</a>
+    <a href="privacidad.html"><i class="ph ph-shield-check" aria-hidden="true"></i>Aviso de privacidad</a>
+  </div>
+</aside>
+<div class="ac-velo" id="velo" hidden></div>
+
+<main class="ac-main">
+  <header class="ac-barra">
+    <button class="ac-icono ac-solo-movil" id="abrirLado" type="button" aria-label="Abrir el menú" aria-controls="lado"><i class="ph ph-sidebar-simple" aria-hidden="true"></i></button>
+    <div class="ac-barra__titulo"><b>Asistente de la Notaría 41</b><small>Respuestas automáticas · la firma de cada trámite es en la notaría</small></div>
+    <button class="ac-icono ac-solo-movil" id="nuevaMovil" type="button" aria-label="Nueva conversación"><i class="ph ph-note-pencil" aria-hidden="true"></i></button>
+  </header>
+
+  <div class="ac-hilo" id="hilo" aria-live="polite">
+    <section class="ac-inicio" id="inicio">
+      <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="72" height="72">
+      <h1>¿En qué te ayudo hoy?</h1>
+      <p>Pregúntame por requisitos, costos o para pedir una cita en la notaría.</p>
+      <div class="ac-tarjetas" id="tarjetas">
+        <button type="button" data-p="¿Cuánto cuesta un poder especial?"><i class="ph ph-currency-circle-dollar" aria-hidden="true"></i><b>Costo de un poder</b><span>Tarifa oficial con IVA</span></button>
+        <button type="button" data-p="¿Qué necesito para vender una casa?"><i class="ph ph-file-text" aria-hidden="true"></i><b>Vender una casa</b><span>Requisitos de la compraventa</span></button>
+        <button type="button" data-p="¿Qué necesito para un divorcio de mutuo acuerdo?"><i class="ph ph-scales" aria-hidden="true"></i><b>Divorcio de mutuo acuerdo</b><span>Requisitos y pasos</span></button>
+        <button type="button" data-p="Quiero pedir una cita en la notaría"><i class="ph ph-calendar-check" aria-hidden="true"></i><b>Pedir una cita</b><span>El personal te confirma por WhatsApp</span></button>
+      </div>
+    </section>
+    <div class="ac-mensajes" id="mensajes"></div>
+  </div>
+
+  <div class="ac-redactar">
+    <form class="ac-caja" id="form">
+      <textarea id="texto" rows="1" maxlength="1000" placeholder="Escribe tu pregunta" aria-label="Escribe tu pregunta"></textarea>
+      <button type="submit" id="enviar" aria-label="Enviar" disabled><i class="ph ph-arrow-up" aria-hidden="true"></i></button>
+    </form>
+    <p class="ac-nota">Asistente automático: puede equivocarse y las tarifas son referenciales. No compartas datos sensibles por aquí.</p>
+  </div>
+</main>
+
+<script type="module" src="js/asistente.js"></script>
+</body>
+</html>
