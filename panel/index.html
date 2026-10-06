@@ -57,7 +57,17 @@ form.resp textarea{resize:none;height:46px}
   <input id="email" type="email" placeholder="Correo" autocomplete="username" required>
   <input id="clave" type="password" placeholder="Contraseña" autocomplete="current-password" required>
   <button class="btn">Entrar</button>
+  <button class="btn btn--line" type="button" id="olvide">Olvidé mi contraseña</button>
   <p class="err" id="loginErr"></p>
+</form>
+
+<form class="login" id="nuevaClave" hidden>
+  <h1>Define tu contraseña</h1>
+  <p class="aviso">Es la que usarás para entrar al panel.</p>
+  <input id="clave1" type="password" placeholder="Nueva contraseña (mínimo 8 caracteres)" autocomplete="new-password" minlength="8" required>
+  <input id="clave2" type="password" placeholder="Repítela" autocomplete="new-password" minlength="8" required>
+  <button class="btn">Guardar y entrar</button>
+  <p class="err" id="claveErr"></p>
 </form>
 
 <main id="app" hidden>
@@ -70,6 +80,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// El enlace del correo (invitación o recuperación) trae type=invite|recovery en la URL: hay que definir contraseña.
+const definirClave = /type=(invite|recovery)/.test(location.hash + location.search);
 const cfg = await (await fetch("/api/panel-config")).json();
 const sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 let actual = null, timer = null;
@@ -85,7 +97,17 @@ async function api(metodo, params) {
   return data;
 }
 
-function mostrarLogin() { $("#login").hidden = false; $("#app").hidden = true; $("#salir").hidden = true; clearInterval(timer); }
+function mostrarNuevaClave() { $("#nuevaClave").hidden = false; $("#login").hidden = true; $("#app").hidden = true; }
+$("#nuevaClave").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("#claveErr").textContent = "";
+  if ($("#clave1").value !== $("#clave2").value) { $("#claveErr").textContent = "Las contraseñas no coinciden."; return; }
+  const { error } = await sb.auth.updateUser({ password: $("#clave1").value });
+  if (error) { $("#claveErr").textContent = "No se pudo guardar: " + error.message; return; }
+  history.replaceState(null, "", location.pathname);
+  $("#nuevaClave").hidden = true;
+  try { await mostrarApp(); } catch (err) { mostrarLogin(); $("#loginErr").textContent = err.message; }
+});
+function mostrarLogin() { $("#nuevaClave").hidden = true; $("#login").hidden = false; $("#app").hidden = true; $("#salir").hidden = true; clearInterval(timer); }
 async function mostrarApp() {
   $("#login").hidden = true; $("#app").hidden = false; $("#salir").hidden = false;
   await cargarLista(); clearInterval(timer);
@@ -99,6 +121,12 @@ $("#login").addEventListener("submit", async (e) => {
   try { await mostrarApp(); } catch (err) { $("#loginErr").textContent = err.message; await sb.auth.signOut(); mostrarLogin(); }
 });
 $("#salir").onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
+$("#olvide").onclick = async () => {
+  const email = $("#email").value.trim();
+  if (!email) { $("#loginErr").textContent = "Escribe tu correo y vuelve a pulsar."; return; }
+  await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/panel/" });
+  $("#loginErr").textContent = "Si el correo está registrado, te llegará un enlace para definir una nueva contraseña.";
+};
 
 async function cargarLista() {
   const filas = await api("GET", { accion: "conversaciones" });
@@ -170,7 +198,9 @@ $("#detalle").addEventListener("click", async (e) => {
 });
 
 const { data: { session } } = await sb.auth.getSession();
-if (session) mostrarApp().catch(mostrarLogin); else mostrarLogin();
+if (definirClave && session) mostrarNuevaClave();
+else if (session) mostrarApp().catch(mostrarLogin);
+else mostrarLogin();
 </script>
 </body>
 </html>
