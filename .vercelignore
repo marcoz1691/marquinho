@@ -1,5 +1,7 @@
 .claude
 test
+e2e
+playwright.config.js
 docs
 supabase
 scripts
