@@ -21,8 +21,10 @@ function pintar() {
   $("#chatSugerencias").hidden = chat.mensajes.length > 0;
   lista.scrollTop = lista.scrollHeight;
 }
-function agregar(m) {
-  agregarMensaje(chat.sesion, m);
+// La respuesta se guarda en la conversación donde se preguntó, aunque la persona ya haya abierto otra.
+function agregar(m, sesion = chat.sesion) {
+  agregarMensaje(sesion, m);
+  if (sesion !== chat.sesion) return;
   burbuja(m);
   $("#chatSugerencias").hidden = true;
   lista.scrollTop = lista.scrollHeight;
@@ -38,10 +40,11 @@ async function enviar(texto) {
   escribiendo.setAttribute("aria-label", nombre + " está escribiendo");
   escribiendo.innerHTML = "<span></span><span></span><span></span>";
   lista.appendChild(escribiendo); lista.scrollTop = lista.scrollHeight;
-  const r = await enviarMensaje(chat.sesion, texto);
+  const sesion = chat.sesion;
+  const r = await enviarMensaje(sesion, texto);
   escribiendo.remove();
-  if (r.error) agregar({ autor: "aviso", texto: r.error });
-  else r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }));
+  if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);
+  else r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
   enviando = false; form.classList.remove("chat__form--ocupado"); campo.focus();
 }
 

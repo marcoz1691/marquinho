@@ -1,4 +1,4 @@
-import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from "./nucleo.js";
+import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoEscrito, estaAbierto } from "./nucleo.js";
 
 (function () {
   "use strict";
@@ -164,7 +164,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from 
       $("#calcQtyWrap").hidden = !multi;
       $("#calcMontoWrap").hidden = !esCuantia;
       $("#calcUnit").textContent = multi ? "(" + f.unidad + ")" : "";
-      var monto = parseFloat(String($("#calcMonto").value).replace(/[^\d.]/g, ""));
+      var monto = montoEscrito($("#calcMonto").value);
       var r = calcularTarifa(t, T, { cantidad: parseInt($("#calcQty").value, 10) || 1, monto: monto });
       if (esCuantia) {
         if (r.total !== null) note = "Rango " + (r.hasta === null ? "desde " + money(r.desde + .01) : money(r.desde ? r.desde + .01 : 0) + " a " + money(r.hasta)) + ": " +
@@ -214,8 +214,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from 
       sameAs: redes.length ? redes : undefined
     });
     var tick = function () {
-      var d = new Date(), hm = d.getHours() * 60 + d.getMinutes(), p = function (s) { var a = s.split(":"); return +a[0] * 60 + +a[1]; };
-      var open = N.horario.dias.indexOf(d.getDay()) !== -1 && hm >= p(N.horario.abre) && hm < p(N.horario.cierra);
+      var open = estaAbierto(N.horario, new Date());
       $("#estado").innerHTML = '<span class="dot' + (open ? " on" : "") + '"></span>' + (open ? "Abierto ahora · cierra a las " + esc(N.horario.cierra) : "Cerrado ahora · " + esc(N.horario.texto));
     };
     tick(); setInterval(tick, 60000);
@@ -343,7 +342,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from 
     }
     burger.addEventListener("click", function () { var o = menu.classList.toggle("open"); burger.setAttribute("aria-expanded", o); });
     menu.addEventListener("click", function (e) { if (e.target.tagName === "A") { menu.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); } });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") menu.classList.remove("open"); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { menu.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); } });
     $("#buscar").addEventListener("input", function (e) { state.q = e.target.value; renderChips(); renderLista(); });
     $("#chips").addEventListener("click", function (e) {
       var b = e.target.closest("[data-c]"); if (!b) return;

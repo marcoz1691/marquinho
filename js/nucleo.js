@@ -3,7 +3,8 @@
 
 export const norm = function (s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 export const money = function (n) { return "$" + n.toLocaleString("es-EC", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-const redondear = function (n) { return Math.round(n * 100) / 100; };
+// Pasar por texto evita que 25,305 quede como 25,30499999… y se redondee hacia abajo.
+const redondear = function (n) { return Math.round(Number(n.toFixed(8) + "e2")) / 100; };
 
 // CSV (RFC 4180): comillas, comas y saltos de línea dentro de celdas.
 export function parseCSV(text) {
@@ -46,6 +47,29 @@ export function num(v) {
   else if (s.indexOf(",") > -1 && s.indexOf(".") > -1) s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
   else s = s.replace(",", ".");
   var n = parseFloat(s); return isNaN(n) ? null : n;
+}
+
+// Montos que escribe una persona: "85.000", "85,000", "1.250.000,50", "10000.01".
+// Un separador repetido, o uno solo seguido de exactamente tres dígitos, es de miles; si hay ambos, el último es el decimal.
+export function montoEscrito(v) {
+  var s = String(v || "").replace(/[^\d,.]/g, "");
+  if (!/\d/.test(s)) return null;
+  var ultimo = Math.max(s.lastIndexOf(","), s.lastIndexOf("."));
+  var hayAmbos = s.indexOf(",") > -1 && s.indexOf(".") > -1;
+  var sep = s.charAt(ultimo), veces = s.split(sep).length - 1;
+  var decimal = ultimo > -1 && (hayAmbos || (veces === 1 && s.length - ultimo - 1 !== 3));
+  var entero = (decimal ? s.slice(0, ultimo) : s).replace(/[,.]/g, "");
+  return parseFloat(entero + (decimal ? "." + s.slice(ultimo + 1) : "")) || 0;
+}
+
+// ¿Está abierta la notaría en `fecha`? Siempre con la hora de Quito, aunque el visitante esté en otra zona.
+export function estaAbierto(horario, fecha) {
+  var partes = {};
+  new Intl.DateTimeFormat("en-US", { timeZone: "America/Guayaquil", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(fecha).forEach(function (p) { partes[p.type] = p.value; });
+  var dia = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(partes.weekday);
+  var ahora = +partes.hour * 60 + +partes.minute;
+  return horario.dias.indexOf(dia) !== -1 && ahora >= minutos(horario.abre) && ahora < minutos(horario.cierra);
 }
 
 // Fechas "2026-11-02" o "2/11/2026" (día primero) a AAAA-MM-DD.

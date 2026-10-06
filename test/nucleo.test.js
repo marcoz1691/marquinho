@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCSV, num, fecha, desdeHoja, calcularTarifa, precioTexto } from "../js/nucleo.js";
+import { parseCSV, num, fecha, desdeHoja, calcularTarifa, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
 
 const TARIFAS = {
   sbu: 482, iva: 0.15, anio: 2026,
@@ -78,6 +78,46 @@ describe("calcularTarifa", () => {
 
   it("consultar no tiene valor", () => {
     expect(calcularTarifa({ tarifa: { tipo: "consultar" } }, TARIFAS, {}).total).toBeNull();
+  });
+
+  it("redondea medio centavo hacia arriba", () => {
+    // 0,35 SBU = 168,70; IVA exacto 25,305
+    const t = { tarifa: { tipo: "cuantia", tabla: "transferencia" } };
+    expect(calcularTarifa(t, TARIFAS, { monto: 20000 })).toMatchObject({ base: 168.7, iva: 25.31, total: 194.01 });
+  });
+});
+
+describe("montoEscrito", () => {
+  it("entiende puntos o comas de miles", () => {
+    expect(["85000", "85.000", "85,000", "$ 85.000", "1.250.000", "1,250,000"].map(montoEscrito)).toEqual([85000, 85000, 85000, 85000, 1250000, 1250000]);
+  });
+
+  it("entiende decimales con punto o coma", () => {
+    expect(["10000.01", "10000,01", "1.250.000,50", "1,250,000.50", "85000,5"].map(montoEscrito)).toEqual([10000.01, 10000.01, 1250000.5, 1250000.5, 85000.5]);
+  });
+
+  it("sin dígitos no hay monto", () => {
+    expect(["", "abc", "."].map(montoEscrito)).toEqual([null, null, null]);
+  });
+});
+
+describe("estaAbierto", () => {
+  const horario = { dias: [1, 2, 3, 4, 5], abre: "08:00", cierra: "17:00" };
+  const quito = (s) => new Date(s + "-05:00");
+
+  it("usa la hora de Quito sin importar la zona del equipo", () => {
+    expect(estaAbierto(horario, quito("2026-10-05T10:00:00"))).toBe(true);
+    expect(estaAbierto(horario, quito("2026-10-05T20:00:00"))).toBe(false);
+  });
+
+  it("abre a la hora de apertura y cierra a la de cierre", () => {
+    expect(estaAbierto(horario, quito("2026-10-05T07:59:00"))).toBe(false);
+    expect(estaAbierto(horario, quito("2026-10-05T08:00:00"))).toBe(true);
+    expect(estaAbierto(horario, quito("2026-10-09T17:00:00"))).toBe(false);
+  });
+
+  it("no abre en días no laborables", () => {
+    expect(estaAbierto(horario, quito("2026-10-10T10:00:00"))).toBe(false);
   });
 });
 

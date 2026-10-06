@@ -269,8 +269,8 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 /* Responsive */
 @media (max-width:860px){
   .nav__burger{display:grid}
-  .nav__links{position:fixed;inset:60px 0 auto 0;flex-direction:column;gap:0;background:var(--bg);padding:8px 20px 20px;border-bottom:1px solid var(--line);transform:translateY(-8px);opacity:0;pointer-events:none;transition:.25s;font-size:19px;margin:0}
-  .nav__links.open{opacity:1;transform:none;pointer-events:auto}
+  .nav__links{position:fixed;inset:60px 0 auto 0;flex-direction:column;gap:0;background:var(--bg);padding:8px 20px 20px;border-bottom:1px solid var(--line);transform:translateY(-8px);opacity:0;visibility:hidden;pointer-events:none;transition:.25s;font-size:19px;margin:0}
+  .nav__links.open{opacity:1;visibility:visible;transform:none;pointer-events:auto}
   .nav__links a{padding:14px 0;border-bottom:1px solid var(--line)}
   .nav__tools{margin-left:auto}
   .cols,.contact,.svc__in,.calc__wrap,.faq,.tl,.tp__cols{grid-template-columns:1fr}

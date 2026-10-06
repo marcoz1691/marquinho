@@ -49,8 +49,10 @@ function pintar() {
   pintarHistorial();
   abajo();
 }
-function agregar(m) {
-  agregarMensaje(chat.sesion, m);
+// La respuesta se guarda en la conversación donde se preguntó, aunque la persona ya haya abierto otra.
+function agregar(m, sesion = chat.sesion) {
+  agregarMensaje(sesion, m);
+  if (sesion !== chat.sesion) return pintarHistorial();
   chat = chatActual();
   $("#inicio").hidden = true;
   mensajes.appendChild(nodo(m));
@@ -67,10 +69,11 @@ async function enviar(texto) {
   pensando.className = "ac-msg ac-msg--asistente";
   pensando.innerHTML = '<img class="ac-avatar" src="assets/logo/logo-notaria41-verde.svg" alt="" width="30" height="30"><div class="ac-cuerpo"><b class="ac-nombre">' + esc(nombre) + '</b><div class="ac-pensando" aria-label="' + esc(nombre) + ' está escribiendo"><span></span><span></span><span></span></div></div>';
   mensajes.appendChild(pensando); abajo();
-  const r = await enviarMensaje(chat.sesion, texto);
+  const sesion = chat.sesion;
+  const r = await enviarMensaje(sesion, texto);
   pensando.remove();
-  if (r.error) agregar({ autor: "aviso", texto: r.error });
-  else r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }));
+  if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);
+  else r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
   enviando = false; boton.disabled = !campo.value.trim(); campo.focus();
 }
 
