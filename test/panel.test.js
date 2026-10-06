@@ -127,4 +127,32 @@ describe("panel del personal", () => {
     const { id } = await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: "M1", nombre: "", mime: "", bytes: new Uint8Array([1]), descripcion: "x" });
     await expect(panel.revisarDocumento(id, "perdido")).rejects.toThrow();
   });
+
+  describe("conversaciones del chat web", () => {
+    let web;
+    beforeEach(async () => {
+      web = await almacen.conversacion("web:s_7f3a9c2e41b84d0f");
+      const s = await almacen.sesionActiva(web.id, { ahora: t.getTime(), sistema: "S", inactividadMs: 864e5 });
+      await almacen.agregarMensajes(s.id, [{ role: "user", content: "Quiero una cita" }], t.getTime());
+      await almacen.marcarClienteEscribio(web.id, t.getTime());
+    });
+
+    it("se marcan como canal web en la lista y en el detalle no se pueden responder", async () => {
+      expect((await panel.conversaciones()).find((c) => c.id === web.id)).toMatchObject({ canal: "web" });
+      expect(await panel.detalle(web.id)).toMatchObject({ puedeResponder: false, canal: "web" });
+    });
+
+    it("responder a una conversación web explica que no es posible", async () => {
+      await expect(panel.responder(web.id, "Hola")).rejects.toThrow(/página web/);
+      expect(whatsapp.enviarTexto).not.toHaveBeenCalled();
+    });
+
+    it("confirmar una cita web avisa por WhatsApp al celular de contacto con la plantilla", async () => {
+      const { id } = await almacen.crearSolicitudCita({ conversacionId: web.id, tramiteId: "compraventa", fecha: "2026-10-12", hora: "09:00", nombre: "Ana", contacto: "593991112233" });
+      const r = await panel.decidirCita(id, "confirmada");
+      expect(r.avisado).toBe(true);
+      expect(whatsapp.enviarTexto).not.toHaveBeenCalled();
+      expect(whatsapp.enviarPlantilla).toHaveBeenCalledWith("593991112233", "cita_confirmada", ["Ana", "Compraventa de inmuebles", "lunes, 12 de octubre", "09:00"]);
+    });
+  });
 });

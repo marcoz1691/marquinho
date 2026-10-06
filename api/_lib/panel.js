@@ -7,9 +7,12 @@ const ESTADOS_DOC = ["recibido", "aprobado", "observado"];
 const TURNO_MS = 30 * 1000;
 
 const legible = (historial) => historial.map(textoVisible).filter(Boolean);
+const canalDe = (telefono) => (String(telefono).startsWith("web:") ? "web" : "whatsapp");
 
 export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)), plantillas = {} }) {
   async function dentroDeVentana(conversacionId) {
+    const c = await almacen.conversacionPorId(conversacionId);
+    if (c && canalDe(c.telefono) === "web") return false;   // el chat web no tiene canal para escribirle al cliente
     return ahora().getTime() - (await almacen.ultimoMensajeCliente(conversacionId)) <= VENTANA_MS;
   }
   // El personal escribe en la conversación con el mismo turno que el asistente, para no mezclar mensajes a mitad de una respuesta.
@@ -38,7 +41,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
 
   return {
     async conversaciones() {
-      const filas = (await almacen.resumenConversaciones()).map(({ ultimoTexto, ...c }) => ({ ...c, ultimo: ultimoTexto }));
+      const filas = (await almacen.resumenConversaciones()).map(({ ultimoTexto, ...c }) => ({ ...c, ultimo: ultimoTexto, canal: canalDe(c.telefono) }));
       return filas.sort((a, b) => (b.derivada - a.derivada) || (b.ultimaActividad - a.ultimaActividad));
     },
 
@@ -48,6 +51,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
       return {
         conversacion: c,
+        canal: canalDe(c.telefono),
         puedeResponder: await dentroDeVentana(id),
         mensajes: legible(await almacen.historial(id)),
         citas: (await almacen.solicitudesCita(id)).map((x) => ({ ...x, tramite: nombreDe(x.tramiteId) })),
@@ -58,6 +62,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     async responder(id, texto) {
       const c = await conversacion(id);
       if (!String(texto || "").trim()) throw new Error("El mensaje está vacío");
+      if (canalDe(c.telefono) === "web") throw new Error("Esta conversación es del chat de la página web: no se puede responder desde aquí. Si el cliente dejó su celular, contáctalo por WhatsApp o teléfono.");
       if (!(await dentroDeVentana(id))) throw new Error("Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp solo permite escribirle con una plantilla aprobada. Llámalo por teléfono.");
       await enviarComoPersonal(c, texto.trim());
     },
@@ -77,10 +82,11 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
         ? `Hola ${cita.nombre}, tu cita${tramite ? " para " + tramite : ""} quedó confirmada para el ${dia} a las ${cita.hora} en la ${C.notaria.nombre} (${C.notaria.direccion}). Recuerda traer tus documentos originales.`
         : `Hola ${cita.nombre}, no pudimos confirmar tu cita del ${dia} a las ${cita.hora}${motivo ? ": " + motivo : ""}. Escríbenos otro horario que te convenga y te ayudamos.`;
       if (await dentroDeVentana(c.id)) { await enviarComoPersonal(c, texto); return { avisado: true }; }
-      // Fuera de la ventana de 24 h WhatsApp solo permite plantillas aprobadas.
+      // Fuera de la ventana de 24 h (o en citas del chat web) WhatsApp solo permite plantillas aprobadas.
       const plantilla = estado === "confirmada" ? plantillas.citaConfirmada : plantillas.citaRechazada;
-      if (!plantilla) return { avisado: false };
-      await whatsapp.enviarPlantilla(c.telefono, plantilla, estado === "confirmada" ? [cita.nombre, tramite || "tu trámite", dia, cita.hora] : [cita.nombre, dia, cita.hora]);
+      const destino = cita.contacto || (canalDe(c.telefono) === "whatsapp" ? c.telefono : null);
+      if (!plantilla || !destino) return { avisado: false };
+      await whatsapp.enviarPlantilla(destino, plantilla, estado === "confirmada" ? [cita.nombre, tramite || "tu trámite", dia, cita.hora] : [cita.nombre, dia, cita.hora]);
       return { avisado: true };
     },
 

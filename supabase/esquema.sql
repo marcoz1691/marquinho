@@ -110,3 +110,22 @@ alter table personal enable row level security;
 -- Bucket privado para los documentos de los clientes.
 insert into storage.buckets (id, name, public) values ('documentos', 'documentos', false)
 on conflict (id) do nothing;
+
+-- Chat web: celular de contacto en las citas y contador de uso para limitar costos.
+alter table solicitudes_cita add column if not exists contacto text;
+
+create table if not exists uso (
+  clave text not null,
+  ventana bigint not null,
+  cuenta int not null default 0,
+  primary key (clave, ventana)
+);
+alter table uso enable row level security;
+
+create or replace function incrementar_uso(p_clave text, p_ventana bigint) returns int
+language sql as $$
+  insert into uso (clave, ventana, cuenta) values (p_clave, p_ventana, 1)
+  on conflict (clave, ventana) do update set cuenta = uso.cuenta + 1
+  returning cuenta;
+$$;
+revoke execute on function incrementar_uso(text, bigint) from public, anon, authenticated;

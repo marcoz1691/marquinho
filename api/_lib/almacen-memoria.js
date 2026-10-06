@@ -4,7 +4,7 @@ import { textoVisible } from "./mensajes.js";
 export function crearAlmacenMemoria() {
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
   const archivos = [], docs = [], citas = [], pendientes = [];
-  const turnos = new Map();
+  const turnos = new Map(), usos = new Map();
   let seq = 0;
   const nuevoId = () => String(++seq);
   const copia = (x) => structuredClone(x);
@@ -94,7 +94,12 @@ export function crearAlmacenMemoria() {
     async marcarRecordada(id) { citas.find((c) => c.id === id).recordada = true; },
     async citasDelDia(fecha) {
       return citas.filter((c) => c.fecha === fecha && c.estado === "confirmada" && !c.recordada)
-        .map((c) => ({ ...copia(c), telefono: (porId(c.conversacionId) || {}).telefono }));
+        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));
+    },
+    async contarUso(clave, ventanaMs, ahora) {
+      const k = clave + "|" + Math.floor(ahora / ventanaMs);
+      usos.set(k, (usos.get(k) || 0) + 1);
+      return usos.get(k);
     }
   };
 }

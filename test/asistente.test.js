@@ -314,3 +314,50 @@ describe("horario escrito de distintas formas en la hoja", () => {
     expect(claude.llamadas[1].messages.at(-1).content[0].is_error).toBe(true);
   });
 });
+
+describe("canal web", () => {
+  const web = (over = {}) => mensaje({ de: "web:abc123", nombre: "", canal: "web", ...over });
+
+  it("no espera para agrupar mensajes en la web", async () => {
+    const esperar = vi.fn(async () => {});
+    const claude = claudeFalso([texto("Hola")]);
+    await nuevo(claude, undefined, { esperar }).atender(web());
+    expect(esperar).toHaveBeenCalledWith(0);
+  });
+
+  it("le dice al modelo que está en la web y qué cambia", async () => {
+    const claude = claudeFalso([texto("Hola")]);
+    await nuevo(claude).atender(web());
+    expect(claude.llamadas[0].messages.at(-1).content).toMatch(/página web/);
+  });
+
+  it("en la web no guarda documentos y pide enviarlos por WhatsApp", async () => {
+    const claude = claudeFalso([herramienta("guardar_documento", { media_id: "X", descripcion: "cédula" }), texto("Envíala por WhatsApp")]);
+    await nuevo(claude).atender(web());
+    const r = claude.llamadas[1].messages.at(-1).content[0];
+    expect(r.is_error).toBe(true);
+    expect(r.content).toMatch(/WhatsApp/);
+  });
+
+  it("en la web la solicitud de cita exige un celular de contacto", async () => {
+    const claude = claudeFalso([herramienta("solicitar_cita", { fecha: "2026-10-08", hora: "10:00", nombre: "Ana" }), texto("¿Tu celular?")]);
+    await nuevo(claude).atender(web());
+    expect(claude.llamadas[1].messages.at(-1).content[0]).toMatchObject({ is_error: true });
+  });
+
+  it("en la web guarda el celular de contacto en la cita", async () => {
+    const claude = claudeFalso([herramienta("solicitar_cita", { fecha: "2026-10-08", hora: "10:00", nombre: "Ana", telefono: "0991112233" }), texto("Listo")]);
+    await nuevo(claude).atender(web());
+    const conv = await almacen.conversacion("web:abc123");
+    expect((await almacen.solicitudesCita(conv.id))[0]).toMatchObject({ contacto: "593991112233" });
+    expect(avisar.mock.calls[0][0]).toMatch(/593991112233/);
+  });
+
+  it("en la web derivar no pausa al asistente y avisa al personal con el contacto", async () => {
+    const claude = claudeFalso([herramienta("derivar_a_persona", { motivo: "quiere hablar con el notario", telefono: "0991112233" }), texto("Te contactarán")]);
+    await nuevo(claude).atender(web());
+    const conv = await almacen.conversacion("web:abc123");
+    expect(conv.derivada).toBe(false);
+    expect(avisar.mock.calls[0][0]).toMatch(/593991112233/);
+  });
+});

@@ -11,6 +11,10 @@
     "api/recordatorios.js": {
       "maxDuration": 60,
       "includeFiles": "data/**"
+    },
+    "api/chat.js": {
+      "maxDuration": 120,
+      "includeFiles": "data/**"
     }
   },
   "crons": [

@@ -40,6 +40,7 @@ const HERRAMIENTAS = [
         fecha: { type: "string", description: "AAAA-MM-DD" },
         hora: { type: "string", description: "HH:MM en 24 horas" },
         nombre: { type: "string", description: "nombre completo del cliente" },
+        telefono: { type: "string", description: "celular de contacto del cliente; obligatorio en el chat de la página web" },
         nota: { type: "string", description: "detalle adicional opcional" }
       },
       required: ["fecha", "hora", "nombre"]
@@ -66,7 +67,7 @@ const HERRAMIENTAS = [
   {
     name: "derivar_a_persona",
     description: "Pasa la conversación a una persona de la notaría y deja de responder. Úsala si el cliente lo pide, si hay una queja, una duda legal que requiere criterio del notario, o algo que no puedes resolver con la base de conocimiento.",
-    input_schema: { type: "object", properties: { motivo: { type: "string" } }, required: ["motivo"] }
+    input_schema: { type: "object", properties: { motivo: { type: "string" }, telefono: { type: "string", description: "celular de contacto si el cliente lo dio (chat web)" } }, required: ["motivo"] }
   },
   {
     name: "estado_de_mi_tramite",
@@ -121,6 +122,14 @@ ${tramites}
 ${faq}`;
 }
 
+const esWeb = (conv) => String(conv.telefono).startsWith("web:");
+// Celular ecuatoriano a formato internacional: "0991112233" -> "593991112233".
+function celular(v) {
+  let d = String(v || "").replace(/\D/g, "");
+  if (/^0\d{9}$/.test(d)) d = "593" + d.slice(1);
+  return /^\d{11,13}$/.test(d) ? d : null;
+}
+
 function contexto(conv, t, C) {
   const N = C.notaria;
   const fechaTxt = new Intl.DateTimeFormat("es-EC", { timeZone: ZONA, dateStyle: "full", timeStyle: "short" }).format(t);
@@ -128,8 +137,13 @@ function contexto(conv, t, C) {
   const { dia, min } = enQuito(t);
   const abierta = N.horario.dias.includes(dia) && min >= minutos(N.horario.abre) && min < minutos(N.horario.cierra);
   const avisos = (C.data.avisos || []).filter((a) => (!a.desde || a.desde <= iso) && (!a.hasta || iso <= a.hasta)).map((a) => a.msg);
+  const canal = esWeb(conv)
+    ? "Canal: chat de la página web. Aquí no puedes recibir documentos: si necesita enviarlos, pídele que lo haga por WhatsApp" + (N.whatsapp ? " (wa.me/" + String(N.whatsapp).replace(/\D/g, "") + ")" : "") +
+      ". Para solicitar una cita pide también su número de celular, porque la confirmación llegará por WhatsApp. No hay atención humana en vivo en la web: si pide hablar con una persona, ofrece el WhatsApp o el teléfono de la notaría y, si te da su celular, avisa al personal para que lo contacte."
+    : "Canal: WhatsApp.";
   return [`Fecha y hora en Quito: ${fechaTxt} (${iso}). La notaría está ${abierta ? "abierta" : "cerrada"} en este momento.`,
-    `Cliente: ${conv.nombre || "sin nombre"} (${conv.telefono}). Consentimiento de datos: ${conv.consentimiento ? "sí" : "no"}.`,
+    canal,
+    `Cliente: ${conv.nombre || "sin nombre"}${esWeb(conv) ? "" : " (" + conv.telefono + ")"}. Consentimiento de datos: ${conv.consentimiento ? "sí" : "no"}.`,
     avisos.length ? "Avisos vigentes: " + avisos.join(" | ") : ""].filter(Boolean).join("\n");
 }
 
@@ -174,9 +188,11 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const dia = new Date(i.fecha + "T12:00:00Z").getUTCDay(), hora = i.hora.padStart(5, "0"), H = C.notaria.horario, m = minutos(hora);
         if (i.fecha < hoy || (i.fecha === hoy && m <= enQuito(ctx.t).min)) return error("Esa fecha u hora ya pasó.");
         if (!H.dias.includes(dia) || m < minutos(H.abre) || m >= minutos(H.cierra)) return error(`Fuera del horario de atención (${H.texto}).`);
+        const contacto = esWeb(conv) ? celular(i.telefono) : null;
+        if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo, la confirmación de la cita llegará por WhatsApp.");
         const t = i.tramite_id ? tramite(i.tramite_id) : null;
-        await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre: i.nombre, nota: i.nota || "" });
-        await avisar(`Nueva solicitud de cita: ${i.nombre} ${quien} — ${t ? t.nombre : "trámite por definir"} — ${i.fecha} ${hora}. Confírmala en el panel.`);
+        await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre: i.nombre, nota: i.nota || "", ...(contacto ? { contacto } : {}) });
+        await avisar(`Nueva solicitud de cita${esWeb(conv) ? " (web)" : ""}: ${i.nombre} ${contacto ? "(" + contacto + ")" : quien} — ${t ? t.nombre : "trámite por definir"} — ${i.fecha} ${hora}. Confírmala en el panel.`);
         return ok("Solicitud de cita registrada como pendiente. El personal la confirmará por este chat.");
       }
 
@@ -186,6 +202,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         return ok("Consentimiento registrado.");
 
       case "guardar_documento": {
+        if (esWeb(conv)) return error("En el chat de la página web no se pueden recibir documentos: pide al cliente que los envíe por WhatsApp.");
         if (!conv.consentimiento) return error("El cliente aún no ha dado su consentimiento de datos: muéstrale el aviso de privacidad y pide que acepte antes de guardar documentos.");
         const archivo = await almacen.archivoRecibido(conv.id, i.media_id);
         if (!archivo) return error(`El archivo ${i.media_id} no fue recibido en esta conversación.`);
@@ -199,6 +216,12 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "derivar_a_persona":
+        if (esWeb(conv)) {
+          const contacto = celular(i.telefono);
+          if (contacto) await avisar(`Cliente del chat web (${contacto}) pide que lo contacten: ${i.motivo || "sin motivo"}.`);
+          return ok(contacto ? "Aviso enviado al personal: lo contactarán a ese número. Ofrécele también el WhatsApp o el teléfono de la notaría."
+            : "No hay atención en vivo en la web: ofrécele el WhatsApp o el teléfono de la notaría, o pídele su celular para que lo contacten.");
+        }
         await almacen.actualizarConversacion(conv.id, { derivada: true });
         await avisar(`${quien} pide atención de una persona: ${i.motivo || "sin motivo"}. Respóndele desde el panel.`);
         return ok("Conversación derivada. No vuelvas a responder; despídete diciendo que una persona le escribirá pronto.");
@@ -297,7 +320,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
     const respuestas = [];
     while (await almacen.tomarTurno(conv.id, ahora().getTime(), TURNO_MS)) {
       try {
-        await esperar(AGRUPAR_MS);
+        await esperar(m.canal === "web" ? 0 : AGRUPAR_MS);
         const lote = await almacen.pendientes(conv.id);
         if (!lote.length) break;
         respuestas.push(...(await turno(conv.id, lote)));

@@ -250,7 +250,7 @@ $("#salirSinPermiso").onclick = async () => { await sb.auth.signOut(); vista("vE
 async function cargarLista() {
   const filas = await api("GET", { accion: "conversaciones" });
   $("#lista").innerHTML = filas.map((c) => `<button class="item${c.id === actual ? " on" : ""}" data-id="${esc(c.id)}">
-    <b>${esc(c.nombre || c.telefono)} ${c.derivada ? '<span class="tag tag--der">Derivada</span>' : ""} ${c.citasPendientes ? `<span class="tag">${c.citasPendientes} cita</span>` : ""}</b>
+    <b>${esc(c.canal === "web" ? (c.nombre || "Visitante de la web") : (c.nombre || c.telefono))} ${c.canal === "web" ? '<span class="tag">Web</span>' : ""} ${c.derivada ? '<span class="tag tag--der">Derivada</span>' : ""} ${c.citasPendientes ? `<span class="tag">${c.citasPendientes} cita</span>` : ""}</b>
     <small>${esc(c.ultimo)}</small></button>`).join("") || '<p class="vacio">Aún no hay conversaciones.</p>';
 }
 $("#lista").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b) abrir(b.dataset.id); });
@@ -263,14 +263,15 @@ async function abrir(id, silencioso) {
     $("#mensajes").innerHTML = mensajes(d); if (abajo) $("#mensajes").scrollTop = 1e9; return;
   }
   $("#detalle").innerHTML = `<div class="chat">
-      <div class="top"><h2>${esc(c.nombre || "Cliente")} · ${esc(c.telefono)}</h2>
+      <div class="top"><h2>${esc(c.nombre || (d.canal === "web" ? "Visitante de la web" : "Cliente"))}${d.canal === "web" ? " · Chat web" : " · " + esc(c.telefono)}</h2>
         ${c.derivada ? '<button class="btn btn--line" id="devolver">Devolver al asistente</button>' : '<span class="tag">Atiende el asistente</span>'}</div>
       <div id="mensajes">${mensajes(d)}</div>
       ${d.puedeResponder ? `<form class="resp" id="resp"><textarea id="texto" placeholder="Escribe tu respuesta…" required></textarea><button class="btn">Enviar</button></form>`
+        : d.canal === "web" ? '<p class="aviso" style="margin:12px 18px">Conversación del chat de la página web: no se puede responder desde aquí. Si dejó su celular (ver citas), contáctalo por WhatsApp o teléfono.</p>'
         : '<p class="aviso" style="margin:12px 18px">Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp no permite escribirle desde aquí. Llámalo por teléfono.</p>'}
     </div>
     <aside class="lado">
-      <div><h3>Citas</h3>${d.citas.map((x) => `<div class="ficha"><b>${esc(x.tramite)}</b><span>${esc(x.fecha)} · ${esc(x.hora)} · ${esc(x.nombre)}</span>
+      <div><h3>Citas</h3>${d.citas.map((x) => `<div class="ficha"><b>${esc(x.tramite)}</b><span>${esc(x.fecha)} · ${esc(x.hora)} · ${esc(x.nombre)}</span>${x.contacto ? `<small>Celular: <a href="https://wa.me/${esc(x.contacto)}" target="_blank" rel="noopener">+${esc(x.contacto)}</a></small>` : ""}
         <span class="tag" style="justify-self:start">${esc(x.estado)}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
         <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada">Confirmar</button>
           <button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada">Rechazar</button>` : ""}

@@ -164,7 +164,22 @@
   </section>
 </main>
 
-<a class="wa" id="waBtn" href="#contacto" aria-label="Escribir por WhatsApp" hidden><i class="ph-fill ph-whatsapp-logo" aria-hidden="true"></i></a>
+<button class="chat-lanzador" id="chatAbrir" type="button" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
+<section class="chat" id="chat" role="dialog" aria-label="Asistente de la Notaría 41" hidden>
+  <header class="chat__cab">
+    <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="36" height="36">
+    <div><b>Asistente de la Notaría 41</b><small>Respuestas automáticas</small></div>
+    <button class="chat__icono" id="chatNueva" type="button" aria-label="Empezar una conversación nueva" title="Conversación nueva"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i></button>
+    <button class="chat__icono" id="chatCerrar" type="button" aria-label="Cerrar el chat"><i class="ph ph-x" aria-hidden="true"></i></button>
+  </header>
+  <div class="chat__mensajes" id="chatMensajes" aria-live="polite"></div>
+  <div class="chat__sugerencias" id="chatSugerencias"></div>
+  <form class="chat__form" id="chatForm">
+    <textarea id="chatTexto" rows="1" maxlength="1000" placeholder="Escribe tu pregunta" aria-label="Escribe tu pregunta"></textarea>
+    <button type="submit" aria-label="Enviar"><i class="ph-fill ph-paper-plane-right" aria-hidden="true"></i></button>
+  </form>
+  <p class="chat__pie">Asistente automático; no compartas datos sensibles. <a href="privacidad.html">Privacidad</a> <a id="chatWhatsapp" target="_blank" rel="noopener" hidden>Prefiero WhatsApp</a></p>
+</section>
 
 <footer class="foot">
   <div class="foot__in">
@@ -179,5 +194,6 @@
 
 <script type="application/ld+json" id="ld"></script>
 <script type="module" src="js/app.js"></script>
+<script type="module" src="js/chat.js"></script>
 </body>
 </html>

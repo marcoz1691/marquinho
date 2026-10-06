@@ -117,6 +117,21 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     expect((await a.citasDelDia(fecha)).filter((x) => x.id === id)).toEqual([]);
   });
 
+  it("guarda el celular de contacto de una cita web y lo usa para recordatorios", async () => {
+    const a = crear(), c = await a.conversacion("web:" + Math.random().toString(36).slice(2)), fecha = "2033-0" + (1 + Math.floor(Math.random() * 9)) + "-11";
+    const { id } = await a.crearSolicitudCita({ conversacionId: c.id, tramiteId: null, fecha, hora: "09:00", nombre: "Ana", contacto: "593991112233" });
+    expect(await a.cita(id)).toMatchObject({ contacto: "593991112233" });
+    await a.actualizarCita(id, { estado: "confirmada" });
+    expect((await a.citasDelDia(fecha)).find((x) => x.id === id)).toMatchObject({ telefono: "593991112233" });
+  });
+
+  it("cuenta el uso por clave y ventana de tiempo (límites del chat web)", async () => {
+    const a = crear(), clave = "prueba:" + Math.random();
+    expect(await a.contarUso(clave, 3600000, 1000)).toBe(1);
+    expect(await a.contarUso(clave, 3600000, 2000)).toBe(2);
+    expect(await a.contarUso(clave, 3600000, 3600000 + 5)).toBe(1); // ventana nueva
+  });
+
   it("lista conversaciones con su última actividad", async () => {
     const a = crear(), c = await a.conversacion(tel(), "Luis");
     const s = await a.sesionActiva(c.id, { ahora: 5000, sistema: "S", inactividadMs: DIA });

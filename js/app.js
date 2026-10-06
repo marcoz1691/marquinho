@@ -195,7 +195,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from 
     if (soc) rows += '<div><h3>Redes</h3><div class="social">' + soc + "</div></div>";
     $("#contactInfo").innerHTML = rows;
     $("#mapa").src = "https://www.openstreetmap.org/export/embed.html?bbox=" + [m.lng - .006, m.lat - .004, m.lng + .006, m.lat + .004].join("%2C") + "&layer=mapnik&marker=" + m.lat + "%2C" + m.lng;
-    if (tieneWa()) { var b = $("#waBtn"); b.href = wa("Hola, tengo una consulta."); b.target = "_blank"; b.rel = "noopener"; b.hidden = false; }
+    if (tieneWa()) document.documentElement.dataset.wa = String(N.whatsapp).replace(/\D/g, "");
     $("#footTxt").textContent = "© " + new Date().getFullYear() + " " + N.nombre + " · " + N.notario;
     var redes = Object.keys(N.redes || {}).map(function (k) { return N.redes[k]; }).filter(Boolean);
     $("#ld").textContent = JSON.stringify({
