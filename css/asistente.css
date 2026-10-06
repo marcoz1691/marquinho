@@ -1,0 +1,111 @@
+/* Página del asistente a pantalla completa (diseño tipo LibreChat). Usa los tokens de styles.css. */
+body.ac{display:grid;grid-template-columns:272px 1fr;height:100vh;height:100dvh;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px}
+.ac button{font:inherit;color:inherit}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ac img[src*="logo-notaria41-verde"]{content:url("../assets/logo/logo-notaria41-blanco.svg")}}
+:root[data-theme="dark"] .ac img[src*="logo-notaria41-verde"]{content:url("../assets/logo/logo-notaria41-blanco.svg")}
+
+/* Barra lateral */
+.ac-lado{display:flex;flex-direction:column;gap:12px;min-height:0;padding:14px 12px;background:var(--bg-alt);border-right:1px solid var(--line)}
+.ac-lado__top{display:flex;align-items:center;justify-content:space-between;padding:2px 6px}
+.ac-marca{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font-weight:600;font-stretch:106%;letter-spacing:-.01em}
+.ac-nueva{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;font-weight:500;text-align:left;transition:border-color .2s,background .2s}
+.ac-nueva:hover{border-color:var(--accent)}
+.ac-nueva i{font-size:18px;color:var(--accent)}
+.ac-historial{flex:1;min-height:0;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.ac-grupo{margin:16px 10px 6px;font-size:var(--t-label);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.ac-item{display:flex;align-items:center;border-radius:10px}
+.ac-item:hover,.ac-item--on{background:var(--accent-soft)}
+.ac-item > button:first-child{flex:1;min-width:0;padding:9px 10px;border:0;background:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.ac-item--on > button:first-child{font-weight:600}
+.ac-borrar{flex:none;width:32px;height:32px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;opacity:0;transition:opacity .15s}
+.ac-item:hover .ac-borrar,.ac-item--on .ac-borrar,.ac-borrar:focus-visible{opacity:1}
+.ac-borrar:hover{color:#B3261E}
+.ac-lado__pie{display:grid;gap:2px;padding-top:10px;border-top:1px solid var(--line)}
+.ac-lado__pie a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:14.5px}
+.ac-lado__pie a:hover{background:var(--accent-soft);color:var(--fg)}
+.ac-lado__pie i{font-size:18px}
+
+/* Columna principal */
+.ac-main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.ac-barra{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line)}
+.ac-barra__titulo{flex:1;min-width:0;display:grid}
+.ac-barra__titulo b{font-weight:600;font-stretch:106%}
+.ac-barra__titulo small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-icono{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:10px;background:none;cursor:pointer;font-size:21px}
+.ac-icono:hover{background:var(--accent-soft)}
+.ac-solo-movil{display:none}
+
+.ac-hilo{flex:1;min-height:0;overflow-y:auto;scroll-behavior:smooth}
+.ac-mensajes,.ac-inicio{width:100%;max-width:760px;margin:0 auto;padding:0 24px}
+.ac-mensajes{padding-top:28px;padding-bottom:24px;display:flex;flex-direction:column;gap:26px}
+
+/* Estado vacío */
+.ac-inicio{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:safe center;text-align:center;padding-top:32px;padding-bottom:32px}
+.ac-inicio h1{margin:18px 0 8px;font-size:clamp(28px,3.4vw,38px);font-weight:600;font-stretch:106%;letter-spacing:-.02em;line-height:1.1}
+.ac-inicio p{margin:0;color:var(--muted);font-size:var(--t-lead)}
+.ac-tarjetas{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;margin-top:34px}
+.ac-tarjetas button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:12px;row-gap:2px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:left;cursor:pointer;transition:border-color .2s,transform .2s}
+.ac-tarjetas button:hover{border-color:var(--accent);transform:translateY(-1px)}
+.ac-tarjetas i{grid-row:span 2;font-size:24px;color:var(--accent)}
+.ac-tarjetas b{font-weight:600}
+.ac-tarjetas span{color:var(--muted);font-size:14px}
+
+/* Mensajes */
+.ac-msg{display:flex;gap:14px;animation:ac-entra .25s ease-out}
+@keyframes ac-entra{from{opacity:0;transform:translateY(6px)}}
+.ac-msg--cliente{justify-content:flex-end}
+.ac-burbuja{max-width:min(78%,560px);padding:11px 16px;border-radius:18px 18px 4px 18px;background:var(--accent-soft);line-height:1.5;overflow-wrap:anywhere}
+.ac-avatar{flex:none;width:30px;height:30px;margin-top:1px}
+.ac-cuerpo{flex:1;min-width:0}
+.ac-nombre{display:block;margin-bottom:4px;font-size:14px;font-weight:600}
+.ac-texto{line-height:1.65;overflow-wrap:anywhere}
+.ac-texto p{margin:0 0 .7em}
+.ac-texto ul{margin:0 0 .7em;padding-left:1.2em}
+.ac-texto li{margin:.25em 0}
+.ac-texto li::marker{color:var(--accent)}
+.ac-texto > :last-child{margin-bottom:0}
+.ac-texto a{color:var(--accent);text-underline-offset:2px}
+.ac-acciones{margin-top:6px;opacity:0;transition:opacity .15s}
+.ac-msg:hover .ac-acciones,.ac-msg:last-child .ac-acciones,.ac-acciones:focus-within{opacity:1}
+.ac-copiar{display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;font-size:16px}
+.ac-copiar:hover{background:var(--accent-soft);color:var(--fg)}
+.ac-aviso{display:flex;gap:10px;align-items:flex-start;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-alt);color:var(--muted);font-size:14.5px}
+.ac-aviso i{font-size:18px;margin-top:1px}
+.ac-pensando{display:flex;gap:5px;padding:8px 0}
+.ac-pensando span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:ac-punto 1.2s infinite ease-in-out}
+.ac-pensando span:nth-child(2){animation-delay:.15s}
+.ac-pensando span:nth-child(3){animation-delay:.3s}
+@keyframes ac-punto{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+/* Redactar */
+.ac-redactar{width:100%;max-width:760px;margin:0 auto;padding:8px 24px calc(14px + env(safe-area-inset-bottom))}
+.ac-caja{display:flex;align-items:flex-end;gap:8px;padding:8px 8px 8px 18px;border:1px solid var(--line);border-radius:24px;background:var(--card);box-shadow:var(--sombra);transition:border-color .2s}
+.ac-caja:focus-within{border-color:var(--accent)}
+.ac-caja textarea{flex:1;min-height:40px;max-height:200px;padding:9px 0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:16px;line-height:1.45;resize:none}
+.ac-caja textarea::placeholder{color:var(--muted)}
+.ac-caja button{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-size:19px;cursor:pointer;transition:opacity .2s}
+.ac-caja button:disabled{opacity:.35;cursor:default}
+.ac-nota{margin:8px 0 0;text-align:center;color:var(--muted);font-size:12.5px}
+
+.ac-velo{position:fixed;inset:0;z-index:20;background:rgba(7,19,14,.4)}
+
+@media (prefers-reduced-motion:reduce){.ac-msg,.ac-pensando span{animation:none}.ac-hilo{scroll-behavior:auto}}
+
+/* Celular: la barra lateral se vuelve un cajón */
+@media (max-width:860px){
+  body.ac{grid-template-columns:1fr}
+  .ac-solo-movil{display:grid}
+  .ac-lado{position:fixed;z-index:30;inset:0 auto 0 0;width:min(300px,86vw);transform:translateX(-100%);transition:transform .25s cubic-bezier(.2,.7,.2,1)}
+  .ac--lado .ac-lado{transform:none;box-shadow:var(--sombra)}
+  .ac-barra{padding:8px 10px}
+  .ac-barra__titulo{text-align:center}
+  .ac-mensajes,.ac-inicio,.ac-redactar{padding-left:16px;padding-right:16px}
+  .ac-tarjetas{grid-template-columns:1fr;gap:10px;margin-top:22px}
+  .ac-tarjetas button{padding:13px 16px}
+  .ac-inicio{padding-top:20px;padding-bottom:20px}
+  .ac-inicio img{width:56px;height:56px}
+  .ac-inicio h1{margin-top:12px}
+  .ac-barra__titulo small{display:none}
+  .ac-borrar{opacity:1}
+}
+.ac-vacio{margin:14px 10px;color:var(--muted);font-size:14px}

@@ -1,0 +1,15 @@
+{
+  "_nota": "Conexión con Google Sheets. 'documento' es el ID de la hoja (lo que va entre /d/ y /edit en su enlace); la hoja debe estar compartida como 'Cualquier persona con el enlace: Lector'. 'pestanas' es el gid de cada pestaña (#gid=... en la URL). Si 'documento' está vacío, el sitio usa los JSON de esta carpeta. Ver README.",
+  "googleSheet": {
+    "documento": "1gR5B7yJTKHHWMUIyC5Z6BnlHU-GhgPKPwC93DpTDVks",
+    "publicado": "",
+    "pestanas": {
+      "tramites": "",
+      "categorias": "",
+      "preguntas": "",
+      "avisos": "",
+      "configuracion": "",
+      "tablas": ""
+    }
+  }
+}

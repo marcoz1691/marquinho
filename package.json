@@ -1,0 +1,23 @@
+{
+  "name": "notaria41",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8000",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "probar": "node --env-file=.env.local scripts/probar-asistente.mjs"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@supabase/supabase-js": "^2.117.2",
+    "@vercel/functions": "^3.9.11"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "vitest": "^5.0.3"
+  }
+}

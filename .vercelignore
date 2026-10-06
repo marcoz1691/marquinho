@@ -1,0 +1,12 @@
+.claude
+test
+e2e
+playwright.config.js
+docs
+supabase
+scripts
+cms/*.md
+GLOSSARY.md
+video
+.env
+.env.local

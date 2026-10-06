@@ -1,0 +1,3 @@
+# Sitio en preparación: no indexar hasta el lanzamiento (luego cambiar a Allow: /).
+User-agent: *
+Disallow: /

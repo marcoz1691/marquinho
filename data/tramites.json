@@ -1,0 +1,1136 @@
+{
+ "categorias": [
+  {
+   "id": "poderes",
+   "nombre": "Poderes",
+   "resumen": "Autoriza a otra persona a actuar en tu nombre."
+  },
+  {
+   "id": "inmuebles",
+   "nombre": "Escrituras e inmuebles",
+   "resumen": "Compraventas, donaciones, hipotecas y propiedades."
+  },
+  {
+   "id": "familia",
+   "nombre": "Familia",
+   "resumen": "Divorcio, unión de hecho, bienes del matrimonio y menores."
+  },
+  {
+   "id": "herencias",
+   "nombre": "Herencias y testamentos",
+   "resumen": "Posesión efectiva, testamentos y particiones."
+  },
+  {
+   "id": "declaraciones",
+   "nombre": "Declaraciones y certificaciones",
+   "resumen": "Declaraciones juramentadas, firmas y copias certificadas."
+  },
+  {
+   "id": "empresas",
+   "nombre": "Empresas",
+   "resumen": "Constitución, reformas y cierre de compañías."
+  },
+  {
+   "id": "diligencias",
+   "nombre": "Notificaciones y diligencias",
+   "resumen": "Desahucios, requerimientos y constataciones."
+  }
+ ],
+ "tramites": [
+  {
+   "id": "poder-natural",
+   "cat": "poderes",
+   "nombre": "Poder general o especial (persona natural)",
+   "desc": "Autoriza a otra persona para que actúe en tu nombre en uno o varios asuntos.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales del poderdante (quien da el poder)",
+    "Copia de la cédula del apoderado (quien recibe el poder)",
+    "Extranjeros: pasaporte vigente"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.12
+   },
+   "nota": "Cada otorgante adicional suma 3% del SBU."
+  },
+  {
+   "id": "poder-juridica",
+   "cat": "poderes",
+   "nombre": "Poder de persona jurídica",
+   "desc": "Poder que otorga una compañía u organización a través de su representante legal.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Nombramiento vigente e inscrito del representante legal",
+    "RUC de la compañía",
+    "Cédula y certificado de votación del representante legal"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.5
+   }
+  },
+  {
+   "id": "procuracion-judicial",
+   "cat": "poderes",
+   "nombre": "Procuración judicial",
+   "desc": "Autoriza a un abogado para que te represente en un juicio.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales del mandante",
+    "Nombre y matrícula del abogado procurador"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.12
+   },
+   "nota": "Persona natural. Si la otorga una compañía: 50% del SBU."
+  },
+  {
+   "id": "poder-social",
+   "cat": "poderes",
+   "nombre": "Poder especial con fines sociales",
+   "desc": "Para cobrar sueldos, pensiones, jubilaciones, bonos o el Bono de Desarrollo Humano.",
+   "req": [
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Documento que identifique el beneficio a cobrar"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.03
+   },
+   "nota": "Cada otorgante adicional suma 3% del SBU."
+  },
+  {
+   "id": "revocatoria-poder",
+   "cat": "poderes",
+   "nombre": "Notificación de revocatoria de poder",
+   "desc": "Notificamos al apoderado que el poder quedó sin efecto.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Copia de la escritura de revocatoria",
+    "Dirección del apoderado para la notificación"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.12
+   },
+   "nota": "Si el poder se otorgó en esta notaría, la marginación de la revocatoria no tiene costo adicional."
+  },
+  {
+   "id": "compraventa",
+   "cat": "inmuebles",
+   "nombre": "Compraventa de inmuebles",
+   "desc": "Escritura pública para transferir la propiedad de una casa, departamento o terreno.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes (y de sus cónyuges)",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Escritura anterior o título de propiedad",
+    "Pago del impuesto predial del año en curso",
+    "Comprobantes de pago de los impuestos de alcabala y plusvalía",
+    "Si venden herederos: posesión efectiva inscrita",
+    "Si alguien comparece por otra persona: poder especial original y vigente"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas",
+    "Inscripción en el Registro de la Propiedad"
+   ],
+   "tarifa": {
+    "tipo": "cuantia",
+    "tabla": "transferencia"
+   },
+   "nota": "Se calcula sobre el valor del contrato; si es menor al avalúo catastral, se usa el avalúo."
+  },
+  {
+   "id": "promesa-compraventa",
+   "cat": "inmuebles",
+   "nombre": "Promesa de compraventa",
+   "desc": "Compromiso de compra y venta de un bien en una fecha y condiciones acordadas.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "cuantia",
+    "tabla": "promesa"
+   }
+  },
+  {
+   "id": "donacion",
+   "cat": "inmuebles",
+   "nombre": "Donación de inmuebles",
+   "desc": "Transferencia gratuita de un inmueble. Requiere insinuación previa.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Pago del impuesto predial del año en curso",
+    "Escritura de insinuación para la donación",
+    "Comprobantes de pago de impuestos de la transferencia"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas",
+    "Inscripción en el Registro de la Propiedad"
+   ],
+   "tarifa": {
+    "tipo": "cuantia",
+    "tabla": "transferencia"
+   }
+  },
+  {
+   "id": "insinuacion-donacion",
+   "cat": "inmuebles",
+   "nombre": "Insinuación para la donación",
+   "desc": "Autorización previa que exige la ley para donar un bien.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Cédulas y certificados de votación del donante, donatario y dos testigos",
+    "Dos testigos que acrediten que el donante conserva bienes suficientes para su subsistencia",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.4
+   },
+   "nota": "Incluye las declaraciones de los testigos y la protocolización."
+  },
+  {
+   "id": "hipoteca",
+   "cat": "inmuebles",
+   "nombre": "Constitución de hipoteca",
+   "desc": "Hipoteca abierta o cerrada y mutuo hipotecario.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Pago del impuesto predial del año en curso"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas",
+    "Inscripción en el Registro de la Propiedad"
+   ],
+   "tarifa": {
+    "tipo": "cuantia",
+    "tabla": "hipoteca"
+   },
+   "nota": "Si la hipoteca va junto con una compraventa, solo se cobra la compraventa."
+  },
+  {
+   "id": "cancelacion-hipoteca",
+   "cat": "inmuebles",
+   "nombre": "Cancelación de hipoteca",
+   "desc": "Levanta la hipoteca cuando la deuda ya fue pagada.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Nombramiento y cédula del representante del acreedor (banco o institución)",
+    "Copias de cédulas de los deudores",
+    "Pago del impuesto predial del año en curso"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas",
+    "Inscripción en el Registro de la Propiedad"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.2
+   }
+  },
+  {
+   "id": "arrendamiento",
+   "cat": "inmuebles",
+   "nombre": "Inscripción de contrato de arrendamiento",
+   "desc": "Registro del contrato de arriendo de vivienda o local.",
+   "req": [
+    "Contrato de arrendamiento original firmado, por triplicado",
+    "Cédulas y certificados de votación de arrendador, arrendatario y garante",
+    "Inscribir dentro de los 30 días posteriores a la firma"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "consultar"
+   },
+   "nota": "La tarifa depende del canon mensual."
+  },
+  {
+   "id": "propiedad-horizontal",
+   "cat": "inmuebles",
+   "nombre": "Declaratoria de propiedad horizontal",
+   "desc": "Divide legalmente un edificio o conjunto en unidades independientes.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Planos y cuadro de alícuotas aprobados por el municipio"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.2
+   },
+   "nota": "Hasta 20 alícuotas de vivienda o 10 comerciales. Más alícuotas: consulta."
+  },
+  {
+   "id": "lotes",
+   "cat": "inmuebles",
+   "nombre": "Unificación o fraccionamiento de lotes",
+   "desc": "Une varios lotes en uno, o divide un lote en varios.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Aprobación municipal y planos"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.3
+   }
+  },
+  {
+   "id": "adosamiento",
+   "cat": "inmuebles",
+   "nombre": "Adosamiento",
+   "desc": "Autorización entre vecinos para construir junto al lindero.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes de los predios afectados"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.2
+   }
+  },
+  {
+   "id": "patrimonio-extincion",
+   "cat": "inmuebles",
+   "nombre": "Extinción de patrimonio familiar",
+   "desc": "Levanta el patrimonio familiar que pesa sobre un inmueble.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Declaración juramentada del propietario y de dos testigos idóneos",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Escritura del inmueble",
+    "Pago del impuesto predial del año en curso"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas",
+    "Inscripción en el Registro de la Propiedad"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.3
+   },
+   "nota": "Gratuito para adultos mayores cuando son propietarios exclusivos."
+  },
+  {
+   "id": "patrimonio-constitucion",
+   "cat": "inmuebles",
+   "nombre": "Constitución de patrimonio familiar",
+   "desc": "Protege la vivienda familiar frente a embargos.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad",
+    "Pago del impuesto predial del año en curso"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.25
+   }
+  },
+  {
+   "id": "divorcio",
+   "cat": "familia",
+   "nombre": "Divorcio por mutuo consentimiento",
+   "desc": "Solo cuando no hay hijos menores de edad ni dependientes, o su situación ya está resuelta.",
+   "req": [
+    "Formulario único de petición de divorcio del Consejo de la Judicatura, patrocinado por un abogado",
+    "Cédulas y certificados de votación originales de ambos cónyuges",
+    "Partida de matrimonio original",
+    "Declaración juramentada de no tener hijos menores de edad ni dependientes",
+    "Si un cónyuge está en el exterior: poder especial vigente"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Fijamos fecha para la audiencia",
+    "Audiencia y ratificación de los cónyuges",
+    "Entrega del acta y marginación en el Registro Civil"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.39
+   },
+   "nota": "No incluye la declaración juramentada ni el reconocimiento de firmas."
+  },
+  {
+   "id": "terminacion-union",
+   "cat": "familia",
+   "nombre": "Terminación de unión de hecho",
+   "desc": "Termina por mutuo acuerdo una unión de hecho registrada.",
+   "req": [
+    "Formulario único de terminación de unión de hecho, patrocinado por un abogado",
+    "Declaración de unión de hecho inscrita",
+    "Cédulas y certificados de votación de ambos convivientes"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Fijamos fecha para la audiencia",
+    "Audiencia y ratificación",
+    "Entrega del acta"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.39
+   },
+   "nota": "No incluye la declaración juramentada ni el reconocimiento de firmas."
+  },
+  {
+   "id": "union-hecho",
+   "cat": "familia",
+   "nombre": "Declaración de unión de hecho",
+   "desc": "La pareja declara formalmente su unión de hecho.",
+   "req": [
+    "Cédulas y certificados de votación originales de la pareja",
+    "Partidas de nacimiento o cédulas de los hijos, si los hay"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Inscripción en el Registro Civil"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.1
+   }
+  },
+  {
+   "id": "disolucion-sociedad-conyugal",
+   "cat": "familia",
+   "nombre": "Disolución de la sociedad conyugal",
+   "desc": "Separa los bienes del matrimonio o de la unión de hecho.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Cédulas de los cónyuges",
+    "Partida de matrimonio"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.34
+   },
+   "nota": "No incluye el reconocimiento de firmas."
+  },
+  {
+   "id": "liquidacion-sociedad-conyugal",
+   "cat": "familia",
+   "nombre": "Liquidación de la sociedad conyugal",
+   "desc": "Reparte los bienes del matrimonio una vez disuelta la sociedad conyugal.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Partida de matrimonio original",
+    "Cédulas y certificados de votación originales",
+    "Documentos de los bienes a repartir",
+    "Los cónyuges no deben tener hijos menores o dependientes"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "cuantia",
+    "tabla": "transferencia"
+   },
+   "nota": "Se calcula sobre el valor de los bienes que se reparten."
+  },
+  {
+   "id": "capitulaciones",
+   "cat": "familia",
+   "nombre": "Capitulaciones matrimoniales",
+   "desc": "Acuerdo sobre el régimen de bienes antes o durante el matrimonio.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Partida de matrimonio, si ya están casados",
+    "Documentos de los bienes incluidos"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.4
+   }
+  },
+  {
+   "id": "salida-pais",
+   "cat": "familia",
+   "nombre": "Autorización de salida del país de menores",
+   "desc": "Permiso de uno o ambos padres para que un menor viaje al exterior.",
+   "req": [
+    "Cédulas y certificados de votación originales de los padres",
+    "Cédula o partida de nacimiento del menor",
+    "Pasaporte del menor si es extranjero",
+    "Si un padre está ausente: poder especial vigente"
+   ],
+   "pasos": [
+    "Acércate con los documentos originales",
+    "Verificamos la identidad de los padres",
+    "Firma de la autorización",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.05,
+    "unidad": "por menor"
+   },
+   "nota": "Trámite presencial."
+  },
+  {
+   "id": "posesion-efectiva",
+   "cat": "herencias",
+   "nombre": "Posesión efectiva",
+   "desc": "Reconoce a los herederos para que puedan disponer de los bienes del fallecido.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Cédulas y certificados de votación de los herederos",
+    "Partida de defunción",
+    "Partidas de nacimiento de los herederos",
+    "Partida de matrimonio, si hay cónyuge sobreviviente",
+    "Escrituras y certificados de los bienes, si los hay"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas",
+    "Inscripción en el Registro de la Propiedad"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.4
+   },
+   "nota": "Para cobrar beneficios sociales (pensiones, liquidaciones, bonos) la tarifa es 5% del SBU."
+  },
+  {
+   "id": "testamento-abierto",
+   "cat": "herencias",
+   "nombre": "Testamento abierto",
+   "desc": "Expresa tu voluntad sobre tus bienes ante el notario y tres testigos.",
+   "req": [
+    "Cédula y certificado de votación del testador",
+    "Tres testigos con sus cédulas",
+    "Detalle de bienes y herederos o borrador del testamento"
+   ],
+   "pasos": [
+    "Entrega el borrador o las instrucciones",
+    "Preparamos el testamento",
+    "Lectura y firma ante el notario y los testigos",
+    "Entrega de copias"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 1.2
+   }
+  },
+  {
+   "id": "testamento-cerrado",
+   "cat": "herencias",
+   "nombre": "Testamento cerrado",
+   "desc": "Testamento entregado en sobre cerrado y reservado ante el notario.",
+   "req": [
+    "Cédula y certificado de votación del testador",
+    "Testamento en sobre cerrado",
+    "Testigos con sus cédulas"
+   ],
+   "pasos": [
+    "Presenta el sobre ante el notario",
+    "Otorgamiento con testigos",
+    "Custodia y entrega de la constancia"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 1.0
+   }
+  },
+  {
+   "id": "apertura-testamento",
+   "cat": "herencias",
+   "nombre": "Apertura y publicación de testamento",
+   "desc": "Apertura del testamento cerrado después del fallecimiento.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Partida de defunción",
+    "Cédulas de los interesados"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 1.0
+   },
+   "nota": "Trámite presencial."
+  },
+  {
+   "id": "aceptacion-herencia",
+   "cat": "herencias",
+   "nombre": "Aceptación o repudio de herencia",
+   "desc": "Declara si aceptas o rechazas una herencia.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Partida de defunción"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.6
+   }
+  },
+  {
+   "id": "particion-hereditaria",
+   "cat": "herencias",
+   "nombre": "Partición de bienes hereditarios",
+   "desc": "Reparto de la herencia entre los herederos de mutuo acuerdo.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Posesión efectiva inscrita",
+    "Cédula y certificado de votación originales de los comparecientes",
+    "Certificado de gravámenes actualizado del Registro de la Propiedad"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.3
+   },
+   "nota": "Incluye la protocolización."
+  },
+  {
+   "id": "declaracion-natural",
+   "cat": "declaraciones",
+   "nombre": "Declaración juramentada (persona natural)",
+   "desc": "Declaración bajo juramento para cualquier trámite público o privado.",
+   "req": [
+    "Cédula y certificado de votación originales",
+    "Texto o datos de lo que vas a declarar"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.05
+   },
+   "nota": "Cada declarante adicional suma 3% del SBU."
+  },
+  {
+   "id": "declaracion-juridica",
+   "cat": "declaraciones",
+   "nombre": "Declaración juramentada (persona jurídica)",
+   "desc": "Declaración del representante legal de una compañía.",
+   "req": [
+    "Cédula del representante legal",
+    "Nombramiento vigente",
+    "RUC de la compañía"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.12
+   }
+  },
+  {
+   "id": "reconocimiento-firmas",
+   "cat": "declaraciones",
+   "nombre": "Reconocimiento de firmas",
+   "desc": "Da validez legal a la firma de un documento privado.",
+   "req": [
+    "Documento a reconocer, por duplicado",
+    "Cédula y certificado de votación de quien firma"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.03,
+    "unidad": "por firma"
+   },
+   "nota": "Trámite presencial."
+  },
+  {
+   "id": "compraventa-vehiculo",
+   "cat": "declaraciones",
+   "nombre": "Compraventa de vehículo (reconocimiento de firmas)",
+   "desc": "Legaliza las firmas del contrato de compraventa de un vehículo.",
+   "req": [
+    "Contrato de compraventa lleno, por duplicado",
+    "Cédulas y certificados de votación de comprador y vendedor",
+    "Matrícula original del vehículo",
+    "Certificado Único Vehicular de la ANT",
+    "Si el vendedor es casado: firma del cónyuge"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.03,
+    "unidad": "por firma"
+   },
+   "nota": "Trámite presencial."
+  },
+  {
+   "id": "copias-certificadas",
+   "cat": "declaraciones",
+   "nombre": "Copias certificadas",
+   "desc": "Certificamos que la copia es fiel al original.",
+   "req": [
+    "Documento original",
+    "Copias a certificar"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "fija",
+    "valor": 1.79,
+    "unidad": "por hoja"
+   },
+   "nota": "Planos: USD 3,00 por plano."
+  },
+  {
+   "id": "certificacion-electronica",
+   "cat": "declaraciones",
+   "nombre": "Certificación de documentos electrónicos o de páginas web",
+   "desc": "Certificamos documentos obtenidos de internet o en formato electrónico.",
+   "req": [
+    "Documento electrónico o enlace"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Entrega del documento certificado"
+   ],
+   "tarifa": {
+    "tipo": "fija",
+    "valor": 1.34,
+    "unidad": "por hoja"
+   }
+  },
+  {
+   "id": "protocolizacion",
+   "cat": "declaraciones",
+   "nombre": "Protocolización de documentos",
+   "desc": "Incorpora un documento al archivo de la notaría para su conservación.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Documentos a protocolizar"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.03,
+    "unidad": "por hoja"
+   },
+   "nota": "Planos: 4% del SBU."
+  },
+  {
+   "id": "informacion-sumaria",
+   "cat": "declaraciones",
+   "nombre": "Información sumaria",
+   "desc": "Declaraciones de testigos para probar un hecho.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Cédulas y certificados de votación del peticionario y los testigos"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.07
+   },
+   "nota": "Incluye dos testigos; desde el tercero, 3% del SBU por cada uno."
+  },
+  {
+   "id": "supervivencia",
+   "cat": "declaraciones",
+   "nombre": "Fe de supervivencia",
+   "desc": "Certifica que una persona está viva, para pensiones y jubilaciones.",
+   "req": [
+    "Cédula de la persona",
+    "Presencia de la persona en la notaría"
+   ],
+   "pasos": [
+    "Acércate con tus documentos originales",
+    "Revisamos tu identidad y el documento",
+    "Firma ante el notario",
+    "Entrega inmediata"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.02
+   },
+   "nota": "Trámite presencial."
+  },
+  {
+   "id": "constitucion-compania",
+   "cat": "empresas",
+   "nombre": "Constitución de compañías",
+   "desc": "Escritura de creación de una compañía.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédulas y certificados de votación de los socios",
+    "Reserva de denominación de la Superintendencia de Compañías",
+    "Certificado de cuenta de integración de capital"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas",
+    "Inscripción en el Registro Mercantil"
+   ],
+   "tarifa": {
+    "tipo": "cuantia",
+    "tabla": "sociedades"
+   },
+   "nota": "Se calcula sobre el capital suscrito. Incluye tres copias certificadas."
+  },
+  {
+   "id": "reforma-estatutos",
+   "cat": "empresas",
+   "nombre": "Reforma de estatutos",
+   "desc": "Cambios al estatuto de una compañía.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Acta de junta general",
+    "Nombramiento del representante legal",
+    "RUC"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.3,
+    "unidad": "por reforma"
+   }
+  },
+  {
+   "id": "disolucion-compania",
+   "cat": "empresas",
+   "nombre": "Disolución, liquidación o cancelación de compañías",
+   "desc": "Cierre legal de una compañía.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Acta de junta general",
+    "Nombramiento del representante legal",
+    "RUC"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.1
+   }
+  },
+  {
+   "id": "reactivacion-compania",
+   "cat": "empresas",
+   "nombre": "Reactivación de compañías",
+   "desc": "Reactiva una compañía disuelta.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Acta de junta general",
+    "Nombramiento del representante legal"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.1
+   }
+  },
+  {
+   "id": "cesion-participaciones",
+   "cat": "empresas",
+   "nombre": "Cesión de participaciones",
+   "desc": "Transferencia de participaciones entre socios o a terceros.",
+   "req": [
+    "Minuta firmada por un abogado",
+    "Cédulas de cedente y cesionario",
+    "Autorización de la junta general"
+   ],
+   "pasos": [
+    "Entrega la minuta y los documentos en la notaría",
+    "Revisamos los documentos y preparamos la escritura",
+    "Lectura y firma ante el notario",
+    "Retiro de las copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "consultar"
+   },
+   "nota": "La tarifa depende del valor de las participaciones."
+  },
+  {
+   "id": "desahucio",
+   "cat": "diligencias",
+   "nombre": "Notificación de desahucio",
+   "desc": "Aviso formal al arrendatario para terminar el contrato.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Cédula del peticionario",
+    "Contrato de arrendamiento"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.3
+   },
+   "nota": "Incluye la diligencia fuera de la notaría."
+  },
+  {
+   "id": "constitucion-mora",
+   "cat": "diligencias",
+   "nombre": "Requerimiento para constituir en mora",
+   "desc": "Requerimiento formal a un deudor para que pague.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Documento que respalda la deuda",
+    "Dirección del deudor"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 0.3
+   },
+   "nota": "Incluye la diligencia fuera de la notaría."
+  },
+  {
+   "id": "constatacion",
+   "cat": "diligencias",
+   "nombre": "Constatación notarial",
+   "desc": "El notario verifica y deja constancia de un hecho en un lugar.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Dirección y descripción de lo que se va a constatar"
+   ],
+   "pasos": [
+    "Agenda la diligencia",
+    "Visita del notario al lugar",
+    "Acta de constatación"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 1.0
+   },
+   "nota": "Primera hora. Cada hora adicional: 25% del SBU."
+  },
+  {
+   "id": "levantamiento-protesto",
+   "cat": "diligencias",
+   "nombre": "Levantamiento de protesto",
+   "desc": "Protesto de letras de cambio o pagarés no pagados.",
+   "req": [
+    "Petición escrita patrocinada por un abogado",
+    "Título de crédito original"
+   ],
+   "pasos": [
+    "Entrega la petición y los documentos",
+    "Revisión y preparación del acta",
+    "Firma ante el notario",
+    "Retiro del acta y copias certificadas"
+   ],
+   "tarifa": {
+    "tipo": "pct",
+    "valor": 1.0
+   },
+   "nota": "Incluye la protocolización."
+  }
+ ],
+ "faq": [
+  {
+   "q": "¿Puedo hacer un trámite en línea?",
+   "a": "La Ley Notarial (Art. 18.1) permite la comparecencia telemática, pero en la Notaría 41 todos los trámites se firman de forma presencial. Lo que sí puedes hacer por WhatsApp es consultar requisitos y costos, enviar tus documentos para revisión previa y agendar tu cita, para resolver todo en una sola visita."
+  },
+  {
+   "q": "¿Necesito abogado?",
+   "a": "Para escrituras, poderes, divorcios y posesiones efectivas se necesita una minuta o petición firmada por un abogado. Para declaraciones juramentadas, reconocimiento de firmas y copias certificadas no."
+  },
+  {
+   "q": "¿Cómo se calculan los costos?",
+   "a": "Las tarifas las fija el Consejo de la Judicatura como porcentaje del Salario Básico Unificado (SBU) o según la cuantía del acto, más IVA. Son iguales en todas las notarías del país."
+  },
+  {
+   "q": "¿Qué documentos debo llevar siempre?",
+   "a": "Cédula de identidad y certificado de votación originales, o pasaporte vigente si eres extranjero. Cada trámite indica sus requisitos adicionales."
+  },
+  {
+   "q": "¿Hay descuentos para adultos mayores o personas con discapacidad?",
+   "a": "Sí. La ley establece exoneraciones en algunos trámites. Pregunta en la notaría con tu cédula."
+  },
+  {
+   "q": "¿Cuántas copias recibo?",
+   "a": "La tarifa incluye dos copias certificadas (tres en actos de compañías). Desde la tercera copia se cobra USD 1,79 por hoja."
+  }
+ ],
+ "avisos": []
+}

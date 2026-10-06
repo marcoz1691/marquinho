@@ -1,0 +1,22 @@
+{
+  "name": "Notaría 41 de Quito",
+  "short_name": "Notaría 41",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FAF8F3",
+  "theme_color": "#1B4D3E",
+  "lang": "es-EC",
+  "icons": [
+    {
+      "src": "assets/logo/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

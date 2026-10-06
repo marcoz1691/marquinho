@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notaría 41 de Quito | Trámites, requisitos y tarifas</title>
+<meta name="description" content="Trámites notariales en Ecuador: requisitos, procesos paso a paso, tarifas 2026, atención por WhatsApp, dirección y horarios de la Notaría 41 de Quito.">
+<meta name="theme-color" content="#F4F7F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1712" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Notaría 41 de Quito">
+<meta property="og:image" content="assets/logo/logo-notaria41.png">
+<meta property="og:description" content="Fe pública, con claridad. Trámites, requisitos y tarifas.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/logo/icono-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="nav" id="nav">
+  <div class="nav__in">
+    <a class="nav__brand" href="#inicio"><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt=""><img class="brand--dark" src="assets/logo/logo-notaria41-blanco.svg" alt=""><span id="brandName">Notaría 41</span></a>
+    <nav class="nav__links" id="menu" aria-label="Principal">
+      <a href="#servicios">Servicios</a>
+      <a href="#tramites">Trámites</a>
+      <a href="#calculadora">Tarifas</a>
+      <a href="#whatsapp">WhatsApp</a>
+      <a href="#faq">Preguntas</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <button class="icon-btn nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu" type="button"><i class="ph ph-list" aria-hidden="true"></i></button>
+  </div>
+</header>
+
+<div class="aviso" id="aviso" role="status" hidden>
+  <p id="avisoTxt"></p>
+  <button class="aviso__x" id="avisoX" type="button" aria-label="Cerrar aviso"><i class="ph ph-x" aria-hidden="true"></i></button>
+</div>
+
+<main id="main">
+  <section class="hero" id="inicio" data-scene>
+    <div class="hero__pin">
+      <div class="hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow" id="heroNotario">Servicio notarial</p>
+          <h1 id="heroTitle">Fe pública, con claridad.</h1>
+          <p class="lead">Prepara tu trámite por WhatsApp y fírmalo en una sola visita.</p>
+          <div class="cta">
+            <a class="btn btn--primary" href="#tramites">Ver trámites</a>
+            <a class="link" href="#contacto">Contacto <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+          </div>
+        </div>
+        <div class="hero__seal">
+          <picture>
+            <source srcset="assets/logo/logo-notaria41-blanco.svg" media="(prefers-color-scheme: dark)">
+            <img class="seal" src="assets/logo/logo-notaria41.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
+          </picture>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="statement" data-scene>
+    <div class="statement__pin">
+      <p class="words" id="words">Cada trámite, explicado. Cada requisito, a la vista. Cada costo, antes de firmar.</p>
+    </div>
+  </section>
+
+  <section class="section svc" id="servicios">
+    <div class="svc__in">
+      <header class="svc__head">
+        <p class="kicker reveal">Servicios</p>
+        <h2 class="reveal">En qué podemos ayudarte.</h2>
+        <p class="svc__intro reveal">Atendemos a personas, familias y empresas. Elige un área para ver sus trámites, requisitos y costos.</p>
+        <a class="link reveal" href="#tramites">Ver todos los trámites <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+      </header>
+      <div class="svc__list" id="categorias"></div>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="tramites">
+    <div class="tr__head">
+      <h2 class="reveal">Encuentra tu trámite.</h2>
+      <label class="find reveal">
+        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+        <input id="buscar" type="search" placeholder="Buscar trámite" aria-label="Buscar trámite" autocomplete="off">
+      </label>
+    </div>
+    <div class="tabs" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+    <div class="tl" id="tramitesUi">
+      <ul class="tl__lista" id="lista" aria-label="Trámites"></ul>
+      <article class="tp" id="detalleTramite" aria-live="polite"></article>
+    </div>
+    <p class="empty" id="vacio" hidden>No encontramos ese trámite. Escríbenos y te ayudamos.</p>
+  </section>
+
+  <section class="section" id="calculadora">
+    <div class="calc__wrap">
+      <div class="calc__intro">
+        <h2 class="reveal">Calcula tu costo.</h2>
+        <p class="sub reveal">Tarifas oficiales <span id="anioTarifa">2026</span> del Consejo de la Judicatura, sobre el Salario Básico Unificado de <span id="sbuTxt"></span>, más IVA.</p>
+      </div>
+      <form class="calc reveal" id="calc" onsubmit="return false">
+        <div class="calc__fields">
+          <label>Trámite
+            <select id="calcTramite"></select>
+          </label>
+          <label id="calcMontoWrap" hidden>Valor del contrato o avalúo (USD)
+            <input id="calcMonto" type="text" inputmode="decimal" placeholder="Ej.: 85000" autocomplete="off">
+          </label>
+          <label id="calcQtyWrap">Cantidad <span id="calcUnit"></span>
+            <input id="calcQty" type="number" min="1" value="1" inputmode="numeric">
+          </label>
+        </div>
+        <div class="calc__out" aria-live="polite">
+          <div class="calc__total"><span>Total a pagar</span><strong id="rTotal">-</strong></div>
+          <div class="calc__split">
+            <div><span>Tarifa</span><strong id="rBase">-</strong></div>
+            <div><span>IVA</span><strong id="rIva">-</strong></div>
+          </div>
+          <p class="note" id="calcNote"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="hscroll section--alt" id="whatsapp" data-scene data-h>
+    <div class="hscroll__pin">
+      <div class="hscroll__head">
+        <h2 class="reveal">Prepara todo por WhatsApp.</h2>
+        <p class="sub reveal">Resuelve tus dudas y deja tus documentos revisados antes de venir. La firma es en la notaría, en una sola visita.</p>
+      </div>
+      <ol class="hscroll__track" id="track">
+        <li><i class="ph ph-chat-circle-text" aria-hidden="true"></i><h3>Pregunta.</h3><p>Escríbenos qué necesitas y te decimos los requisitos y el costo.</p></li>
+        <li class="tono-verde"><i class="ph ph-file-arrow-up" aria-hidden="true"></i><h3>Envía tus documentos.</h3><p>Los revisamos antes de tu visita para que no te falte nada.</p></li>
+        <li class="tono-miel"><i class="ph ph-calendar-check" aria-hidden="true"></i><h3>Agenda tu cita.</h3><p>Elige el día y la hora que te queden mejor.</p></li>
+        <li><i class="ph ph-signature" aria-hidden="true"></i><h3>Firma en la notaría.</h3><p>Llegas con todo listo y sales con tu trámite firmado.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <h2 class="reveal">Preguntas frecuentes.</h2>
+    <div class="faq" id="faqList"></div>
+  </section>
+
+  <section class="section section--alt" id="contacto">
+    <div class="contact__head">
+      <h2 class="reveal">Visítanos.</h2>
+      <p class="estado reveal" id="estado" aria-live="polite"></p>
+    </div>
+    <div class="contact">
+      <div class="contact__info reveal" id="contactInfo"></div>
+      <div class="contact__map reveal"><iframe id="mapa" title="Mapa de ubicación" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    </div>
+  </section>
+</main>
+
+<button class="chat-lanzador" id="chatAbrir" type="button" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
+<section class="chat" id="chat" role="dialog" aria-label="Chat con la Notaría 41" hidden>
+  <header class="chat__cab">
+    <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="36" height="36">
+    <div><b data-nombre>Sofía</b><small>Notaría 41 · respuestas automáticas</small></div>
+    <a class="chat__icono" href="asistente.html" aria-label="Abrir el chat en pantalla completa" title="Pantalla completa"><i class="ph ph-arrows-out-simple" aria-hidden="true"></i></a>
+    <button class="chat__icono" id="chatNueva" type="button" aria-label="Empezar una conversación nueva" title="Conversación nueva"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i></button>
+    <button class="chat__icono" id="chatCerrar" type="button" aria-label="Cerrar el chat"><i class="ph ph-x" aria-hidden="true"></i></button>
+  </header>
+  <div class="chat__mensajes" id="chatMensajes" aria-live="polite"></div>
+  <div class="chat__sugerencias" id="chatSugerencias"></div>
+  <form class="chat__form" id="chatForm">
+    <textarea id="chatTexto" rows="1" maxlength="1000" placeholder="Escribe tu pregunta" aria-label="Escribe tu pregunta"></textarea>
+    <button type="submit" aria-label="Enviar"><i class="ph-fill ph-paper-plane-right" aria-hidden="true"></i></button>
+  </form>
+  <p class="chat__pie">Respuestas automáticas; no compartas datos sensibles. <a href="privacidad.html">Privacidad</a> <a id="chatWhatsapp" target="_blank" rel="noopener" hidden>Prefiero WhatsApp</a></p>
+</section>
+
+<footer class="foot">
+  <div class="foot__in">
+    <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="56" height="56">
+    <div>
+      <p id="footTxt"></p>
+      <p>Las tarifas y requisitos son referenciales y pueden variar según la normativa del Consejo de la Judicatura. Confirma con la notaría.</p>
+    </div>
+    <nav class="foot__links" aria-label="Legal"><a href="privacidad.html">Aviso de privacidad</a></nav>
+  </div>
+</footer>
+
+<script type="application/ld+json" id="ld"></script>
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/chat.js"></script>
+</body>
+</html>

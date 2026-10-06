@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+.vercel/
+video/
+e2e/reporte/
+e2e/resultados/
+.vercel
+.env*
+.DS_Store

@@ -1,0 +1,39 @@
+{
+  "_nota": "Datos tomados de directorios públicos (oct. 2026); WhatsApp confirmado por el cliente. Confirmar con la notaría: correo y ubicación exacta del mapa.",
+  "nombre": "Notaría 41 de Quito",
+  "notario": "Dr. Dobri Miguel Albornoz Donoso",
+  "asistente": "Sofía",
+  "eslogan": "Fe pública, con claridad.",
+  "direccion": "Simón Bolívar Oe1-222, entre Juan Montalvo y Eugenio Espejo, frente al Parque Central de Tumbaco, Quito, Ecuador",
+  "telefonos": [
+    "02 600 1141",
+    "02 600 4141"
+  ],
+  "whatsapp": "593996530276",
+  "correo": "notaria41uio@gmail.com",
+  "horario": {
+    "dias": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "abre": "08:00",
+    "cierra": "17:00",
+    "texto": "Lunes a viernes, de 08:00 a 17:00"
+  },
+  "mapa": {
+    "lat": -0.2114,
+    "lng": -78.4026,
+    "zoom": 17
+  },
+  "redes": {
+    "instagram": "",
+    "facebook": "https://www.facebook.com/p/Notaria-41-Quito-100047615838049/",
+    "linkedin": "",
+    "tiktok": "",
+    "x": ""
+  },
+  "agenda": ""
+}

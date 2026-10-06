@@ -1,0 +1,37 @@
+{
+  "functions": {
+    "api/whatsapp.js": {
+      "maxDuration": 300,
+      "includeFiles": "data/**"
+    },
+    "api/panel.js": {
+      "maxDuration": 60,
+      "includeFiles": "data/**"
+    },
+    "api/recordatorios.js": {
+      "maxDuration": 60,
+      "includeFiles": "data/**"
+    },
+    "api/chat.js": {
+      "maxDuration": 120,
+      "includeFiles": "data/**"
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/recordatorios",
+      "schedule": "0 22 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ]
+}
