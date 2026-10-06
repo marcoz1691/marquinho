@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Panel Notaría 41</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#FBFAF7;--alt:#F3F1EA;--card:#fff;--fg:#1C2620;--muted:#5A6660;--line:#E4E1D8;--acc:#0E6B4F;--acc-fg:#fff;--soft:#E6F2EC;--gold:#87631F;--deep:#0A3B2E;--warn:#B3261E;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0B1712;--alt:#0F1F18;--card:#13261E;--fg:#EEF2EE;--muted:#9FB2A8;--line:#22372D;--acc:#5FD3A2;--acc-fg:#0B1712;--soft:#163428;--gold:#E2C27A;--deep:#07130E;--warn:#FF8A80;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button,input,textarea{font:inherit}button{cursor:pointer}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--deep);color:#fff}
+header img{width:34px;height:34px}header b{font-weight:600}header .sp{flex:1}
+header button{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 14px}
+.login{max-width:360px;margin:12vh auto;padding:28px;background:var(--card);border:1px solid var(--line);border-radius:18px;display:grid;gap:12px}
+.login h1{margin:0 0 6px;font-size:22px}
+input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.btn{background:var(--acc);color:var(--acc-fg);border:0;border-radius:999px;padding:10px 18px;font-weight:600}
+.btn--line{background:none;color:var(--fg);border:1px solid var(--line);font-weight:500}
+.btn--warn{background:none;color:var(--warn);border:1px solid var(--line);font-weight:500}
+.err{color:var(--warn);min-height:1.2em;margin:0;font-size:14px}
+main{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 54px)}
+#lista{border-right:1px solid var(--line);overflow:auto;background:var(--alt)}
+.item{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 16px;color:inherit}
+.item:hover,.item.on{background:var(--card)}
+.item b{display:flex;gap:8px;align-items:center}.item small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--acc)}
+.tag--der{background:var(--warn);color:#fff}
+#detalle{display:grid;grid-template-columns:1fr 300px;overflow:hidden}
+.chat{display:flex;flex-direction:column;overflow:hidden}
+.top{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top h2{margin:0;font-size:18px;flex:1}
+#mensajes{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:8px}
+.m{max-width:78%;padding:9px 13px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word}
+.m small{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+.m--cliente{align-self:flex-start;background:var(--card);border:1px solid var(--line)}
+.m--asistente{align-self:flex-end;background:var(--soft)}
+.m--personal{align-self:flex-end;background:var(--acc);color:var(--acc-fg)}.m--personal small{color:inherit;opacity:.8}
+form.resp{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+form.resp textarea{resize:none;height:46px}
+.lado{border-left:1px solid var(--line);overflow:auto;padding:16px;display:grid;gap:18px;align-content:start;background:var(--alt)}
+.lado h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ficha{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;margin-bottom:8px}
+.ficha .acc{display:flex;gap:6px;flex-wrap:wrap}.ficha .acc button{padding:5px 12px;font-size:13px}
+.vacio{color:var(--muted);padding:40px;text-align:center}
+.aviso{margin:0;padding:8px 12px;border-radius:10px;background:var(--alt);color:var(--muted);font-size:13px}
+@media (max-width:900px){main{grid-template-columns:1fr}#lista{max-height:40vh}#detalle{grid-template-columns:1fr}.lado{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b><span class="sp"></span><button id="salir" hidden>Salir</button></header>
+
+<form class="login" id="login" hidden>
+  <h1>Iniciar sesión</h1>
+  <input id="email" type="email" placeholder="Correo" autocomplete="username" required>
+  <input id="clave" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+  <button class="btn">Entrar</button>
+  <p class="err" id="loginErr"></p>
+</form>
+
+<main id="app" hidden>
+  <nav id="lista"></nav>
+  <section id="detalle"><p class="vacio">Elige una conversación.</p></section>
+</main>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const cfg = await (await fetch("/api/panel-config")).json();
+const sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+let actual = null, timer = null;
+
+async function api(metodo, params) {
+  const { data: { session } } = await sb.auth.getSession();
+  const opts = { method: metodo, headers: { Authorization: "Bearer " + (session?.access_token || ""), "Content-Type": "application/json" } };
+  let url = "/api/panel";
+  if (metodo === "GET") url += "?" + new URLSearchParams(params); else opts.body = JSON.stringify(params);
+  const r = await fetch(url, opts), data = await r.json();
+  if (r.status === 401) { mostrarLogin(); throw new Error(data.error); }
+  if (!r.ok) throw new Error(data.error);
+  return data;
+}
+
+function mostrarLogin() { $("#login").hidden = false; $("#app").hidden = true; $("#salir").hidden = true; clearInterval(timer); }
+async function mostrarApp() {
+  $("#login").hidden = true; $("#app").hidden = false; $("#salir").hidden = false;
+  await cargarLista(); clearInterval(timer);
+  timer = setInterval(() => { cargarLista(); if (actual) abrir(actual, true); }, 15000);
+}
+
+$("#login").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("#loginErr").textContent = "";
+  const { error } = await sb.auth.signInWithPassword({ email: $("#email").value, password: $("#clave").value });
+  if (error) { $("#loginErr").textContent = "Correo o contraseña incorrectos."; return; }
+  try { await mostrarApp(); } catch (err) { $("#loginErr").textContent = err.message; await sb.auth.signOut(); mostrarLogin(); }
+});
+$("#salir").onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
+
+async function cargarLista() {
+  const filas = await api("GET", { accion: "conversaciones" });
+  $("#lista").innerHTML = filas.map((c) => `<button class="item${c.id === actual ? " on" : ""}" data-id="${esc(c.id)}">
+    <b>${esc(c.nombre || c.telefono)} ${c.derivada ? '<span class="tag tag--der">Derivada</span>' : ""} ${c.citasPendientes ? `<span class="tag">${c.citasPendientes} cita</span>` : ""}</b>
+    <small>${esc(c.ultimo)}</small></button>`).join("") || '<p class="vacio">Aún no hay conversaciones.</p>';
+}
+$("#lista").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b) abrir(b.dataset.id); });
+
+async function abrir(id, silencioso) {
+  actual = id;
+  const d = await api("GET", { accion: "detalle", id });
+  const c = d.conversacion, abajo = $("#mensajes") && $("#mensajes").scrollTop + $("#mensajes").clientHeight >= $("#mensajes").scrollHeight - 30;
+  if (silencioso && document.activeElement && document.activeElement.id === "texto") {
+    $("#mensajes").innerHTML = mensajes(d); if (abajo) $("#mensajes").scrollTop = 1e9; return;
+  }
+  $("#detalle").innerHTML = `<div class="chat">
+      <div class="top"><h2>${esc(c.nombre || "Cliente")} · ${esc(c.telefono)}</h2>
+        ${c.derivada ? '<button class="btn btn--line" id="devolver">Devolver al asistente</button>' : '<span class="tag">Atiende el asistente</span>'}</div>
+      <div id="mensajes">${mensajes(d)}</div>
+      ${d.puedeResponder ? `<form class="resp" id="resp"><textarea id="texto" placeholder="Escribe tu respuesta…" required></textarea><button class="btn">Enviar</button></form>`
+        : '<p class="aviso" style="margin:12px 18px">Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp no permite escribirle desde aquí. Llámalo por teléfono.</p>'}
+    </div>
+    <aside class="lado">
+      <div><h3>Citas</h3>${d.citas.map((x) => `<div class="ficha"><b>${esc(x.tramite)}</b><span>${esc(x.fecha)} · ${esc(x.hora)} · ${esc(x.nombre)}</span>
+        <span class="tag" style="justify-self:start">${esc(x.estado)}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
+        <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada">Confirmar</button>
+          <button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada">Rechazar</button>` : ""}
+          ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Marcar atendida</button>` : ""}</div></div>`).join("") || '<p class="aviso">Sin solicitudes de cita.</p>'}</div>
+      <div><h3>Documentos</h3>${d.documentos.map((x) => `<div class="ficha"><b>${esc(x.descripcion)}</b><small>${esc(x.nombre)} ${x.tramite ? "· " + esc(x.tramite) : ""}</small>
+        <span class="tag" style="justify-self:start">${esc(x.estado || "recibido")}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
+        <div class="acc"><button class="btn btn--line" data-ver="${esc(x.id)}">Ver</button>
+          <button class="btn" data-doc="${esc(x.id)}" data-estado="aprobado">Aprobar</button>
+          <button class="btn btn--line" data-doc="${esc(x.id)}" data-estado="observado">Observar</button>
+          <button class="btn btn--warn" data-borrar="${esc(x.id)}">Borrar</button></div></div>`).join("") || '<p class="aviso">Sin documentos.</p>'}</div>
+    </aside>`;
+  $("#mensajes").scrollTop = 1e9;
+  cargarLista();
+}
+
+function mensajes(d) {
+  const nombres = { cliente: d.conversacion.nombre || "Cliente", asistente: "Asistente", personal: "Personal" };
+  return d.mensajes.map((m) => `<div class="m m--${m.autor}"><small>${esc(nombres[m.autor])}</small>${esc(m.texto)}</div>`).join("") || '<p class="vacio">Sin mensajes.</p>';
+}
+
+$("#detalle").addEventListener("submit", async (e) => {
+  if (e.target.id !== "resp") return;
+  e.preventDefault();
+  const texto = $("#texto").value.trim(); if (!texto) return;
+  try { await api("POST", { accion: "responder", id: actual, texto }); await abrir(actual); } catch (err) { alert(err.message); }
+});
+$("#detalle").addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  try {
+    if (b.id === "devolver") await api("POST", { accion: "devolver", id: actual });
+    else if (b.dataset.cita) {
+      const motivo = b.dataset.estado === "rechazada" ? prompt("Motivo para el cliente (opcional):") || "" : "";
+      const r = await api("POST", { accion: "cita", id: b.dataset.cita, estado: b.dataset.estado, motivo });
+      if (b.dataset.estado !== "atendida" && r.avisado === false) alert("La cita se actualizó, pero no se pudo avisar por WhatsApp (pasaron más de 24 horas). Llama al cliente.");
+    } else if (b.dataset.doc) {
+      const nota = b.dataset.estado === "observado" ? prompt("¿Qué debe corregir el cliente?") : "";
+      if (nota === null) return;
+      await api("POST", { accion: "revisarDocumento", id: b.dataset.doc, estado: b.dataset.estado, nota });
+    } else if (b.dataset.ver) { const { url } = await api("GET", { accion: "documento", id: b.dataset.ver }); window.open(url, "_blank", "noopener"); return; }
+    else if (b.dataset.borrar) { if (!confirm("¿Borrar este documento? No se puede deshacer.")) return; await api("POST", { accion: "borrarDocumento", id: b.dataset.borrar }); }
+    else return;
+    await abrir(actual);
+  } catch (err) { alert(err.message); }
+});
+
+const { data: { session } } = await sb.auth.getSession();
+if (session) mostrarApp().catch(mostrarLogin); else mostrarLogin();
+</script>
+</body>
+</html>

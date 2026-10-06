@@ -1,0 +1,10 @@
+.claude
+test
+docs
+supabase
+scripts
+cms/*.md
+GLOSSARY.md
+video
+.env
+.env.local
