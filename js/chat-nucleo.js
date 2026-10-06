@@ -3,7 +3,16 @@ export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&a
 const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const leer = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
 
-export const BIENVENIDA = "Hola, soy el asistente automático de la Notaría 41. Pregúntame por requisitos, costos o para pedir una cita.";
+// Nombre del asistente: el mismo que usa el bot (campo "asistente" de la notaría, editable en la hoja).
+export const NOMBRE_POR_DEFECTO = "Sofía";
+export const bienvenida = (nombre) => "Hola, soy " + nombre + ". Respondo de forma automática por la Notaría 41: pregúntame por requisitos, costos o para pedir una cita.";
+export async function nombreAsistente() {
+  const hoja = leer("n41-hoja");
+  if (hoja && hoja.notaria && hoja.notaria.asistente) return hoja.notaria.asistente;
+  try { return (await (await fetch("data/notaria.json")).json()).asistente || NOMBRE_POR_DEFECTO; } catch (e) { return NOMBRE_POR_DEFECTO; }
+}
+// Pone el nombre en cada elemento marcado con data-nombre.
+export function mostrarNombre(nombre) { document.querySelectorAll("[data-nombre]").forEach((el) => { el.textContent = nombre; }); }
 
 export const nuevaSesion = () => "s_" + Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, "0")).join("");
 

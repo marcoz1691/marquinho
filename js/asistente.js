@@ -1,9 +1,10 @@
 // Página del asistente a pantalla completa (diseño tipo LibreChat).
-import { esc, chats, chatActual, elegirChat, crearChat, agregarMensaje, borrarChat, enviarMensaje, formato } from "./chat-nucleo.js";
+import { esc, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chats, chatActual, elegirChat, crearChat, agregarMensaje, borrarChat, enviarMensaje, formato } from "./chat-nucleo.js";
 
 const $ = (s) => document.querySelector(s);
 const hilo = $("#hilo"), mensajes = $("#mensajes"), form = $("#form"), campo = $("#texto"), boton = $("#enviar");
-let chat = chatActual(), enviando = false;
+let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
+nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); document.title = n + " | Notaría 41 de Quito"; });
 
 // Número de WhatsApp de la notaría (mismo dato que usa la página principal).
 fetch("data/notaria.json").then((r) => r.json()).then((n) => {
@@ -33,7 +34,7 @@ function nodo(m) {
   art.className = "ac-msg ac-msg--" + m.autor;
   if (m.autor === "cliente") art.innerHTML = '<div class="ac-burbuja">' + esc(m.texto).replace(/\n/g, "<br>") + "</div>";
   else if (m.autor === "aviso") art.innerHTML = '<div class="ac-aviso"><i class="ph ph-info" aria-hidden="true"></i>' + esc(m.texto) + "</div>";
-  else art.innerHTML = '<img class="ac-avatar" src="assets/logo/logo-notaria41-verde.svg" alt="" width="30" height="30"><div class="ac-cuerpo"><b class="ac-nombre">Asistente</b><div class="ac-texto">' +
+  else art.innerHTML = '<img class="ac-avatar" src="assets/logo/logo-notaria41-verde.svg" alt="" width="30" height="30"><div class="ac-cuerpo"><b class="ac-nombre">' + esc(nombre) + '</b><div class="ac-texto">' +
     formato(m.texto) + '</div><div class="ac-acciones"><button type="button" class="ac-copiar" aria-label="Copiar respuesta"><i class="ph ph-copy" aria-hidden="true"></i></button></div></div>';
   if (m.autor === "asistente") art.querySelector(".ac-copiar").addEventListener("click", async (e) => {
     try { await navigator.clipboard.writeText(m.texto); const b = e.currentTarget; b.innerHTML = '<i class="ph ph-check" aria-hidden="true"></i>'; setTimeout(() => { b.innerHTML = '<i class="ph ph-copy" aria-hidden="true"></i>'; }, 1500); } catch (err) {}
@@ -64,7 +65,7 @@ async function enviar(texto) {
   agregar({ autor: "cliente", texto });
   const pensando = document.createElement("article");
   pensando.className = "ac-msg ac-msg--asistente";
-  pensando.innerHTML = '<img class="ac-avatar" src="assets/logo/logo-notaria41-verde.svg" alt="" width="30" height="30"><div class="ac-cuerpo"><b class="ac-nombre">Asistente</b><div class="ac-pensando" aria-label="El asistente está escribiendo"><span></span><span></span><span></span></div></div>';
+  pensando.innerHTML = '<img class="ac-avatar" src="assets/logo/logo-notaria41-verde.svg" alt="" width="30" height="30"><div class="ac-cuerpo"><b class="ac-nombre">' + esc(nombre) + '</b><div class="ac-pensando" aria-label="' + esc(nombre) + ' está escribiendo"><span></span><span></span><span></span></div></div>';
   mensajes.appendChild(pensando); abajo();
   const r = await enviarMensaje(chat.sesion, texto);
   pensando.remove();

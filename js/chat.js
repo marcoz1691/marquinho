@@ -1,10 +1,11 @@
 // Burbuja de chat del asistente en la página principal. La página completa está en asistente.html.
-import { esc, BIENVENIDA, chatActual, crearChat, agregarMensaje, enviarMensaje, formato } from "./chat-nucleo.js";
+import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, enviarMensaje, formato } from "./chat-nucleo.js";
 
 const $ = (s) => document.querySelector(s);
 const SUGERENCIAS = ["¿Cuánto cuesta un poder?", "Requisitos para vender una casa", "Quiero pedir una cita"];
 const raiz = $("#chat"), lista = $("#chatMensajes"), form = $("#chatForm"), campo = $("#chatTexto"), lanzador = $("#chatAbrir");
-let chat = chatActual(), enviando = false;
+let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
+nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); });
 
 function burbuja(m) {
   const div = document.createElement("div");
@@ -15,7 +16,7 @@ function burbuja(m) {
 function pintar() {
   chat = chatActual();
   lista.innerHTML = "";
-  burbuja({ autor: "asistente", texto: BIENVENIDA });
+  burbuja({ autor: "asistente", texto: bienvenida(nombre) });
   chat.mensajes.forEach(burbuja);
   $("#chatSugerencias").hidden = chat.mensajes.length > 0;
   lista.scrollTop = lista.scrollHeight;
@@ -34,7 +35,7 @@ async function enviar(texto) {
   agregar({ autor: "cliente", texto });
   const escribiendo = document.createElement("div");
   escribiendo.className = "chat__msg chat__msg--asistente chat__escribiendo";
-  escribiendo.setAttribute("aria-label", "El asistente está escribiendo");
+  escribiendo.setAttribute("aria-label", nombre + " está escribiendo");
   escribiendo.innerHTML = "<span></span><span></span><span></span>";
   lista.appendChild(escribiendo); lista.scrollTop = lista.scrollHeight;
   const r = await enviarMensaje(chat.sesion, texto);
