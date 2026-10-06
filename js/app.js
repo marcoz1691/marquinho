@@ -95,8 +95,15 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from 
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
       }).join("") + "</ul></div>" +
       (t.pasos.length ? '<div><h4>Cómo es el trámite</h4><ol class="pasos">' + t.pasos.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ol></div>" : "") +
-      "</div>" + (t.nota ? '<p class="nota">' + esc(t.nota) + "</p>" : "") +
+      "</div>" + (t.nota ? '<p class="nota">' + esc(t.nota) + "</p>" : "") + sofia(t) +
       '<div class="acts">' + acciones.join("") + "</div>";
+  }
+
+  // La web da lo general; el asistente resuelve el caso particular de cada persona.
+  function sofia(t) {
+    var n = state.notaria.asistente || "Sofía";
+    return '<div class="tp__sofia"><p><strong>¿Tu caso es distinto?</strong> Cuéntaselo a ' + esc(n) + ' y te dice qué requisitos y costo aplican a tu situación.</p>' +
+      '<button class="act act--sofia" type="button" data-sofia="' + esc(t.nombre) + '"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Preguntarle a ' + esc(n) + '</button></div>';
   }
 
   // Lista compacta (izquierda) + panel del trámite elegido (derecha).
@@ -237,7 +244,8 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto } from 
     });
 
     det.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-calc],[data-share],[data-print]"); if (!b) return;
+      var b = e.target.closest("[data-calc],[data-share],[data-print],[data-sofia]"); if (!b) return;
+      if (b.dataset.sofia) return document.dispatchEvent(new CustomEvent("n41:preguntar", { detail: { texto: "Sobre «" + b.dataset.sofia + "»: " } }));
       if (b.dataset.calc) return setupCalc.elegir(b.dataset.calc);
       var t = tramite(b.dataset.share || b.dataset.print);
       if (b.dataset.print) {

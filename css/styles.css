@@ -395,3 +395,10 @@ h2,.sub,.hscroll__head{text-align:left}
   .chat-lanzador{padding:15px}
 }
 @media print{.chat,.chat-lanzador{display:none!important}}
+
+/* Enlace del panel de trámites al asistente */
+.tp__sofia{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;margin-top:22px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--accent-soft)}
+.tp__sofia p{margin:0;flex:1 1 260px;font-size:15px;line-height:1.5;color:var(--fg)}
+.act--sofia{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.act--sofia:hover{filter:brightness(1.08)}
+@media print{.tp__sofia{display:none!important}}

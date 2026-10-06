@@ -2,7 +2,7 @@
 import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, enviarMensaje, formato } from "./chat-nucleo.js";
 
 const $ = (s) => document.querySelector(s);
-const SUGERENCIAS = ["¿Cuánto cuesta un poder?", "Requisitos para vender una casa", "Quiero pedir una cita"];
+const SUGERENCIAS = ["Mi papá falleció y dejó una casa", "Voy a viajar y alguien debe firmar por mí", "Quiero pedir una cita"];
 const raiz = $("#chat"), lista = $("#chatMensajes"), form = $("#chatForm"), campo = $("#chatTexto"), lanzador = $("#chatAbrir");
 let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
 nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); });
@@ -62,4 +62,11 @@ campo.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey)
 campo.addEventListener("input", () => { campo.style.height = "auto"; campo.style.height = Math.min(campo.scrollHeight, 120) + "px"; });
 $("#chatSugerencias").innerHTML = SUGERENCIAS.map((s) => '<button type="button" class="chat__sug">' + esc(s) + "</button>").join("");
 $("#chatSugerencias").addEventListener("click", (e) => { const b = e.target.closest(".chat__sug"); if (b) enviar(b.textContent); });
+// Desde el panel de un trámite: abre el chat con el trámite ya escrito para que la persona cuente su caso.
+document.addEventListener("n41:preguntar", (e) => {
+  if (raiz.hidden) abrir();
+  campo.value = e.detail.texto;
+  campo.dispatchEvent(new Event("input"));
+  setTimeout(() => { campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }, 60);
+});
 $("#chatNueva").addEventListener("click", () => { crearChat(); pintar(); campo.focus(); });
