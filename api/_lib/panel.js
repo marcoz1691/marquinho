@@ -87,6 +87,8 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (!ESTADOS_CITA.includes(estado)) throw new Error(`Estado de cita inválido: ${estado}`);
       const cita = await almacen.cita(citaId);
       if (!cita) throw new Error("Cita no encontrada");
+      if (cita.estado === estado) throw new Error(`La cita ya está ${estado}.`);
+      if (cita.estado === "rechazada" || cita.estado === "atendida") throw new Error("Esta cita ya se cerró; si el cliente quiere otra, que la pida de nuevo.");
       await almacen.actualizarCita(citaId, { estado, motivo });
       if (estado === "atendida") return { avisado: false };
       const c = await conversacion(cita.conversacionId), C = await contenido();

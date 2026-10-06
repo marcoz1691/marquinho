@@ -191,10 +191,29 @@ test.describe("Navegación", () => {
     await expect(page.locator("#burger")).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("CF-96 @movil elegir un trámite desplaza la vista hasta su detalle", async ({ page }) => {
+  test("CF-96 @movil elegir un trámite abre su detalle como hoja que se cierra con la X o Escape", async ({ page }) => {
     await abrirPortada(page);
     await page.locator("#lista .tl__item").nth(5).click();
-    await expect(page.locator("#detalleTramite .tp__nombre")).toBeInViewport();
+    const hoja = page.locator("#detalleTramite");
+    await expect(hoja).toHaveAttribute("role", "dialog");
+    await expect(hoja.locator(".tp__nombre")).toBeInViewport();
+    await expect(hoja.locator("[data-cerrar]")).toBeFocused();
+    await hoja.locator("[data-cerrar]").click();
+    await expect(hoja).not.toHaveClass(/tp--abierto/);
+    await page.locator("#lista .tl__item").nth(2).click();
+    await expect(hoja).toHaveClass(/tp--abierto/);
+    await page.keyboard.press("Escape");
+    await expect(hoja).not.toHaveClass(/tp--abierto/);
+  });
+
+  test("CF-131 @movil las preguntas están en acordeón y quedan abiertas al pasar a pantalla ancha", async ({ page }) => {
+    await abrirPortada(page);
+    const preguntas = page.locator("#faqList details");
+    await expect(preguntas.first()).not.toHaveAttribute("open", "");
+    await preguntas.first().locator("summary").click();
+    await expect(preguntas.first()).toHaveAttribute("open", "");
+    await page.setViewportSize({ width: 1100, height: 800 });
+    for (const d of await preguntas.all()) await expect(d).toHaveAttribute("open", "");
   });
 });
 

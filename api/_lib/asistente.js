@@ -41,7 +41,8 @@ const HERRAMIENTAS = [
         hora: { type: "string", description: "HH:MM en 24 horas" },
         nombre: { type: "string", description: "nombre completo del cliente" },
         telefono: { type: "string", description: "celular de contacto del cliente; obligatorio en el chat de la página web" },
-        nota: { type: "string", description: "detalle adicional opcional" }
+        nota: { type: "string", description: "detalle adicional opcional" },
+        reprogramar: { type: "boolean", description: "true solo si el cliente confirmó que quiere cambiar su cita activa por esta (la anterior se cancela)" }
       },
       required: ["fecha", "hora", "nombre"]
     }
@@ -151,7 +152,7 @@ function contexto(conv, t, C) {
   const avisos = (C.data.avisos || []).filter((a) => (!a.desde || a.desde <= iso) && (!a.hasta || iso <= a.hasta)).map((a) => a.msg);
   const canal = esWeb(conv)
     ? "Canal: chat de la página web. Aquí no puedes recibir documentos: si necesita enviarlos, pídele que lo haga por WhatsApp" + (N.whatsapp ? " (wa.me/" + String(N.whatsapp).replace(/\D/g, "") + ")" : "") +
-      ". Para solicitar una cita pide también su número de celular, porque la confirmación llegará por WhatsApp. No hay atención humana en vivo en la web: si pide hablar con una persona, ofrece el WhatsApp o el teléfono de la notaría y, si te da su celular, avisa al personal para que lo contacte."
+      ". Para solicitar una cita pide también su número de celular, porque los avisos de su cita llegarán por WhatsApp. No hay atención humana en vivo en la web: si pide hablar con una persona, ofrece el WhatsApp o el teléfono de la notaría y, si te da su celular, avisa al personal para que lo contacte."
     : "Canal: WhatsApp.";
   return [`Fecha y hora en Quito: ${fechaTxt} (${iso}). La notaría está ${abierta ? "abierta" : "cerrada"} en este momento.`,
     canal,
@@ -203,10 +204,16 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const reglas = { porHora: 2, feriados: [], ...C.notaria.citas };
         if (reglas.feriados.includes(i.fecha)) return error(`El ${i.fecha} es feriado y la notaría no atiende: ofrece otro día.`);
         const contacto = esWeb(conv) ? celular(i.telefono) : null;
-        if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo, la confirmación de la cita llegará por WhatsApp.");
+        if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo: los avisos de la cita llegarán por WhatsApp.");
         const t = i.tramite_id ? tramite(i.tramite_id) : null;
+        // Una cita activa por cliente: para cambiarla, Sofía confirma y la reprograma (así no quedan dos citas ni dos recordatorios).
+        const activas = (await almacen.solicitudesCita(conv.id)).filter((x) => (x.estado === "pendiente" || x.estado === "confirmada") && x.fecha >= hoy);
+        if (activas.length && !i.reprogramar) {
+          const a = activas[0], ta = tramite(a.tramiteId);
+          return error(`El cliente ya tiene una cita ${a.estado}${ta ? " para " + ta.nombre : ""} el ${a.fecha} a las ${a.hora}. Pregúntale si quiere cambiarla por esta; si dice que sí, vuelve a usar solicitar_cita con reprogramar: true.`);
+        }
         // Cupo por hora: cuentan las citas pendientes y confirmadas que empiezan en esa misma hora.
-        const ocupadas = (await almacen.agenda(i.fecha)).filter((x) => x.estado === "pendiente" || x.estado === "confirmada");
+        const ocupadas = (await almacen.agenda(i.fecha)).filter((x) => (x.estado === "pendiente" || x.estado === "confirmada") && !activas.some((a) => a.id === x.id));
         const llena = (h) => ocupadas.filter((x) => Math.floor(minutos(x.hora) / 60) === h).length >= reglas.porHora;
         if (llena(Math.floor(m / 60))) {
           const libres = [];
@@ -216,14 +223,19 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
           }
           return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
         }
-        const confirmada = !!t && !t.revision, esHoy = i.fecha === hoy, aviso = esWeb(conv) ? "por WhatsApp" : "por este chat";
+        for (const a of activas) await almacen.actualizarCita(a.id, { estado: "rechazada", motivo: "Reprogramada por el cliente" });
+        // En la web el celular no está verificado: la cita queda pendiente para que nadie llene la agenda ni reciba mensajes que no pidió.
+        const confirmada = !!t && !t.revision && !esWeb(conv), esHoy = i.fecha === hoy, aviso = esWeb(conv) ? "por WhatsApp" : "por este chat";
+        // El recordatorio sale a las 17:00 del día anterior.
+        const manana = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(new Date(ctx.t.getTime() + 864e5));
+        const recordatorio = i.fecha > manana || (i.fecha === manana && enQuito(ctx.t).min < 17 * 60);
         await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre: i.nombre, nota: i.nota || "",
           estado: confirmada ? "confirmada" : "pendiente", ...(contacto ? { contacto } : {}) });
         const cliente = `${i.nombre} ${contacto ? "(" + contacto + ")" : quien}`;
         if (!confirmada) await avisar(`Nueva solicitud de cita${esWeb(conv) ? " (web)" : ""}: ${cliente} — ${t ? t.nombre : "trámite por definir"} — ${i.fecha} ${hora}. Confírmala en el panel.`);
         else if (esHoy) await avisar(`Cita para hoy confirmada${esWeb(conv) ? " (web)" : ""}: ${cliente} — ${t.nombre} — hoy a las ${hora}. Asígnala en el panel.`);
         return ok(confirmada
-          ? `Cita confirmada para el ${i.fecha} a las ${hora}. Recibirá un recordatorio ${aviso} el día anterior.`
+          ? `Cita confirmada para el ${i.fecha} a las ${hora}.${recordatorio ? ` Recibirá un recordatorio ${aviso} el día anterior.` : ""}`
           : `Solicitud de cita registrada como pendiente${t ? ": este trámite necesita que el personal revise el caso antes de confirmar" : ""}. El personal la confirmará ${aviso}.`);
       }
 

@@ -232,7 +232,8 @@ async function mostrarApp() {
   $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
   pestana(pestanaActual);
   clearInterval(timer);
-  timer = setInterval(() => { if (pestanaActual === "agendaV") return cargarAgenda(); cargarLista(); if (actual) abrir(actual, true); }, 15000);
+  const refrescar = () => pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
+  timer = setInterval(() => refrescar().catch((e) => console.warn("No se pudo actualizar:", e.message)), 15000);
 }
 
 document.addEventListener("click", (e) => {
@@ -325,8 +326,9 @@ function pestana(id) {
 }
 $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) pestana(b.dataset.tab); });
 
-async function cargarAgenda() {
-  if (document.activeElement && document.activeElement.tagName === "SELECT") return;   // no repintar mientras eligen
+async function cargarAgenda(opciones = {}) {
+  // El refresco automático no repinta mientras eligen a alguien o tienen el puntero sobre la lista.
+  if (opciones.auto && (document.activeElement?.tagName === "SELECT" || $("#agLista").matches(":hover"))) return;
   const a = await api("GET", { accion: "agenda", fecha: $("#agFecha").value });
   const titulo = new Intl.DateTimeFormat("es-EC", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(a.fecha + "T12:00:00Z"));
   const activas = a.citas.filter((x) => x.estado !== "rechazada").length;
@@ -345,7 +347,7 @@ async function cargarAgenda() {
         <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div>
     </div>`).join("") || '<p class="vacio">No hay citas para este día.</p>';
 }
-$("#agFecha").addEventListener("change", cargarAgenda);
+$("#agFecha").addEventListener("change", () => cargarAgenda());
 $("#agendaV").addEventListener("change", async (e) => {
   const s = e.target.closest("[data-asignar]"); if (!s) return;
   try { await api("POST", { accion: "asignarCita", id: s.dataset.asignar, persona: s.value }); s.blur(); } catch (err) { alert(err.message); }

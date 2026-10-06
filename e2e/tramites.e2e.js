@@ -205,4 +205,16 @@ test.describe("Enlaces directos a trámites", () => {
     await expect(detalle(page).locator(".tp__nombre")).toHaveText(tramite("constitucion-compania").nombre);
     await expect(pestana(page, "Empresas")).toHaveAttribute("aria-pressed", "true");
   });
+
+  test("CF-130 al imprimir en la computadora se ve el detalle completo del trámite", async ({ page }) => {
+    await abrirPortada(page);
+    await page.locator("#lista .tl__item").nth(1).click();
+    await page.evaluate(() => { document.body.dataset.print = "1"; });
+    await page.emulateMedia({ media: "print" });
+    await page.setViewportSize({ width: 760, height: 1000 });   // al imprimir, el ancho es el del papel
+    const hoja = page.locator("#detalleTramite");
+    await expect(hoja.locator(".tp__nombre")).toBeVisible();
+    await expect(hoja).toHaveCSS("transform", "none");
+    await expect(hoja.locator(".tp__cerrar")).toBeHidden();
+  });
 });
