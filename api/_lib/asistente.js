@@ -207,7 +207,9 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo: los avisos de la cita llegarán por WhatsApp.");
         const t = i.tramite_id ? tramite(i.tramite_id) : null;
         // Una cita activa por cliente: para cambiarla, Sofía confirma y la reprograma (así no quedan dos citas ni dos recordatorios).
-        const activas = (await almacen.solicitudesCita(conv.id)).filter((x) => (x.estado === "pendiente" || x.estado === "confirmada") && x.fecha >= hoy);
+        const ahoraMin = enQuito(ctx.t).min;
+        const activas = (await almacen.solicitudesCita(conv.id)).filter((x) => (x.estado === "pendiente" || x.estado === "confirmada") &&
+          (x.fecha > hoy || (x.fecha === hoy && minutos(x.hora) > ahoraMin)));
         if (activas.length && !i.reprogramar) {
           const a = activas[0], ta = tramite(a.tramiteId);
           return error(`El cliente ya tiene una cita ${a.estado}${ta ? " para " + ta.nombre : ""} el ${a.fecha} a las ${a.hora}. Pregúntale si quiere cambiarla por esta; si dice que sí, vuelve a usar solicitar_cita con reprogramar: true.`);
@@ -223,7 +225,6 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
           }
           return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
         }
-        for (const a of activas) await almacen.actualizarCita(a.id, { estado: "rechazada", motivo: "Reprogramada por el cliente" });
         // En la web el celular no está verificado: la cita queda pendiente para que nadie llene la agenda ni reciba mensajes que no pidió.
         const confirmada = !!t && !t.revision && !esWeb(conv), esHoy = i.fecha === hoy, aviso = esWeb(conv) ? "por WhatsApp" : "por este chat";
         // El recordatorio sale a las 17:00 del día anterior.
@@ -232,6 +233,11 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre: i.nombre, nota: i.nota || "",
           estado: confirmada ? "confirmada" : "pendiente", ...(contacto ? { contacto } : {}) });
         const cliente = `${i.nombre} ${contacto ? "(" + contacto + ")" : quien}`;
+        // La anterior se cancela después de crear la nueva, para que el cliente nunca quede sin cita.
+        for (const a of activas) {
+          await almacen.actualizarCita(a.id, { estado: "rechazada", motivo: "Reprogramada por el cliente" });
+          if (a.fecha === hoy) await avisar(`${cliente} cambió su cita de hoy a las ${a.hora}: queda cancelada.`);
+        }
         if (!confirmada) await avisar(`Nueva solicitud de cita${esWeb(conv) ? " (web)" : ""}: ${cliente} — ${t ? t.nombre : "trámite por definir"} — ${i.fecha} ${hora}. Confírmala en el panel.`);
         else if (esHoy) await avisar(`Cita para hoy confirmada${esWeb(conv) ? " (web)" : ""}: ${cliente} — ${t.nombre} — hoy a las ${hora}. Asígnala en el panel.`);
         return ok(confirmada

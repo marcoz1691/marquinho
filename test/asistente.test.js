@@ -196,6 +196,15 @@ describe("herramientas", () => {
       expect(resultadoDe(claude).content).toMatch(/reprogramar/);
     });
 
+    it("una cita de hoy cuya hora ya pasó no cuenta como activa", async () => {
+      const conv = await almacen.conversacion("593991112233", "Ana");
+      await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: "poder", fecha: "2026-10-06", hora: "09:00", nombre: "Ana", estado: "confirmada" });
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje()); // ahora: 10:00 en Quito
+      const [antigua, nueva] = await citas();
+      expect(antigua.estado).toBe("confirmada");
+      expect(nueva.estado).toBe("confirmada");
+    });
+
     it("al reprogramar cancela la cita anterior y libera su cupo", async () => {
       await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje());
       const otra = await almacen.conversacion("593990000001", "Luis");

@@ -245,7 +245,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     var origen = null;
     var abrirHoja = function () {
       if (!angosta.matches) return;
-      origen = document.activeElement;
+      origen = lista.querySelector('[data-sel="' + state.sel + '"]');   // la lista se repintó: el botón tocado ya no existe
       velo.hidden = false; det.scrollTop = 0;
       det.setAttribute("role", "dialog"); det.setAttribute("aria-modal", "true"); det.setAttribute("aria-label", "Detalle del trámite");
       requestAnimationFrame(function () {
