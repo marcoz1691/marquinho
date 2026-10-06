@@ -14,8 +14,29 @@ button,input,textarea{font:inherit}button{cursor:pointer}
 header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--deep);color:#fff}
 header img{width:34px;height:34px}header b{font-weight:600}header .sp{flex:1}
 header button{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 14px}
-.login{max-width:360px;margin:12vh auto;padding:28px;background:var(--card);border:1px solid var(--line);border-radius:18px;display:grid;gap:12px}
-.login h1{margin:0 0 6px;font-size:22px}
+[hidden]{display:none!important}
+.acceso{min-height:calc(100vh - 54px);display:grid;place-items:center;padding:32px 16px}
+.auth{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px;display:grid;gap:16px;box-shadow:0 18px 40px -20px rgba(10,59,46,.25)}
+.auth__sello{width:56px;height:56px}
+.auth h1{margin:0;font-size:24px;letter-spacing:-.01em}
+.auth__sub{margin:-8px 0 0;color:var(--muted)}
+.auth__cuenta{margin:-6px 0 0;font-weight:600;word-break:break-all}
+.campo{display:grid;gap:6px}
+.campo label{font-size:13px;font-weight:600;color:var(--fg)}
+.campo small{color:var(--muted);font-size:13px}
+.pwd{position:relative}
+.pwd input{padding-right:84px}
+.pwd button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--acc);font-weight:600;font-size:13px;padding:6px 10px;border-radius:8px}
+.pwd button:hover{background:var(--soft)}
+.auth .btn{width:100%;padding:12px 18px}
+.btn[disabled]{opacity:.6;cursor:wait}
+.link-btn{border:0;background:none;color:var(--acc);font-weight:600;padding:4px 0;justify-self:start}
+.link-btn:hover{text-decoration:underline}
+.fila{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.msg{margin:0;padding:10px 12px;border-radius:10px;font-size:14px}
+.msg:empty{display:none}
+.msg--error{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn)}
+.msg--info{background:var(--soft);color:var(--fg)}
 input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
 .btn{background:var(--acc);color:var(--acc-fg);border:0;border-radius:999px;padding:10px 18px;font-weight:600}
 .btn--line{background:none;color:var(--fg);border:1px solid var(--line);font-weight:500}
@@ -52,23 +73,70 @@ form.resp textarea{resize:none;height:46px}
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b><span class="sp"></span><button id="salir" hidden>Salir</button></header>
 
-<form class="login" id="login" hidden>
-  <h1>Iniciar sesión</h1>
-  <input id="email" type="email" placeholder="Correo" autocomplete="username" required>
-  <input id="clave" type="password" placeholder="Contraseña" autocomplete="current-password" required>
-  <button class="btn">Entrar</button>
-  <button class="btn btn--line" type="button" id="olvide">Olvidé mi contraseña</button>
-  <p class="err" id="loginErr"></p>
-</form>
+<section class="acceso" id="acceso" hidden>
+  <!-- Entrar -->
+  <form class="auth" id="vEntrar" data-vista novalidate>
+    <img class="auth__sello" src="../assets/logo/logo-notaria41-verde.svg" alt="">
+    <h1>Panel de la notaría</h1>
+    <p class="auth__sub">Ingresa con tu cuenta del personal.</p>
+    <div class="campo"><label for="email">Correo</label><input id="email" type="email" autocomplete="username" required></div>
+    <div class="campo"><div class="fila"><label for="clave">Contraseña</label><button class="link-btn" type="button" data-ir="vRecuperar">¿Olvidaste tu contraseña?</button></div>
+      <div class="pwd"><input id="clave" type="password" autocomplete="current-password" required><button type="button" data-ver="clave">Mostrar</button></div></div>
+    <p class="msg" role="alert" id="mEntrar"></p>
+    <button class="btn">Entrar</button>
+  </form>
 
-<form class="login" id="nuevaClave" hidden>
-  <h1>Define tu contraseña</h1>
-  <p class="aviso">Es la que usarás para entrar al panel.</p>
-  <input id="clave1" type="password" placeholder="Nueva contraseña (mínimo 8 caracteres)" autocomplete="new-password" minlength="8" required>
-  <input id="clave2" type="password" placeholder="Repítela" autocomplete="new-password" minlength="8" required>
-  <button class="btn">Guardar y entrar</button>
-  <p class="err" id="claveErr"></p>
-</form>
+  <!-- Recuperar contraseña -->
+  <form class="auth" id="vRecuperar" data-vista hidden novalidate>
+    <img class="auth__sello" src="../assets/logo/logo-notaria41-verde.svg" alt="">
+    <h1>Recupera tu contraseña</h1>
+    <p class="auth__sub">Te enviaremos un enlace para crear una nueva.</p>
+    <div class="campo"><label for="emailRec">Correo</label><input id="emailRec" type="email" autocomplete="username" required></div>
+    <p class="msg" role="alert" id="mRecuperar"></p>
+    <button class="btn">Enviar enlace</button>
+    <button class="link-btn" type="button" data-ir="vEntrar">Volver a iniciar sesión</button>
+  </form>
+
+  <!-- Enlace enviado -->
+  <div class="auth" id="vEnviado" data-vista hidden>
+    <img class="auth__sello" src="../assets/logo/logo-notaria41-verde.svg" alt="">
+    <h1>Revisa tu correo</h1>
+    <p class="auth__sub">Si <b id="emailEnviado"></b> pertenece a una cuenta del personal, te llegará un enlace para crear una nueva contraseña. Revisa también la carpeta de spam. El enlace vence en 1 hora.</p>
+    <button class="link-btn" type="button" data-ir="vEntrar">Volver a iniciar sesión</button>
+  </div>
+
+  <!-- Crear contraseña (invitación o recuperación) -->
+  <form class="auth" id="vDefinir" data-vista hidden novalidate>
+    <img class="auth__sello" src="../assets/logo/logo-notaria41-verde.svg" alt="">
+    <h1 id="tDefinir">Crea tu contraseña</h1>
+    <p class="auth__sub" id="sDefinir">La usarás para entrar al panel.</p>
+    <p class="auth__cuenta" id="cuentaDefinir"></p>
+    <div class="campo"><label for="clave1">Nueva contraseña</label>
+      <div class="pwd"><input id="clave1" type="password" autocomplete="new-password" minlength="8" required><button type="button" data-ver="clave1">Mostrar</button></div>
+      <small>Mínimo 8 caracteres.</small></div>
+    <div class="campo"><label for="clave2">Repite la contraseña</label>
+      <div class="pwd"><input id="clave2" type="password" autocomplete="new-password" minlength="8" required><button type="button" data-ver="clave2">Mostrar</button></div></div>
+    <p class="msg" role="alert" id="mDefinir"></p>
+    <button class="btn">Guardar contraseña</button>
+  </form>
+
+  <!-- Enlace vencido o inválido -->
+  <div class="auth" id="vVencido" data-vista hidden>
+    <img class="auth__sello" src="../assets/logo/logo-notaria41-verde.svg" alt="">
+    <h1>El enlace ya no es válido</h1>
+    <p class="auth__sub">Los enlaces del correo vencen después de un tiempo y solo se pueden usar una vez. Pide uno nuevo y ábrelo apenas llegue.</p>
+    <button class="btn" type="button" data-ir="vRecuperar">Pedir un enlace nuevo</button>
+    <button class="link-btn" type="button" data-ir="vEntrar">Volver a iniciar sesión</button>
+  </div>
+
+  <!-- Cuenta sin permiso -->
+  <div class="auth" id="vSinPermiso" data-vista hidden>
+    <img class="auth__sello" src="../assets/logo/logo-notaria41-verde.svg" alt="">
+    <h1>Tu cuenta no tiene acceso</h1>
+    <p class="auth__sub">Entraste como <b id="emailSinPermiso"></b>, pero esta cuenta no está autorizada para el panel. Pide al administrador que la habilite.</p>
+    <button class="btn btn--line" type="button" id="salirSinPermiso">Usar otra cuenta</button>
+  </div>
+</section>
 
 <main id="app" hidden>
   <nav id="lista"></nav>
@@ -80,11 +148,22 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-// El enlace del correo (invitación o recuperación) trae type=invite|recovery en la URL: hay que definir contraseña.
-const definirClave = /type=(invite|recovery)/.test(location.hash + location.search);
+// Lo que trae el enlace del correo, leído antes de que la librería limpie la URL.
+const enlace = new URLSearchParams(location.hash.slice(1) + "&" + location.search.slice(1));
+const tipoEnlace = enlace.get("type");               // invite | recovery
+const errorEnlace = enlace.get("error_code") || enlace.get("error");
 const cfg = await (await fetch("/api/panel-config")).json();
-const sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+// Los enlaces de invitación y recuperación traen la sesión en la URL (#access_token…): flujo "implicit".
+const sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true } });
 let actual = null, timer = null;
+
+const TRADUCCION = {
+  "Invalid login credentials": "Correo o contraseña incorrectos.",
+  "Email not confirmed": "Tu correo aún no está confirmado. Abre el enlace que te enviamos.",
+  "New password should be different from the old password.": "La nueva contraseña debe ser distinta de la anterior.",
+  "Auth session missing!": "La sesión del enlace expiró. Pide un enlace nuevo."
+};
+const traducir = (m) => TRADUCCION[m] || (/rate limit/i.test(m) ? "Hiciste demasiados intentos. Espera unos minutos." : /Password should be/i.test(m) ? "La contraseña es demasiado débil: usa al menos 8 caracteres." : m);
 
 async function api(metodo, params) {
   const { data: { session } } = await sb.auth.getSession();
@@ -92,41 +171,81 @@ async function api(metodo, params) {
   let url = "/api/panel";
   if (metodo === "GET") url += "?" + new URLSearchParams(params); else opts.body = JSON.stringify(params);
   const r = await fetch(url, opts), data = await r.json();
-  if (r.status === 401) { mostrarLogin(); throw new Error(data.error); }
+  if (r.status === 401) { vista("vEntrar"); throw new Error(data.error); }
+  if (r.status === 403) { const e = new Error(data.error); e.sinPermiso = true; throw e; }
   if (!r.ok) throw new Error(data.error);
   return data;
 }
 
-function mostrarNuevaClave() { $("#nuevaClave").hidden = false; $("#login").hidden = true; $("#app").hidden = true; }
-$("#nuevaClave").addEventListener("submit", async (e) => {
-  e.preventDefault(); $("#claveErr").textContent = "";
-  if ($("#clave1").value !== $("#clave2").value) { $("#claveErr").textContent = "Las contraseñas no coinciden."; return; }
-  const { error } = await sb.auth.updateUser({ password: $("#clave1").value });
-  if (error) { $("#claveErr").textContent = "No se pudo guardar: " + error.message; return; }
-  history.replaceState(null, "", location.pathname);
-  $("#nuevaClave").hidden = true;
-  try { await mostrarApp(); } catch (err) { mostrarLogin(); $("#loginErr").textContent = err.message; }
-});
-function mostrarLogin() { $("#nuevaClave").hidden = true; $("#login").hidden = false; $("#app").hidden = true; $("#salir").hidden = true; clearInterval(timer); }
+// Solo una pantalla visible a la vez.
+function vista(id) {
+  clearInterval(timer);
+  $("#app").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
+  document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
+  document.querySelectorAll(".msg").forEach((m) => { m.textContent = ""; m.className = "msg"; });
+  const foco = $("#" + id + " input"); if (foco) setTimeout(() => foco.focus(), 30);
+}
+const mensaje = (id, texto, tipo = "error") => { const m = $("#" + id); m.textContent = texto; m.className = "msg msg--" + tipo; };
+async function ocupado(form, fn) {
+  const b = form.querySelector(".btn"); const txt = b.textContent; b.disabled = true; b.textContent = "Un momento…";
+  try { await fn(); } finally { b.disabled = false; b.textContent = txt; }
+}
+
 async function mostrarApp() {
-  $("#login").hidden = true; $("#app").hidden = false; $("#salir").hidden = false;
-  await cargarLista(); clearInterval(timer);
+  try {
+    await cargarLista();
+  } catch (e) {
+    if (e.sinPermiso) {
+      const { data: { user } } = await sb.auth.getUser();
+      $("#emailSinPermiso").textContent = user?.email || "";
+      return vista("vSinPermiso");
+    }
+    throw e;
+  }
+  $("#acceso").hidden = true; $("#app").hidden = false; $("#salir").hidden = false;
+  clearInterval(timer);
   timer = setInterval(() => { cargarLista(); if (actual) abrir(actual, true); }, 15000);
 }
 
-$("#login").addEventListener("submit", async (e) => {
-  e.preventDefault(); $("#loginErr").textContent = "";
-  const { error } = await sb.auth.signInWithPassword({ email: $("#email").value, password: $("#clave").value });
-  if (error) { $("#loginErr").textContent = "Correo o contraseña incorrectos."; return; }
-  try { await mostrarApp(); } catch (err) { $("#loginErr").textContent = err.message; await sb.auth.signOut(); mostrarLogin(); }
+document.addEventListener("click", (e) => {
+  const ir = e.target.closest("[data-ir]");
+  if (ir) {
+    if (ir.dataset.ir === "vRecuperar") $("#emailRec").value = $("#email").value;
+    vista(ir.dataset.ir);
+  }
+  const ver = e.target.closest("[data-ver]");
+  if (ver) { const i = $("#" + ver.dataset.ver); const oculto = i.type === "password"; i.type = oculto ? "text" : "password"; ver.textContent = oculto ? "Ocultar" : "Mostrar"; }
 });
-$("#salir").onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
-$("#olvide").onclick = async () => {
-  const email = $("#email").value.trim();
-  if (!email) { $("#loginErr").textContent = "Escribe tu correo y vuelve a pulsar."; return; }
-  await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/panel/" });
-  $("#loginErr").textContent = "Si el correo está registrado, te llegará un enlace para definir una nueva contraseña.";
-};
+
+$("#vEntrar").addEventListener("submit", (e) => { e.preventDefault(); ocupado(e.target, async () => {
+  const email = $("#email").value.trim(), password = $("#clave").value;
+  if (!email || !password) return mensaje("mEntrar", "Escribe tu correo y tu contraseña.");
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) return mensaje("mEntrar", traducir(error.message));
+  try { await mostrarApp(); } catch (err) { mensaje("mEntrar", err.message); }
+}); });
+
+$("#vRecuperar").addEventListener("submit", (e) => { e.preventDefault(); ocupado(e.target, async () => {
+  const email = $("#emailRec").value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return mensaje("mRecuperar", "Escribe un correo válido.");
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/panel/" });
+  if (error && /rate limit/i.test(error.message)) return mensaje("mRecuperar", traducir(error.message));
+  $("#emailEnviado").textContent = email;   // misma respuesta exista o no la cuenta
+  vista("vEnviado");
+}); });
+
+$("#vDefinir").addEventListener("submit", (e) => { e.preventDefault(); ocupado(e.target, async () => {
+  const c1 = $("#clave1").value, c2 = $("#clave2").value;
+  if (c1.length < 8) return mensaje("mDefinir", "La contraseña debe tener al menos 8 caracteres.");
+  if (c1 !== c2) return mensaje("mDefinir", "Las contraseñas no coinciden.");
+  const { error } = await sb.auth.updateUser({ password: c1 });
+  if (error) return /session/i.test(error.message) ? vista("vVencido") : mensaje("mDefinir", traducir(error.message));
+  history.replaceState(null, "", location.pathname);
+  try { await mostrarApp(); } catch (err) { vista("vEntrar"); mensaje("mEntrar", err.message); }
+}); });
+
+$("#salir").onclick = async () => { await sb.auth.signOut(); vista("vEntrar"); };
+$("#salirSinPermiso").onclick = async () => { await sb.auth.signOut(); vista("vEntrar"); };
 
 async function cargarLista() {
   const filas = await api("GET", { accion: "conversaciones" });
@@ -198,9 +317,19 @@ $("#detalle").addEventListener("click", async (e) => {
 });
 
 const { data: { session } } = await sb.auth.getSession();
-if (definirClave && session) mostrarNuevaClave();
-else if (session) mostrarApp().catch(mostrarLogin);
-else mostrarLogin();
+if (errorEnlace) {
+  history.replaceState(null, "", location.pathname);
+  vista("vVencido");
+} else if (tipoEnlace === "invite" || tipoEnlace === "recovery") {
+  if (!session) vista("vVencido");
+  else {
+    $("#tDefinir").textContent = tipoEnlace === "invite" ? "Bienvenido. Crea tu contraseña" : "Crea una nueva contraseña";
+    $("#sDefinir").textContent = tipoEnlace === "invite" ? "Es la que usarás para entrar al panel de la notaría." : "Después entrarás directamente al panel.";
+    $("#cuentaDefinir").textContent = session.user.email;
+    vista("vDefinir");
+  }
+} else if (session) mostrarApp().catch(() => vista("vEntrar"));
+else vista("vEntrar");
 </script>
 </body>
 </html>
