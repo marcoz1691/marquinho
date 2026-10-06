@@ -88,7 +88,8 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     acciones.push('<button class="act" type="button" data-share="' + esc(t.id) + '"><i class="ph ph-share-network" aria-hidden="true"></i>Compartir</button>');
     acciones.push('<button class="act" type="button" data-print="' + esc(t.id) + '"><i class="ph ph-printer" aria-hidden="true"></i>Imprimir</button>');
 
-    return '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
+    return '<button class="tp__cerrar" type="button" data-cerrar aria-label="Cerrar el trámite"><i class="ph ph-x" aria-hidden="true"></i></button>' +
+      '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
       '<p class="tp__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
       '<div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
       t.req.map(function (r, i) {
@@ -126,9 +127,12 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
   }
 
   function renderFaq() {
+    var ancha = matchMedia("(min-width: 861px)").matches;
     $("#faqList").innerHTML = state.data.faq.map(function (f, i) {
-      return '<article class="faq__item reveal" style="--i:' + (i % 2) + '"><h3>' + esc(f.q) + "</h3><p>" + esc(f.a) + "</p></article>";
+      return '<details class="faq__item reveal" style="--i:' + (i % 2) + '"' + (ancha ? " open" : "") + '><summary><h3>' + esc(f.q) + '</h3><i class="ph ph-plus" aria-hidden="true"></i></summary><p>' + esc(f.a) + "</p></details>";
     }).join("");
+    // En la computadora las respuestas siempre están a la vista.
+    $("#faqList").addEventListener("click", function (e) { if (e.target.closest("summary") && matchMedia("(min-width: 861px)").matches) e.preventDefault(); });
   }
 
   function renderAvisos() {
@@ -228,11 +232,29 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     var enlace = function (id) { return location.href.split("#")[0] + "#t-" + id; };
     var angosta = matchMedia("(max-width: 860px)");
 
+    // En el celular el detalle sube como una hoja desde abajo, sin alargar la página.
+    var velo = document.createElement("div");
+    velo.className = "tp-velo"; velo.hidden = true; document.body.appendChild(velo);
+    var abrirHoja = function () {
+      if (!angosta.matches) return;
+      velo.hidden = false; det.scrollTop = 0;
+      requestAnimationFrame(function () { det.classList.add("tp--abierto"); velo.classList.add("on"); });
+      document.documentElement.classList.add("hoja-abierta");
+    };
+    var cerrarHoja = function () {
+      det.classList.remove("tp--abierto"); velo.classList.remove("on");
+      document.documentElement.classList.remove("hoja-abierta");
+      setTimeout(function () { if (!det.classList.contains("tp--abierto")) velo.hidden = true; }, 350);
+    };
+    velo.addEventListener("click", cerrarHoja);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && det.classList.contains("tp--abierto")) cerrarHoja(); });
+    angosta.addEventListener("change", function () { if (!angosta.matches) cerrarHoja(); });
+
     lista.addEventListener("click", function (e) {
       var b = e.target.closest("[data-sel]"); if (!b) return;
       state.sel = b.dataset.sel; renderLista();
       if (history.replaceState) history.replaceState(null, "", "#t-" + state.sel);
-      if (angosta.matches) det.scrollIntoView({ behavior: "smooth", block: "start" });
+      abrirHoja();
     });
 
     // Lista de requisitos: lo marcado se guarda en este navegador.
@@ -243,7 +265,9 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     });
 
     det.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-calc],[data-share],[data-print],[data-sofia]"); if (!b) return;
+      var b = e.target.closest("[data-calc],[data-share],[data-print],[data-sofia],[data-cerrar]"); if (!b) return;
+      if (b.dataset.cerrar !== undefined || b.dataset.calc || b.dataset.sofia) cerrarHoja();
+      if (b.dataset.cerrar !== undefined) return;
       if (b.dataset.sofia) return document.dispatchEvent(new CustomEvent("n41:preguntar", { detail: { texto: "Sobre «" + b.dataset.sofia + "»: " } }));
       if (b.dataset.calc) return setupCalc.elegir(b.dataset.calc);
       var t = tramite(b.dataset.share || b.dataset.print);
@@ -269,7 +293,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
       var m = location.hash.match(/^#t-([\w-]+)/), t = m && tramite(m[1]); if (!t) return;
       state.q = ""; $("#buscar").value = ""; state.cat = DESTACADOS.indexOf(t.id) > -1 ? "destacados" : t.cat; state.sel = t.id;
       renderChips(); renderLista();
-      setTimeout(function () { $("#tramites").scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+      setTimeout(function () { $("#tramites").scrollIntoView({ behavior: "smooth", block: "start" }); abrirHoja(); }, 60);
     };
     window.addEventListener("hashchange", abrirHash);
     abrirHash();
@@ -286,7 +310,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
       words.innerHTML = words.textContent.trim().split(/\s+/).map(function (w) { return "<span>" + esc(w) + "</span> "; }).join("");
       spans = [].slice.call(words.children);
     }
-    var hs = $("[data-h]"), track = $("#track"), wide = matchMedia("(min-width: 861px)");
+    var hs = $("[data-h]"), track = $("#track"), wide = { matches: true };   // el recorrido horizontal también corre en el celular
     // Recorrido horizontal: hasta que la última tarjeta quede alineada con el margen derecho.
     var travel = function () {
       var last = track.lastElementChild, pad = parseFloat(getComputedStyle(track).paddingLeft);

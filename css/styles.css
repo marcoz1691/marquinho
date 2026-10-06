@@ -274,18 +274,17 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   .nav__links a{padding:14px 0;border-bottom:1px solid var(--line)}
   .nav__tools{margin-left:auto}
   .cols,.contact,.svc__in,.calc__wrap,.faq,.tl,.tp__cols{grid-template-columns:1fr}
-  .tp{position:static;scroll-margin-top:80px}
-  .hero__grid{grid-template-columns:1fr;text-align:left}
-  .hero__seal{order:-1;justify-items:start}
-  .seal{width:clamp(120px,32vw,180px)}
+  .hero__grid{grid-template-columns:1fr;text-align:center;justify-items:center;gap:clamp(18px,3.5svh,32px)}
+  .hero__seal{order:-1;justify-items:center}
+  .seal{width:clamp(170px,min(54vw,30svh),250px)}
+  .hero__copy .cta{justify-content:center}
+  .hero__copy .lead{margin-left:auto;margin-right:auto}
   .foot__in{grid-template-columns:1fr}
   .svc__head{position:static}
   .svc__arr{opacity:1;transform:none}
-  .hscroll{height:auto!important}
-  .hscroll__pin{position:static;height:auto;padding:96px 0}
-  .hscroll__track{flex-direction:column;padding:0 20px;transform:none!important}
-  .hscroll__track li{width:auto;min-height:0;padding:30px}
-  .hscroll__track b{margin-bottom:28px}
+  .hscroll__pin{padding-top:56px}
+  .hscroll__track{padding:0 20px;gap:14px}
+  .hscroll__track li{width:80vw;min-height:min(320px,42svh);padding:28px}
 }
 @media (max-width:520px){
   .find{width:100%}
@@ -402,3 +401,32 @@ h2,.sub,.hscroll__head{text-align:left}
 .act--sofia{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .act--sofia:hover{filter:brightness(1.08)}
 @media print{.tp__sofia{display:none!important}}
+
+/* Celular: el detalle del trámite como hoja que sube desde abajo */
+.tp__cerrar{display:none}
+.tp-velo{position:fixed;inset:0;z-index:69;background:rgba(7,19,14,.45);opacity:0;transition:opacity .3s}
+.tp-velo.on{opacity:1}
+@media (max-width:860px){
+  .tp{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;
+    padding:20px 20px calc(28px + env(safe-area-inset-bottom));transform:translateY(105%);visibility:hidden;animation:none;
+    transition:transform .4s cubic-bezier(.2,.7,.2,1),visibility 0s linear .4s}
+  .tp.tp--abierto{transform:none;visibility:visible;transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+  .tp__cerrar{display:grid;place-items:center;position:sticky;top:0;margin:-6px -6px 0 auto;width:40px;height:40px;border:0;border-radius:50%;background:var(--bg-alt);color:var(--fg);font-size:18px;cursor:pointer;z-index:1}
+  .hoja-abierta,.hoja-abierta body{overflow:hidden}
+  .tl__item{padding:16px 6px 16px 12px}
+  .tl__item::after{content:"›";color:var(--muted);font-size:20px;line-height:1;margin-left:4px}
+}
+
+/* Preguntas frecuentes: acordeón en el celular */
+.faq__item summary{list-style:none;cursor:default}
+.faq__item summary::-webkit-details-marker{display:none}
+.faq__item summary i{display:none}
+@media (max-width:860px){
+  .faq{gap:0;padding-top:0}
+  .faq__item{border-bottom:1px solid var(--line)}
+  .faq__item summary{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;cursor:pointer}
+  .faq__item summary h3{margin:0}
+  .faq__item summary i{display:block;flex:none;font-size:20px;color:var(--accent);transition:transform .3s}
+  .faq__item[open] summary i{transform:rotate(45deg)}
+  .faq__item p{padding:0 0 20px}
+}
