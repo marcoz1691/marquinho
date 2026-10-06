@@ -117,6 +117,7 @@ export function desdeHoja(tabs, base) {
     var t = { id: norm(o.get("codigo") || o.get("tramite")).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), cat: o.get("categoria"),
       nombre: o.get("tramite"), desc: o.get("descripcion"), req: lineas(o.get("requisitos")), pasos: lineas(o.get("pasos")), tarifa: tarifa };
     if (o.get("nota")) t.nota = o.get("nota");
+    if (/^s/.test(norm(o.get("revision")))) t.revision = true;
     return t;
   }).filter(function (t) { return t.nombre && t.cat; });
 
@@ -145,6 +146,8 @@ export function desdeHoja(tabs, base) {
   set("longitud", function (v) { if (num(v) !== null) N.mapa.lng = num(v); });
   set("enlaceparaagendar", function (v) { N.agenda = v; });
   set("nombredelasistente", function (v) { N.asistente = v; });
+  set("citasporhora", function (v) { if (num(v)) N.citas = Object.assign({}, N.citas, { porHora: num(v) }); });
+  set("feriados", function (v) { N.citas = Object.assign({}, N.citas, { feriados: v.split(/[,;\n]+/).map(fecha).filter(Boolean) }); });
   ["facebook", "instagram", "tiktok", "linkedin", "x"].forEach(function (k) { set(k, function (v) { N.redes[k] = v; }); });
   set("sbu", function (v) { if (num(v)) T.sbu = num(v); });
   set("iva", function (v) { if (num(v) !== null) T.iva = num(v) > 1 ? num(v) / 100 : num(v); });

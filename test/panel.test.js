@@ -65,6 +65,28 @@ describe("panel del personal", () => {
     expect(whatsapp.enviarTexto.mock.calls[0][1]).toMatch(/no atiende/);
   });
 
+  it("la agenda del día lista las citas con su trámite, estado y a quién se asignaron", async () => {
+    const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: "compraventa", fecha: "2026-10-08", hora: "10:00", nombre: "Ana", estado: "confirmada" });
+    await panel.asignarCita(id, "Rosa");
+    const a = await panel.agenda("2026-10-08");
+    expect(a.citas).toEqual([expect.objectContaining({ id, tramite: "Compraventa de inmuebles", estado: "confirmada", asignadaA: "Rosa", telefono: "593991112233" })]);
+    expect(a.personal).toEqual([]);
+  });
+
+  it("la agenda sin fecha muestra la de hoy en Quito", async () => {
+    await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-06", hora: "15:00", nombre: "Ana" });
+    const a = await panel.agenda();
+    expect(a.fecha).toBe("2026-10-06");
+    expect(a.citas).toHaveLength(1);
+  });
+
+  it("cancelar una cita ya confirmada le explica al cliente que se canceló", async () => {
+    const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana", estado: "confirmada" });
+    await panel.decidirCita(id, "rechazada", "El notario no estará ese día");
+    expect(whatsapp.enviarTexto.mock.calls[0][1]).toMatch(/cancelar tu cita/);
+    expect(whatsapp.enviarTexto.mock.calls[0][1]).toMatch(/no estará/);
+  });
+
   it("no acepta estados de cita desconocidos", async () => {
     const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana" });
     await expect(panel.decidirCita(id, "borrada")).rejects.toThrow();

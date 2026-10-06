@@ -173,7 +173,8 @@
     "tipo": "cuantia",
     "tabla": "transferencia"
    },
-   "nota": "Se calcula sobre el valor del contrato; si es menor al avalúo catastral, se usa el avalúo."
+   "nota": "Se calcula sobre el valor del contrato; si es menor al avalúo catastral, se usa el avalúo.",
+   "revision": true
   },
   {
    "id": "promesa-compraventa",
@@ -194,7 +195,8 @@
    "tarifa": {
     "tipo": "cuantia",
     "tabla": "promesa"
-   }
+   },
+   "revision": true
   },
   {
    "id": "donacion",
@@ -219,7 +221,8 @@
    "tarifa": {
     "tipo": "cuantia",
     "tabla": "transferencia"
-   }
+   },
+   "revision": true
   },
   {
    "id": "insinuacion-donacion",
@@ -242,7 +245,8 @@
     "tipo": "pct",
     "valor": 0.4
    },
-   "nota": "Incluye las declaraciones de los testigos y la protocolización."
+   "nota": "Incluye las declaraciones de los testigos y la protocolización.",
+   "revision": true
   },
   {
    "id": "hipoteca",
@@ -266,7 +270,8 @@
     "tipo": "cuantia",
     "tabla": "hipoteca"
    },
-   "nota": "Si la hipoteca va junto con una compraventa, solo se cobra la compraventa."
+   "nota": "Si la hipoteca va junto con una compraventa, solo se cobra la compraventa.",
+   "revision": true
   },
   {
    "id": "cancelacion-hipoteca",
@@ -289,7 +294,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.2
-   }
+   },
+   "revision": true
   },
   {
    "id": "arrendamiento",
@@ -310,7 +316,8 @@
    "tarifa": {
     "tipo": "consultar"
    },
-   "nota": "La tarifa depende del canon mensual."
+   "nota": "La tarifa depende del canon mensual.",
+   "revision": true
   },
   {
    "id": "propiedad-horizontal",
@@ -333,7 +340,8 @@
     "tipo": "pct",
     "valor": 0.2
    },
-   "nota": "Hasta 20 alícuotas de vivienda o 10 comerciales. Más alícuotas: consulta."
+   "nota": "Hasta 20 alícuotas de vivienda o 10 comerciales. Más alícuotas: consulta.",
+   "revision": true
   },
   {
    "id": "lotes",
@@ -355,7 +363,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.3
-   }
+   },
+   "revision": true
   },
   {
    "id": "adosamiento",
@@ -376,7 +385,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.2
-   }
+   },
+   "revision": true
   },
   {
    "id": "patrimonio-extincion",
@@ -401,7 +411,8 @@
     "tipo": "pct",
     "valor": 0.3
    },
-   "nota": "Gratuito para adultos mayores cuando son propietarios exclusivos."
+   "nota": "Gratuito para adultos mayores cuando son propietarios exclusivos.",
+   "revision": true
   },
   {
    "id": "patrimonio-constitucion",
@@ -423,7 +434,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.25
-   }
+   },
+   "revision": true
   },
   {
    "id": "divorcio",
@@ -447,7 +459,8 @@
     "tipo": "pct",
     "valor": 0.39
    },
-   "nota": "No incluye la declaración juramentada ni el reconocimiento de firmas."
+   "nota": "No incluye la declaración juramentada ni el reconocimiento de firmas.",
+   "revision": true
   },
   {
    "id": "terminacion-union",
@@ -469,7 +482,8 @@
     "tipo": "pct",
     "valor": 0.39
    },
-   "nota": "No incluye la declaración juramentada ni el reconocimiento de firmas."
+   "nota": "No incluye la declaración juramentada ni el reconocimiento de firmas.",
+   "revision": true
   },
   {
    "id": "union-hecho",
@@ -489,7 +503,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.1
-   }
+   },
+   "revision": true
   },
   {
    "id": "disolucion-sociedad-conyugal",
@@ -511,7 +526,8 @@
     "tipo": "pct",
     "valor": 0.34
    },
-   "nota": "No incluye el reconocimiento de firmas."
+   "nota": "No incluye el reconocimiento de firmas.",
+   "revision": true
   },
   {
    "id": "liquidacion-sociedad-conyugal",
@@ -535,7 +551,8 @@
     "tipo": "cuantia",
     "tabla": "transferencia"
    },
-   "nota": "Se calcula sobre el valor de los bienes que se reparten."
+   "nota": "Se calcula sobre el valor de los bienes que se reparten.",
+   "revision": true
   },
   {
    "id": "capitulaciones",
@@ -557,7 +574,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.4
-   }
+   },
+   "revision": true
   },
   {
    "id": "salida-pais",
@@ -607,7 +625,8 @@
     "tipo": "pct",
     "valor": 0.4
    },
-   "nota": "Para cobrar beneficios sociales (pensiones, liquidaciones, bonos) la tarifa es 5% del SBU."
+   "nota": "Para cobrar beneficios sociales (pensiones, liquidaciones, bonos) la tarifa es 5% del SBU.",
+   "revision": true
   },
   {
    "id": "testamento-abierto",
@@ -628,7 +647,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 1.2
-   }
+   },
+   "revision": true
   },
   {
    "id": "testamento-cerrado",
@@ -648,7 +668,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 1.0
-   }
+   },
+   "revision": true
   },
   {
    "id": "apertura-testamento",
@@ -670,7 +691,8 @@
     "tipo": "pct",
     "valor": 1.0
    },
-   "nota": "Trámite presencial."
+   "nota": "Trámite presencial.",
+   "revision": true
   },
   {
    "id": "aceptacion-herencia",
@@ -691,7 +713,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.6
-   }
+   },
+   "revision": true
   },
   {
    "id": "particion-hereditaria",
@@ -714,7 +737,8 @@
     "tipo": "pct",
     "valor": 0.3
    },
-   "nota": "Incluye la protocolización."
+   "nota": "Incluye la protocolización.",
+   "revision": true
   },
   {
    "id": "declaracion-natural",
@@ -931,7 +955,8 @@
     "tipo": "cuantia",
     "tabla": "sociedades"
    },
-   "nota": "Se calcula sobre el capital suscrito. Incluye tres copias certificadas."
+   "nota": "Se calcula sobre el capital suscrito. Incluye tres copias certificadas.",
+   "revision": true
   },
   {
    "id": "reforma-estatutos",
@@ -954,7 +979,8 @@
     "tipo": "pct",
     "valor": 0.3,
     "unidad": "por reforma"
-   }
+   },
+   "revision": true
   },
   {
    "id": "disolucion-compania",
@@ -976,7 +1002,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.1
-   }
+   },
+   "revision": true
   },
   {
    "id": "reactivacion-compania",
@@ -997,7 +1024,8 @@
    "tarifa": {
     "tipo": "pct",
     "valor": 0.1
-   }
+   },
+   "revision": true
   },
   {
    "id": "cesion-participaciones",
@@ -1018,7 +1046,8 @@
    "tarifa": {
     "tipo": "consultar"
    },
-   "nota": "La tarifa depende del valor de las participaciones."
+   "nota": "La tarifa depende del valor de las participaciones.",
+   "revision": true
   },
   {
    "id": "desahucio",
@@ -1040,7 +1069,8 @@
     "tipo": "pct",
     "valor": 0.3
    },
-   "nota": "Incluye la diligencia fuera de la notaría."
+   "nota": "Incluye la diligencia fuera de la notaría.",
+   "revision": true
   },
   {
    "id": "constitucion-mora",
@@ -1062,7 +1092,8 @@
     "tipo": "pct",
     "valor": 0.3
    },
-   "nota": "Incluye la diligencia fuera de la notaría."
+   "nota": "Incluye la diligencia fuera de la notaría.",
+   "revision": true
   },
   {
    "id": "constatacion",
@@ -1082,7 +1113,8 @@
     "tipo": "pct",
     "valor": 1.0
    },
-   "nota": "Primera hora. Cada hora adicional: 25% del SBU."
+   "nota": "Primera hora. Cada hora adicional: 25% del SBU.",
+   "revision": true
   },
   {
    "id": "levantamiento-protesto",
@@ -1103,7 +1135,8 @@
     "tipo": "pct",
     "valor": 1.0
    },
-   "nota": "Incluye la protocolización."
+   "nota": "Incluye la protocolización.",
+   "revision": true
   }
  ],
  "faq": [

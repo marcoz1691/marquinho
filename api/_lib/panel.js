@@ -69,6 +69,20 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
 
     async devolverAlAsistente(id) { await almacen.actualizarConversacion(id, { derivada: false }); },
 
+    // Agenda de un día (por defecto, hoy en Quito) para repartir las citas entre el personal.
+    async agenda(fecha) {
+      fecha = fecha || new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new Error("Fecha inválida");
+      const C = await contenido();
+      const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
+      return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, tramite: nombreDe(x.tramiteId) })) };
+    },
+
+    async asignarCita(citaId, persona) {
+      if (!(await almacen.cita(citaId))) throw new Error("Cita no encontrada");
+      await almacen.actualizarCita(citaId, { asignadaA: String(persona || "").trim() });
+    },
+
     async decidirCita(citaId, estado, motivo = "") {
       if (!ESTADOS_CITA.includes(estado)) throw new Error(`Estado de cita inválido: ${estado}`);
       const cita = await almacen.cita(citaId);
@@ -80,7 +94,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const dia = new Intl.DateTimeFormat("es-EC", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(cita.fecha + "T12:00:00Z"));
       const texto = estado === "confirmada"
         ? `Hola ${cita.nombre}, tu cita${tramite ? " para " + tramite : ""} quedó confirmada para el ${dia} a las ${cita.hora} en la ${C.notaria.nombre} (${C.notaria.direccion}). Recuerda traer tus documentos originales.`
-        : `Hola ${cita.nombre}, no pudimos confirmar tu cita del ${dia} a las ${cita.hora}${motivo ? ": " + motivo : ""}. Escríbenos otro horario que te convenga y te ayudamos.`;
+        : `Hola ${cita.nombre}, ${cita.estado === "confirmada" ? "tuvimos que cancelar tu cita" : "no pudimos confirmar tu cita"} del ${dia} a las ${cita.hora}${motivo ? ": " + motivo : ""}. Escríbenos otro horario que te convenga y te ayudamos.`;
       if (await dentroDeVentana(c.id)) { await enviarComoPersonal(c, texto); return { avisado: true }; }
       // Fuera de la ventana de 24 h (o en citas del chat web) WhatsApp solo permite plantillas aprobadas.
       const plantilla = estado === "confirmada" ? plantillas.citaConfirmada : plantillas.citaRechazada;

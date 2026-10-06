@@ -15,12 +15,20 @@
     "api/chat.js": {
       "maxDuration": 120,
       "includeFiles": "data/**"
+    },
+    "api/resumen-diario.js": {
+      "maxDuration": 60,
+      "includeFiles": "data/**"
     }
   },
   "crons": [
     {
       "path": "/api/recordatorios",
       "schedule": "0 22 * * *"
+    },
+    {
+      "path": "/api/resumen-diario",
+      "schedule": "0 12 * * 1-5"
     }
   ],
   "headers": [
