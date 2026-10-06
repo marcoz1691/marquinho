@@ -125,6 +125,23 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     expect((await a.citasDelDia(fecha)).find((x) => x.id === id)).toMatchObject({ telefono: "593991112233" });
   });
 
+  it("crea una cita ya confirmada cuando se indica el estado", async () => {
+    const a = crear(), c = await a.conversacion(tel());
+    const { id } = await a.crearSolicitudCita({ conversacionId: c.id, tramiteId: "poder", fecha: "2032-02-10", hora: "10:00", nombre: "Ana", estado: "confirmada" });
+    expect(await a.cita(id)).toMatchObject({ estado: "confirmada" });
+  });
+
+  it("la agenda de un día trae todas sus citas por hora, con teléfono y a quién se asignó", async () => {
+    const a = crear(), t = tel(), c = await a.conversacion(t, "Eva"), fecha = "2034-0" + (1 + Math.floor(Math.random() * 9)) + "-1" + Math.floor(Math.random() * 10);
+    const b = await a.crearSolicitudCita({ conversacionId: c.id, tramiteId: "poder", fecha, hora: "11:00", nombre: "Eva" });
+    const x = await a.crearSolicitudCita({ conversacionId: c.id, tramiteId: "poder", fecha, hora: "09:00", nombre: "Eva", estado: "confirmada" });
+    await a.actualizarCita(x.id, { asignadaA: "Rosa" });
+    const agenda = (await a.agenda(fecha)).filter((y) => y.conversacionId === c.id);
+    expect(agenda.map((y) => y.id)).toEqual([x.id, b.id]);
+    expect(agenda[0]).toMatchObject({ hora: "09:00", estado: "confirmada", asignadaA: "Rosa", telefono: t });
+    expect(agenda[1]).toMatchObject({ estado: "pendiente", asignadaA: "" });
+  });
+
   it("cuenta el uso por clave y ventana de tiempo (límites del chat web)", async () => {
     const a = crear(), clave = "prueba:" + Math.random();
     expect(await a.contarUso(clave, 3600000, 1000)).toBe(1);

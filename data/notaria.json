@@ -35,5 +35,9 @@
     "tiktok": "",
     "x": ""
   },
-  "agenda": ""
+  "agenda": "",
+  "citas": {
+    "porHora": 2,
+    "feriados": []
+  }
 }

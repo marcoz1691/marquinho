@@ -17,12 +17,14 @@ export function crearManejadorPanel({ panel, auth }) {
   const lecturas = {
     conversaciones: () => panel.conversaciones(),
     detalle: (q) => panel.detalle(q.get("id")),
-    documento: async (q) => ({ url: await panel.urlDocumento(q.get("id")) })
+    documento: async (q) => ({ url: await panel.urlDocumento(q.get("id")) }),
+    agenda: (q) => panel.agenda(q.get("fecha"))
   };
   const acciones = {
     responder: (b) => panel.responder(b.id, b.texto),
     devolver: (b) => panel.devolverAlAsistente(b.id),
     cita: (b) => panel.decidirCita(b.id, b.estado, b.motivo),
+    asignarCita: (b) => panel.asignarCita(b.id, b.persona),
     revisarDocumento: (b) => panel.revisarDocumento(b.id, b.estado, b.nota),
     borrarDocumento: (b) => panel.borrarDocumento(b.id)
   };

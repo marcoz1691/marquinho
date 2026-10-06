@@ -25,6 +25,10 @@ Abre el enlace de la hoja «Notaría 41 – Contenido web» con tu cuenta de Gma
 
 **Ocultar un trámite sin borrarlo.** Pon «No» en la columna «Mostrar».
 
+**Citas que confirma Sofía sola.** En «Trámites», la columna «Revisión antes de la cita» decide qué pasa cuando alguien pide una cita por WhatsApp o por la web. Con «No», Sofía la confirma al instante si hay cupo. Con «Sí», queda pendiente hasta que el personal la confirme en el panel (para trámites que necesitan minuta o revisar documentos antes).
+
+**Cupo y feriados.** En «Configuración», «Citas por hora» es cuántas citas se aceptan en cada hora (por ejemplo, 2). En «Feriados» escribe las fechas en que no se atiende, separadas por comas (por ejemplo, 2/11/2026, 3/11/2026): ese día Sofía no agenda citas.
+
 **Cambiar una tarifa.** En «Tipo de tarifa» elige de la lista:
 - *Porcentaje del SBU*: en «Valor» escribe solo el número (12 = 12% del SBU).
 - *Valor fijo (USD)*: en «Valor» escribe el monto (1.79).

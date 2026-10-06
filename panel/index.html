@@ -67,11 +67,30 @@ form.resp textarea{resize:none;height:46px}
 .ficha .acc{display:flex;gap:6px;flex-wrap:wrap}.ficha .acc button{padding:5px 12px;font-size:13px}
 .vacio{color:var(--muted);padding:40px;text-align:center}
 .aviso{margin:0;padding:8px 12px;border-radius:10px;background:var(--alt);color:var(--muted);font-size:13px}
-@media (max-width:900px){main{grid-template-columns:1fr}#lista{max-height:40vh}#detalle{grid-template-columns:1fr}.lado{border-left:0;border-top:1px solid var(--line)}}
+.tabs{display:flex;gap:4px;margin-left:12px}
+.tabs button{background:none;border:0;color:rgba(255,255,255,.75);padding:6px 12px;border-radius:999px;font-weight:600}
+.tabs button.on{background:rgba(255,255,255,.16);color:#fff}
+#agendaV{height:calc(100vh - 54px);overflow:auto;padding:20px}
+.ag-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:980px;margin:0 auto 16px}
+.ag-top h2{margin:0 auto 0 0;font-size:20px}
+.ag-cita a{color:var(--acc)}
+.ag-top input{width:auto;padding:7px 10px}
+.ag-top button{padding:7px 14px}
+.ag-lista{max-width:980px;margin:0 auto;display:grid;gap:8px}
+.ag-cita{display:grid;grid-template-columns:64px 1fr 190px auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.ag-cita--rechazada{opacity:.55}
+.ag-hora{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.ag-cita b{display:block}.ag-cita small{color:var(--muted)}
+.ag-cita select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit}
+.ag-cita .acc{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.ag-cita .acc button{padding:5px 12px;font-size:13px}
+.tag--pend{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+@media (max-width:600px){header{padding:10px 12px;gap:8px}header b{display:none}.tabs{margin-left:0}.tabs button{padding:6px 10px}#agendaV{padding:14px}}
+@media (max-width:900px){main{grid-template-columns:1fr}.ag-cita{grid-template-columns:56px 1fr}.ag-cita select,.ag-cita .acc{grid-column:1/-1}.ag-cita .acc{justify-content:flex-start}#lista{max-height:40vh}#detalle{grid-template-columns:1fr}.lado{border-left:0;border-top:1px solid var(--line)}}
 </style>
 </head>
 <body>
-<header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b><span class="sp"></span><button id="salir" hidden>Salir</button></header>
+<header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
+  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
 
 <section class="acceso" id="acceso" hidden>
   <!-- Entrar -->
@@ -142,6 +161,14 @@ form.resp textarea{resize:none;height:46px}
   <nav id="lista"></nav>
   <section id="detalle"><p class="vacio">Elige una conversación.</p></section>
 </main>
+<section id="agendaV" hidden>
+  <div class="ag-top"><h2 id="agTitulo">Agenda</h2>
+    <button class="btn btn--line" data-dia="-1" aria-label="Día anterior">‹</button>
+    <input type="date" id="agFecha" aria-label="Fecha">
+    <button class="btn btn--line" data-dia="1" aria-label="Día siguiente">›</button>
+    <button class="btn btn--line" data-dia="0">Hoy</button></div>
+  <div class="ag-lista" id="agLista"></div>
+</section>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -155,7 +182,7 @@ const errorEnlace = enlace.get("error_code") || enlace.get("error");
 const cfg = await (await fetch("/api/panel-config")).json();
 // Los enlaces de invitación y recuperación traen la sesión en la URL (#access_token…): flujo "implicit".
 const sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true } });
-let actual = null, timer = null;
+let actual = null, timer = null, pestanaActual = "app";
 
 const TRADUCCION = {
   "Invalid login credentials": "Correo o contraseña incorrectos.",
@@ -180,7 +207,7 @@ async function api(metodo, params) {
 // Solo una pantalla visible a la vez.
 function vista(id) {
   clearInterval(timer);
-  $("#app").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
+  $("#app").hidden = true; $("#agendaV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
   document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
   document.querySelectorAll(".msg").forEach((m) => { m.textContent = ""; m.className = "msg"; });
   const foco = $("#" + id + " input"); if (foco) setTimeout(() => foco.focus(), 30);
@@ -202,9 +229,10 @@ async function mostrarApp() {
     }
     throw e;
   }
-  $("#acceso").hidden = true; $("#app").hidden = false; $("#salir").hidden = false;
+  $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
+  pestana(pestanaActual);
   clearInterval(timer);
-  timer = setInterval(() => { cargarLista(); if (actual) abrir(actual, true); }, 15000);
+  timer = setInterval(() => { if (pestanaActual === "agendaV") return cargarAgenda(); cargarLista(); if (actual) abrir(actual, true); }, 15000);
 }
 
 document.addEventListener("click", (e) => {
@@ -286,6 +314,58 @@ async function abrir(id, silencioso) {
   $("#mensajes").scrollTop = 1e9;
   cargarLista();
 }
+
+/* ---------- Agenda: repartir las citas del día ---------- */
+const hoyQuito = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(new Date());
+function pestana(id) {
+  pestanaActual = id;
+  $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV";
+  document.querySelectorAll("#tabs [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === id));
+  if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); }
+}
+$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) pestana(b.dataset.tab); });
+
+async function cargarAgenda() {
+  if (document.activeElement && document.activeElement.tagName === "SELECT") return;   // no repintar mientras eligen
+  const a = await api("GET", { accion: "agenda", fecha: $("#agFecha").value });
+  const titulo = new Intl.DateTimeFormat("es-EC", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(a.fecha + "T12:00:00Z"));
+  const activas = a.citas.filter((x) => x.estado !== "rechazada").length;
+  const texto = (a.fecha === hoyQuito() ? "Hoy, " : "") + titulo + ` · ${activas} cita${activas === 1 ? "" : "s"}`;
+  $("#agTitulo").textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
+  const personas = a.personal.map((p) => p.nombre || p.email);
+  const opciones = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
+    .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
+  const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
+  $("#agLista").innerHTML = a.citas.map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
+      <span class="ag-hora">${esc(x.hora)}</span>
+      <div><b>${esc(x.nombre)} ${ESTADO[x.estado] || ""}</b><small>${esc(x.tramite)}${x.telefono && !String(x.telefono).startsWith("web:") ? ` · <a href="https://wa.me/${esc(x.telefono)}" target="_blank" rel="noopener">+${esc(x.telefono)}</a>` : ""}${x.nota ? " · " + esc(x.nota) : ""}</small></div>
+      ${x.estado === "rechazada" ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opciones(x.asignadaA)}</select>`}
+      <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada">Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada">Rechazar</button>` : ""}
+        ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Atendida</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada">Cancelar</button>` : ""}
+        <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div>
+    </div>`).join("") || '<p class="vacio">No hay citas para este día.</p>';
+}
+$("#agFecha").addEventListener("change", cargarAgenda);
+$("#agendaV").addEventListener("change", async (e) => {
+  const s = e.target.closest("[data-asignar]"); if (!s) return;
+  try { await api("POST", { accion: "asignarCita", id: s.dataset.asignar, persona: s.value }); s.blur(); } catch (err) { alert(err.message); }
+});
+$("#agendaV").addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  try {
+    if (b.dataset.dia !== undefined) {
+      const f = new Date(($("#agFecha").value || hoyQuito()) + "T12:00:00Z"); f.setUTCDate(f.getUTCDate() + Number(b.dataset.dia));
+      $("#agFecha").value = b.dataset.dia === "0" ? hoyQuito() : f.toISOString().slice(0, 10);
+    } else if (b.dataset.chat) { pestana("app"); return abrir(b.dataset.chat); }
+    else if (b.dataset.cita) {
+      const motivo = b.dataset.estado === "rechazada" ? prompt("Motivo para el cliente (opcional):") : "";
+      if (motivo === null) return;
+      const r = await api("POST", { accion: "cita", id: b.dataset.cita, estado: b.dataset.estado, motivo });
+      if (b.dataset.estado !== "atendida" && r.avisado === false) alert("La cita se actualizó, pero no se pudo avisar por WhatsApp. Llama al cliente.");
+    } else return;
+    await cargarAgenda();
+  } catch (err) { alert(err.message); }
+});
 
 function mensajes(d) {
   const nombres = { cliente: d.conversacion.nombre || "Cliente", asistente: "Asistente", personal: "Personal" };

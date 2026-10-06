@@ -7,13 +7,16 @@ const contenido = {
     categorias: [{ id: "inmuebles", nombre: "Escrituras e inmuebles", resumen: "" }],
     tramites: [
       { id: "compraventa", cat: "inmuebles", nombre: "Compraventa de inmuebles", desc: "Transferir una casa", req: ["Minuta"], pasos: ["Firma"],
-        tarifa: { tipo: "cuantia", tabla: "transferencia" } }
+        tarifa: { tipo: "cuantia", tabla: "transferencia" }, revision: true },
+      { id: "poder", cat: "inmuebles", nombre: "Poder especial", desc: "Que alguien firme por ti", req: ["Cédula"], pasos: ["Firma"],
+        tarifa: { tipo: "pct", valor: 0.12 } }
     ],
     faq: [], avisos: []
   },
   tarifas: { sbu: 482, iva: 0.15, anio: 2026, tablas: { transferencia: [[60000, 0.5], [90000, 0.8], [null, 20]] } },
   notaria: { nombre: "Notaría 41 de Quito", notario: "Dr. X", direccion: "Tumbaco", telefonos: ["02 600 1141"], correo: "n@x.ec",
-    horario: { dias: [1, 2, 3, 4, 5], abre: "08:00", cierra: "17:00", texto: "Lunes a viernes, 08:00 – 17:00" }, mapa: { lat: 0, lng: 0 }, redes: {} }
+    horario: { dias: [1, 2, 3, 4, 5], abre: "08:00", cierra: "17:00", texto: "Lunes a viernes, 08:00 – 17:00" }, mapa: { lat: 0, lng: 0 }, redes: {},
+    citas: { porHora: 2, feriados: ["2026-10-09"] } }
 };
 
 // Respuestas guionizadas del modelo: cada llamada consume la siguiente.
@@ -134,6 +137,61 @@ describe("herramientas", () => {
     expect(cita).toMatchObject({ tramiteId: "compraventa", fecha: "2026-10-08", hora: "10:00", estado: "pendiente" });
     expect(avisar.mock.calls[0][0]).toMatch(/Ana Pérez.*Compraventa/);
     expect(resultadoDe(claude).content).toMatch(/pendiente/i);
+  });
+
+  describe("citas que se confirman solas", () => {
+    const pedir = (datos) => claudeFalso([herramienta("solicitar_cita", { nombre: "Ana Pérez", ...datos }), texto("Listo")]);
+    const citas = async () => almacen.solicitudesCita((await almacen.conversacion("593991112233")).id);
+
+    it("confirma al instante un trámite simple si hay cupo, sin pedir nada al personal", async () => {
+      const claude = pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" });
+      await nuevo(claude).atender(mensaje());
+      expect((await citas())[0]).toMatchObject({ tramiteId: "poder", estado: "confirmada" });
+      expect(resultadoDe(claude).content).toMatch(/confirmada/i);
+      expect(avisar).not.toHaveBeenCalled();
+    });
+
+    it("deja pendiente una cita sin trámite definido", async () => {
+      await nuevo(pedir({ fecha: "2026-10-08", hora: "10:00" })).atender(mensaje());
+      expect((await citas())[0].estado).toBe("pendiente");
+      expect(avisar).toHaveBeenCalled();
+    });
+
+    it("con la hora llena no agenda y ofrece las horas libres de ese día", async () => {
+      const otra = await almacen.conversacion("593990000001", "Luis");
+      await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Luis", estado: "confirmada" });
+      await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "compraventa", fecha: "2026-10-08", hora: "10:30", nombre: "Luis" });
+      const claude = pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:30" });
+      await nuevo(claude).atender(mensaje());
+      expect(await citas()).toHaveLength(0);
+      const r = resultadoDe(claude);
+      expect(r.is_error).toBe(true);
+      expect(r.content).toMatch(/09:00/);
+      expect(r.content).not.toMatch(/10:00/);
+    });
+
+    it("las citas rechazadas no ocupan cupo", async () => {
+      const otra = await almacen.conversacion("593990000001", "Luis");
+      for (const hora of ["10:00", "10:30"]) {
+        const { id } = await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "poder", fecha: "2026-10-08", hora, nombre: "Luis" });
+        await almacen.actualizarCita(id, { estado: "rechazada" });
+      }
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje());
+      expect((await citas())[0].estado).toBe("confirmada");
+    });
+
+    it("no agenda en un feriado", async () => {
+      const claude = pedir({ tramite_id: "poder", fecha: "2026-10-09", hora: "10:00" });
+      await nuevo(claude).atender(mensaje());
+      expect(resultadoDe(claude).is_error).toBe(true);
+      expect(await citas()).toHaveLength(0);
+    });
+
+    it("avisa al personal si la cita confirmada es para hoy, porque ya pasó el resumen de la mañana", async () => {
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-06", hora: "14:00" })).atender(mensaje()); // ahora: 10:00 en Quito
+      expect((await citas())[0].estado).toBe("confirmada");
+      expect(avisar.mock.calls[0][0]).toMatch(/hoy.*14:00/i);
+    });
   });
 
   it("guardar_documento exige el consentimiento de datos", async () => {

@@ -86,6 +86,7 @@ create table if not exists solicitudes_cita (
   recordada boolean not null default false,
   creada timestamptz not null default now()
 );
+alter table solicitudes_cita add column if not exists asignada_a text not null default '';
 create index if not exists citas_conversacion on solicitudes_cita(conversacion_id);
 create index if not exists citas_fecha on solicitudes_cita(fecha, estado);
 create index if not exists mensajes_conversacion on mensajes(conversacion_id, id);

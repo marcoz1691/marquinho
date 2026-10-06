@@ -54,6 +54,19 @@ describe("desdeHoja", () => {
     expect(desdeHoja(tabs, base).data.faq).toEqual([{ q: "local", a: "local" }]);
   });
 
+  it("marca los trámites que el personal revisa antes de confirmar la cita", () => {
+    const hoja = { ...tabs, tramites: "Código,Categoría,Trámite,Descripción,Requisitos,Pasos,Tipo de tarifa,Valor,Unidad,Tabla de cuantía,Nota,Revisión antes de la cita,Mostrar\n" +
+      "poder,poderes,Poder especial,D,R,P,Consultar,,,,,No,Sí\ncompraventa,poderes,Compraventa,D,R,P,Consultar,,,,,Sí,Sí\n" };
+    const [poder, compraventa] = desdeHoja(hoja, base).data.tramites;
+    expect(poder.revision).toBeUndefined();
+    expect(compraventa.revision).toBe(true);
+  });
+
+  it("lee el cupo de citas por hora y los feriados de la configuración", () => {
+    const r = desdeHoja({ ...tabs, configuracion: "Dato,Valor\nCitas por hora,3\nFeriados,\"2/11/2026, 3/11/2026\"\n" }, base);
+    expect(r.notaria.citas).toEqual({ porHora: 3, feriados: ["2026-11-02", "2026-11-03"] });
+  });
+
   it("rechaza una hoja sin trámites", () => {
     expect(() => desdeHoja({ ...tabs, tramites: "Código\n" }, base)).toThrow();
   });

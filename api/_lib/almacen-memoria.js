@@ -87,11 +87,16 @@ export function crearAlmacenMemoria() {
     async borrarDocumento(id) { const i = docs.findIndex((d) => d.id === id); if (i > -1) docs.splice(i, 1); },
     async urlDocumento(id) { return docs.some((d) => d.id === id) ? `memoria://documentos/${id}` : null; },
 
-    async crearSolicitudCita(c) { const x = { id: nuevoId(), estado: "pendiente", ...c }; citas.push(x); return { id: x.id }; },
+    async crearSolicitudCita(c) { const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c }; citas.push(x); return { id: x.id }; },
     async solicitudesCita(conversacionId) { return citas.filter((c) => c.conversacionId === conversacionId).map(copia); },
     async cita(id) { return copia(citas.find((c) => c.id === id) || null); },
     async actualizarCita(id, cambios) { Object.assign(citas.find((c) => c.id === id), cambios); },
     async marcarRecordada(id) { citas.find((c) => c.id === id).recordada = true; },
+    async agenda(fecha) {
+      return citas.filter((c) => c.fecha === fecha).sort((a, b) => a.hora.localeCompare(b.hora))
+        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));
+    },
+    async listaPersonal() { return []; },
     async citasDelDia(fecha) {
       return citas.filter((c) => c.fecha === fecha && c.estado === "confirmada" && !c.recordada)
         .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));

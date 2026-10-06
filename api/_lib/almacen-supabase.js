@@ -9,7 +9,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
   const db = cliente || createClient(url, clave, { auth: { persistSession: false } });
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
   const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada };
-  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null };
+  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "" };
   const doc = (r) => ({ id: r.id, conversacionId: r.conversacion_id, mediaId: r.media_id, nombre: r.nombre, mime: r.mime, descripcion: r.descripcion, tramiteId: r.tramite_id,
     estado: r.estado, nota: r.nota, creado: Date.parse(r.creado) });
   const mensajesDe = async (filtro, valor) => ok(await db.from("mensajes").select("contenido").eq(filtro, valor).order("id")).map((m) => m.contenido);
@@ -121,7 +121,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
 
     async crearSolicitudCita(c) {
       const r = ok(await db.from("solicitudes_cita").insert({ conversacion_id: c.conversacionId, tramite_id: c.tramiteId || null, fecha: c.fecha, hora: c.hora,
-        nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null }).select("id").single());
+        nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id").single());
       return { id: r.id };
     },
     async solicitudesCita(conversacionId) { return ok(await db.from("solicitudes_cita").select("*").eq("conversacion_id", conversacionId).order("creada")).map(cita); },
@@ -130,10 +130,16 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       const fila = {};
       if ("estado" in cambios) fila.estado = cambios.estado;
       if ("motivo" in cambios) fila.motivo = cambios.motivo;
+      if ("asignadaA" in cambios) fila.asignada_a = cambios.asignadaA;
       ok(await db.from("solicitudes_cita").update(fila).eq("id", id));
     },
 
     async marcarRecordada(id) { ok(await db.from("solicitudes_cita").update({ recordada: true }).eq("id", id)); },
+    async agenda(fecha) {
+      const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("fecha", fecha).order("hora").order("creada"));
+      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
+    },
+    async listaPersonal() { return ok(await db.from("personal").select("email, nombre").order("nombre")); },
     async citasDelDia(fecha) {
       const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("fecha", fecha).eq("estado", "confirmada").eq("recordada", false).order("hora"));
       return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
