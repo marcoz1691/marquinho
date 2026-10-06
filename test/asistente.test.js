@@ -283,6 +283,22 @@ describe("mensajes seguidos y fallas", () => {
   });
 });
 
+describe("errores de la API", () => {
+  it("un error de saldo o de cuenta no borra la conversación (no abre sesión nueva)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const claude = claudeFalso([texto("Hola")]);
+    const a = nuevo(claude);
+    await a.atender(mensaje({ texto: "Hola" }));
+    claude.beta.messages.create.mockRejectedValueOnce(Object.assign(new Error("Your credit balance is too low to access the Anthropic API."), { status: 400 }));
+    const r = await a.atender(mensaje({ texto: "¿Y el costo?" }));
+    expect(r[0]).toMatch(/problema/i);
+    expect(claude.llamadas).toHaveLength(1); // no reintentó con una sesión nueva
+    const conv = await almacen.conversacion("593991112233");
+    expect((await almacen.historial(conv.id)).filter((m) => m.role === "user" && typeof m.content === "string").map((m) => m.content)).toEqual(["Hola", "¿Y el costo?"]);
+  });
+});
+
 describe("horario escrito de distintas formas en la hoja", () => {
   it("acepta una cita a las 09:00 cuando la hoja dice que abre a las 8:00", async () => {
     const otro = structuredClone(contenido);

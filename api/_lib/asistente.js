@@ -10,6 +10,8 @@ const MAX_VUELTAS = 6;
 const TURNO_MS = 280 * 1000;        // duración máxima de un turno (algo menos que maxDuration de Vercel)
 const AGRUPAR_MS = 2500;            // espera para juntar burbujas seguidas del cliente
 const DISCULPA = "Disculpa, tuve un problema para responderte. Inténtalo de nuevo en unos minutos o llama a la notaría.";
+// Solo estos 400 indican que el historial guardado ya no es válido (no los de saldo, clave o límites).
+const ERROR_DE_HISTORIAL = /thinking|tool_use|tool_result|messages\.\d|prefix|role/i;
 const SIN_TEXTO = "Disculpa, no pude completar tu consulta. ¿Quieres que te comunique con una persona de la notaría?";
 const ZONA = "America/Guayaquil";
 const MAX_DOC_BYTES = 15 * 1024 * 1024;
@@ -258,7 +260,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
           r = await llamar();
         } catch (e) {
           // Si el historial guardado ya no es válido para la API, se empieza una sesión nueva una sola vez.
-          if (e?.status === 400 && vuelta === 0 && sesion.mensajes.length) {
+          if (e?.status === 400 && vuelta === 0 && sesion.mensajes.length && ERROR_DE_HISTORIAL.test(e.message)) {
             console.warn("Historial rechazado por la API; se abre una sesión nueva:", e.message);
             sesion = await almacen.sesionActiva(conv.id, { ahora: t.getTime(), sistema: construirSistema(C), inactividadMs: INACTIVIDAD_MS, nueva: true });
             r = await llamar();
@@ -276,7 +278,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         await guardar();
       }
     } catch (e) {
-      console.error("Error en el turno de", conv.telefono, e);
+      console.error(`Error en el turno de ${conv.telefono}: ${e?.status || ""} ${e?.message || e}`);
       porGuardar.push({ role: "assistant", content: [{ type: "text", text: DISCULPA }] });
       await guardar();
       return [...respuestas, DISCULPA];
