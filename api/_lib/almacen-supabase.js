@@ -10,7 +10,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
   const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada,
     consentimientoTexto: r.consentimiento_texto || "", consentimientoAviso: r.consentimiento_aviso || "" };
-  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "" };
+  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, codigo: r.codigo ?? null, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "" };
   const doc = (r) => ({ id: r.id, conversacionId: r.conversacion_id, mediaId: r.media_id, nombre: r.nombre, mime: r.mime, descripcion: r.descripcion, tramiteId: r.tramite_id,
     estado: r.estado, nota: r.nota, creado: Date.parse(r.creado) });
   const mensajesDe = async (filtro, valor) => ok(await db.from("mensajes").select("contenido").eq(filtro, valor).order("id")).map((m) => m.contenido);
@@ -121,9 +121,20 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     },
 
     async crearSolicitudCita(c) {
-      const r = ok(await db.from("solicitudes_cita").insert({ conversacion_id: c.conversacionId, tramite_id: c.tramiteId || null, fecha: c.fecha, hora: c.hora,
-        nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id").single());
-      return { id: r.id };
+      for (let intento = 0; intento < 8; intento++) {
+        const codigo = String(1000 + Math.floor(Math.random() * 9000));
+        const resultado = await db.from("solicitudes_cita").insert({ conversacion_id: c.conversacionId, tramite_id: c.tramiteId || null, fecha: c.fecha, hora: c.hora,
+          codigo, nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id, codigo").single();
+        if (resultado.error?.code === "23505") continue;
+        const r = ok(resultado);
+        return { id: r.id, codigo: r.codigo };
+      }
+      throw new Error("No se pudo generar un ticket único para ese día.");
+    },
+    async citasPorCodigo(codigo, desdeFecha) {
+      const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("codigo", codigo).gte("fecha", desdeFecha)
+        .in("estado", ["pendiente", "confirmada"]).order("fecha").order("hora"));
+      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
     },
     async solicitudesCita(conversacionId) { return ok(await db.from("solicitudes_cita").select("*").eq("conversacion_id", conversacionId).order("creada")).map(cita); },
     async cita(id) { return cita(ok(await db.from("solicitudes_cita").select("*").eq("id", id).maybeSingle())); },

@@ -1,13 +1,17 @@
 // Manejador del webhook de WhatsApp: verificación (GET) y mensajes entrantes (POST).
 import { verificarFirma, extraerMensajes } from "./whatsapp.js";
 
+import { textoResumen } from "./resumen.js";
+
 const DISCULPA = "Disculpa, tuve un problema para responderte. Inténtalo de nuevo en unos minutos o llama a la notaría.";
 
 export function crearManejador({ asistente, whatsapp, secreto, tokenVerificacion, enSegundoPlano }) {
   async function procesar(m) {
     try {
       await whatsapp.marcarLeido(m.id).catch(() => {});
-      for (const texto of await asistente.atender(m)) await whatsapp.enviarTexto(m.de, texto);
+      const eventos = [];
+      for (const texto of await asistente.atender(m, { eventos })) await whatsapp.enviarTexto(m.de, texto);
+      for (const e of eventos) if (e.tipo === "cita") await whatsapp.enviarTexto(m.de, textoResumen({ ...e.resumen, subirDocumentos: false }));
     } catch (e) {
       console.error("Error atendiendo", m.id, e?.message || e);
       await whatsapp.enviarTexto(m.de, DISCULPA).catch(() => {});

@@ -45,6 +45,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
 
   const lecturas = {
     conversaciones: { fn: () => panel.conversaciones() },
+    buscarTicket: { fn: (q) => panel.buscarTicket(q.get("codigo")), auditar: true },
     agenda: { fn: (q) => panel.agenda(q.get("fecha")) },
     detalle: { fn: (q) => panel.detalle(q.get("id")), auditar: true },
     documento: { auditar: true, estricta: true, fn: async (q, email) => {
@@ -67,7 +68,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     async GET(request) {
       const a = await autorizar(request); if (a.no) return a.no;
       const q = new URL(request.url).searchParams, accion = q.get("accion"), l = Object.hasOwn(lecturas, accion) && lecturas[accion];
-      return l ? ejecutar(accion, q.get("id"), a.email, () => l.fn(q, a.email), l.auditar, l.estricta) : json({ error: "Acción desconocida" }, 400);
+      return l ? ejecutar(accion, accion === "buscarTicket" ? q.get("codigo") : q.get("id"), a.email, () => l.fn(q, a.email), l.auditar, l.estricta) : json({ error: "Acción desconocida" }, 400);
     },
     async POST(request) {
       const a = await autorizar(request); if (a.no) return a.no;

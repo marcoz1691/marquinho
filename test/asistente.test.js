@@ -229,11 +229,13 @@ describe("herramientas", () => {
 
     it("al reprogramar cancela la cita anterior y libera su cupo", async () => {
       await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje());
+      const codigoAnterior = (await citas())[0].codigo;
       const otra = await almacen.conversacion("593990000001", "Luis");
       await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "poder", fecha: "2026-10-08", hora: "10:30", nombre: "Luis", estado: "confirmada" });
       await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:30", reprogramar: true })).atender(mensaje());
       const [vieja, nueva] = await citas();
-      expect(vieja).toMatchObject({ hora: "10:00", estado: "rechazada", motivo: "Reprogramada por el cliente" });
+      expect(vieja).toMatchObject({ hora: "10:00", estado: "rechazada", motivo: "Reprogramada por el cliente", codigo: codigoAnterior });
+      expect(nueva.codigo).not.toBe(codigoAnterior);
       expect(nueva).toMatchObject({ hora: "10:30", estado: "confirmada" });
     });
 
@@ -554,15 +556,18 @@ describe("canal web", () => {
   it("le dice al modelo que está en la web y qué cambia", async () => {
     const claude = claudeFalso([texto("Hola")]);
     await nuevo(claude).atender(web());
-    expect(claude.llamadas[0].messages.at(-1).content).toMatch(/página web/);
+    const contexto = claude.llamadas[0].messages.at(-1).content;
+    expect(contexto).toMatch(/página web/);
+    expect(contexto).toContain("Subir documentos");
+    expect(contexto).not.toMatch(/pídele que lo haga por WhatsApp/);
   });
 
-  it("en la web no guarda documentos y pide enviarlos por WhatsApp", async () => {
-    const claude = claudeFalso([herramienta("guardar_documento", { media_id: "X", descripcion: "cédula" }), texto("Envíala por WhatsApp")]);
+  it("en la web ofrece subir documentos desde la tarjeta", async () => {
+    const claude = claudeFalso([herramienta("guardar_documento", { media_id: "X", descripcion: "cédula" }), texto("Usa Subir documentos")]);
     await nuevo(claude).atender(web());
     const r = claude.llamadas[1].messages.at(-1).content[0];
     expect(r.is_error).toBe(true);
-    expect(r.content).toMatch(/WhatsApp/);
+    expect(r.content).toMatch(/Subir documentos/);
   });
 
   it("en la web la solicitud de cita exige un celular de contacto", async () => {
@@ -593,4 +598,47 @@ describe("canal web", () => {
     expect(conv.derivada).toBe(false);
     expect(avisar.mock.calls[0][0]).toMatch(/593991112233/);
   });
+});
+
+describe("tickets y eventos de citas", () => {
+  const resultadoDe = (claude) => claude.llamadas[1].messages.at(-1).content[0];
+  it.each([false, true])("emite el resumen al crear una cita (web: %s)", async (web) => {
+    const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Ana Pérez", telefono: "0991112233" }), texto("Listo")]);
+    const eventos = [];
+    await nuevo(claude).atender(mensaje(web ? { de: "web:abc123", canal: "web" } : {}), { eventos });
+    expect(eventos).toHaveLength(1);
+    expect(eventos[0]).toMatchObject({ tipo: "cita", resumen: { codigo: expect.stringMatching(/^[1-9]\d{3}$/), estado: web ? "pendiente" : "confirmada", subirDocumentos: web, tramite: { id: "poder" } } });
+    expect(resultadoDe(claude).content).toContain("Ticket " + eventos[0].resumen.codigo);
+    expect(resultadoDe(claude).content).toContain("El resumen con el ticket se le muestra al cliente aparte; no lo repitas completo. Solo dile el ticket y qué sigue.");
+  });
+  it("consulta el ticket solo entre las citas del cliente", async () => {
+    const conv = await almacen.conversacion("593991112233");
+    const a = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana" });
+    const otra = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "11:00", nombre: "Ana" });
+    const ajena = await almacen.conversacion("593998887777");
+    await almacen.crearSolicitudCita({ conversacionId: ajena.id, fecha: "2026-10-10", hora: "12:00", nombre: "Otra persona" });
+    const claude = claudeFalso([herramienta("estado_de_mi_tramite", { codigo: a.codigo }), texto("ok")]);
+    await nuevo(claude).atender(mensaje());
+    expect(resultadoDe(claude).content).toContain("Ticket " + a.codigo);
+    expect(resultadoDe(claude).content).not.toContain("Ticket " + otra.codigo);
+    expect(resultadoDe(claude).content).not.toContain("2026-10-10");
+    expect(claude.llamadas[0].system[0].text).toMatch(/ticket.*codigo/);
+  });
+});
+
+it("una solicitud inválida no emite tarjetas", async () => {
+  const claude = claudeFalso([herramienta("solicitar_cita", { fecha: "2026-10-08", hora: "10:00", nombre: "1" }), texto("Necesito tu nombre")]);
+  const eventos = [];
+  await nuevo(claude).atender(mensaje(), { eventos });
+  expect(eventos).toEqual([]);
+});
+
+it("un mensaje duplicado no repite el evento de cita", async () => {
+  const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Ana" }), texto("Listo")]);
+  const asistente = nuevo(claude), m = mensaje(), eventos = [];
+  await asistente.atender(m, { eventos });
+  expect(eventos).toHaveLength(1);
+  const repetidos = [];
+  expect(await asistente.atender(m, { eventos: repetidos })).toEqual([]);
+  expect(repetidos).toEqual([]);
 });

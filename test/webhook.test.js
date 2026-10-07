@@ -73,3 +73,12 @@ describe("mensajes entrantes (POST)", () => {
     expect(deps.asistente.atender).not.toHaveBeenCalled();
   });
 });
+
+it("envía el resumen después de las respuestas de Sofía", async () => {
+  const { m, deps, terminar } = preparar(async (_, { eventos }) => {
+    eventos.push({ tipo: "cita", resumen: { codigo: "4821", estado: "confirmada", fechaTexto: "jueves 8 de octubre", hora: "10:00", direccion: "Quito", requisitos: [], costo: null } });
+    return ["Listo", "Tu ticket es 4821"];
+  });
+  await m.POST(post(cuerpo)); await terminar();
+  expect(deps.whatsapp.enviarTexto.mock.calls.map((c) => c[1])).toEqual(["Listo", "Tu ticket es 4821", expect.stringContaining("Tu cita quedó confirmada. Ticket 4821")]);
+});

@@ -6,6 +6,7 @@ import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
 const CONFIRMADO = "2026-10-01T00:00:00Z";
 function preparar({ usuario = { email: "carla@notaria41.ec", email_confirmed_at: CONFIRMADO, aal: "aal2" }, esPersonal = true, exigirMfa = true, limiteDescargas, avisar } = {}) {
   const panel = {
+    buscarTicket: vi.fn(async () => []),
     conversaciones: vi.fn(async () => [{ id: "1" }]),
     detalle: vi.fn(async (id) => ({ id })),
     responder: vi.fn(async () => {}),
@@ -142,4 +143,19 @@ describe("API del panel", () => {
     expect(avisar.mock.calls[0][0]).toMatch(/verificación en dos pasos de carla@notaria41\.ec/);
     expect((await almacen.auditoria()).filter((a) => a.accion === "mfa_activado")).toHaveLength(1);
   });
+});
+
+it("audita buscarTicket con el código como objetivo", async () => {
+  const { m, panel, almacen } = preparar();
+  const r = await m.GET(req("GET", "?accion=buscarTicket&codigo=4821"));
+  expect(r.status).toBe(200);
+  expect(panel.buscarTicket).toHaveBeenCalledWith("4821");
+  expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ accion: "buscarTicket", objetivo: "4821", ok: true }));
+});
+
+it("audita también una búsqueda de ticket fallida", async () => {
+  const { m, panel, almacen } = preparar();
+  panel.buscarTicket.mockRejectedValueOnce(new Aviso("Escribe un ticket válido de 4 dígitos."));
+  expect((await m.GET(req("GET", "?accion=buscarTicket&codigo=x"))).status).toBe(400);
+  expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ accion: "buscarTicket", objetivo: "x", ok: false }));
 });

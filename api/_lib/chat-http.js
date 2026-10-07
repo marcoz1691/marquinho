@@ -27,8 +27,10 @@ export function crearManejadorChat({ asistente, almacen, ahora = () => Date.now(
       ]);
       if (nSesion > limites.porSesion || nIp > limites.porIp || nDia > limites.porDia) return json({ error: SATURADO }, 429);
 
-      const respuestas = await asistente.atender({ id: "web." + t + "." + Math.random().toString(36).slice(2, 10), de: "web:" + sesion, nombre: "", tipo: "texto", texto, canal: "web" });
-      return json(respuestas.length ? { respuestas } : { respuestas: [], ocupado: true });
+      const eventos = [];
+      const respuestas = await asistente.atender({ id: "web." + t + "." + Math.random().toString(36).slice(2, 10), de: "web:" + sesion, nombre: "", tipo: "texto", texto, canal: "web" }, { eventos });
+      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: true }));
+      return json({ respuestas, tarjetas, ...(!respuestas.length ? { ocupado: true } : {}) });
     }
   };
 }

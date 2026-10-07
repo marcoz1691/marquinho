@@ -66,6 +66,12 @@ describe("panel del personal", () => {
     expect(whatsapp.enviarTexto.mock.calls[0][1]).toMatch(/no atiende/);
   });
 
+  it("busca tickets activos desde hoy con nombre del trámite y contacto", async () => {
+    const { id, codigo } = await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: "compraventa", fecha: "2026-10-08", hora: "10:00", nombre: "Ana" });
+    expect(await panel.buscarTicket(codigo)).toEqual([expect.objectContaining({ id, codigo, tramite: "Compraventa de inmuebles", telefono: "593991112233", conversacionId: conv.id })]);
+    await expect(panel.buscarTicket("123")).rejects.toBeInstanceOf(Aviso);
+  });
+
   it("la agenda del día lista las citas con su trámite, estado y a quién se asignaron", async () => {
     const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: "compraventa", fecha: "2026-10-08", hora: "10:00", nombre: "Ana", estado: "confirmada" });
     await panel.asignarCita(id, "Rosa");
