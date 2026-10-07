@@ -16,6 +16,7 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async guardarPrecio(p) { precios.set(p.tramiteId, { unidad: "", tabla: "", actualizadoPor: "", ...copia(p), actualizadoEn: new Date().toISOString() }); },
     async restaurarPrecio(id) { precios.delete(id); },
     async ajustes() { return copia(ajustes); },
+    async restaurarAjuste(clave) { delete ajustes[clave]; },
     async guardarAjuste(clave, valor, por) { ajustes[clave] = clave === "sbu" ? Number(valor) : String(valor); },
     async esAdmin(email) { return personal.some((p) => p.email.toLowerCase() === String(email).toLowerCase() && p.rol === "admin"); },
     async marcarProcesado(waId) {

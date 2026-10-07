@@ -333,7 +333,7 @@ async function cargarPreciosPanel() {
     preciosPanel = await api("GET", { accion: "precios" });
     const T = preciosPanel.tarifas;
     $("#preciosAjustes").innerHTML = preciosPanel.esAdmin
-      ? `<label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>`
+      ? `<label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}`
       : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>`;
     pintarPrecios();
   } catch (e) { $("#preciosMensaje").textContent = e.message; }
@@ -348,7 +348,7 @@ function pintarPrecios() {
     const f = t.tarifa;
     const campos = preciosPanel.esAdmin ? `<div class="precio-campos">
       <label>Tipo<select data-campo="tipo">${Object.entries(TIPOS_PRECIO).map(([k, v]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
-      <label><span data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? f.valor * 100 : f.valor ?? "")}"></label>
+      <label><span data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
       <label>Unidad (opcional, por ejemplo «por firma»)<input data-campo="unidad" maxlength="30" value="${esc(f.unidad)}"></label>
       <label>Tabla<select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
       <button class="btn" data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div>` : `<p>${esc(TIPOS_PRECIO[f.tipo])}</p>`;
@@ -387,6 +387,9 @@ $("#preciosV").addEventListener("click", async (e) => {
       const sbu = Number($("#precioSbu").value), anio = $("#precioAnio").value;
       if (!confirm(`Antes → Después\nSBU: ${preciosPanel.tarifas.sbu} → ${sbu}\nAño: ${preciosPanel.tarifas.anio} → ${anio}`)) return;
       pedido = { accion: "guardarSBU", sbu, anio };
+    } else if (b.id === "restaurarSbu") {
+      if (!confirm("¿Volver al SBU y al año de la hoja de Google?")) return;
+      pedido = { accion: "restaurarSBU" };
     } else {
       const fila = b.closest(".precio-fila"), p = precioDeFila(fila);
       if (b.dataset.precio === "restaurar") {
@@ -400,7 +403,7 @@ $("#preciosV").addEventListener("click", async (e) => {
     }
     b.disabled = true;
     await api("POST", pedido);
-    $("#preciosMensaje").textContent = "Guardado. El sitio y Sofía lo mostrarán al renovar su caché (hasta 5 minutos).";
+    $("#preciosMensaje").textContent = "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
     await cargarPreciosPanel();
   } catch (err) { $("#preciosMensaje").textContent = err.message; }
   finally { b.disabled = false; }

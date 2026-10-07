@@ -24,6 +24,8 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     await a.guardarAjuste("sbu", 500, "admin");
     await a.guardarAjuste("anio", "2027", "admin");
     expect(await a.ajustes()).toMatchObject({ sbu: 500, anio: "2027" });
+    await a.restaurarAjuste("sbu"); await a.restaurarAjuste("anio");
+    expect((await a.ajustes()).sbu).toBeUndefined();
   });
 
   it("crea tickets de cuatro dígitos, los conserva y busca solo citas activas desde la fecha", async () => {

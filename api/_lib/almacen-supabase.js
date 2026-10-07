@@ -20,6 +20,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     async guardarPrecio(p) { ok(await db.from("precios").upsert({ tramite_id: p.tramiteId, tipo: p.tipo, valor: p.valor ?? null, unidad: p.unidad || "", tabla: p.tabla || "", actualizado_por: p.actualizadoPor || "", actualizado_en: new Date().toISOString() })); },
     async restaurarPrecio(id) { ok(await db.from("precios").delete().eq("tramite_id", id)); },
     async ajustes() { return Object.fromEntries(ok(await db.from("ajustes").select("clave, valor")).map((p) => [p.clave, p.clave === "sbu" ? Number(p.valor) : p.valor])); },
+    async restaurarAjuste(clave) { ok(await db.from("ajustes").delete().eq("clave", clave)); },
     async guardarAjuste(clave, valor, por) { ok(await db.from("ajustes").upsert({ clave, valor: String(valor), actualizado_por: por, actualizado_en: new Date().toISOString() })); },
     async esAdmin(email) { return !!ok(await db.from("personal").select("email").eq("email", String(email || "").toLowerCase()).eq("rol", "admin").maybeSingle()); },
     async marcarProcesado(waId) {

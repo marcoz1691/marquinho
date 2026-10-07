@@ -1,11 +1,11 @@
 import { test, expect } from "./fixtures.js";
 
-async function preparar(page, esAdmin, editada = {}) {
+async function preparar(page, esAdmin, editada = {}, extra = {}) {
   const pedidos = [];
   await page.route("**/vendor/supabase-js-*.js", (r) => r.fulfill({ contentType: "application/javascript", body: `window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'TOKEN'}}}),signOut:async()=>({})}})};` }));
   await page.route("**/api/panel-config", (r) => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
   await page.route("**/api/panel?**", (r) => r.fulfill({ json: new URL(r.request().url()).searchParams.get("accion") === "precios" ? {
-    esAdmin, tarifas: { sbu: 482, anio: "2026", iva: 0.15, tablas: { inmueble: [[null, 0.1]] } },
+    ...extra, esAdmin, tarifas: { sbu: 482, anio: "2026", iva: 0.15, tablas: { inmueble: [[null, 0.1]] } },
     tramites: [{ id: "poder", nombre: "Poder general", tarifa: { tipo: "pct", valor: 0.12, unidad: "", tabla: "" }, editada: false, ...editada }]
   } : [] }));
   await page.route("**/api/panel", async (r) => { pedidos.push(r.request().postDataJSON()); await r.fulfill({ json: { ok: true } }); });
@@ -85,4 +85,28 @@ test("precios: la fecha de la última edición se lee como fecha, no como códig
   await expect(nota).toContainText("7 oct 2026");
   await expect(nota).toContainText("10:00");   // 15:00 UTC = 10:00 en Quito
   await expect(nota).not.toContainText("T15:00:00Z");
+});
+
+test("precios: un porcentaje como 7 % se ve «7», no 7.000000000000001", async ({ page }) => {
+  await preparar(page, true, { tarifa: { tipo: "pct", valor: 0.07, unidad: "", tabla: "" } });
+  await expect(page.locator('.precio-fila [data-campo="valor"]')).toHaveValue("7");
+});
+
+test("precios: si el SBU se editó en el panel, ofrece volver al de la hoja de Google", async ({ page }) => {
+  const pedidos = await preparar(page, true, {}, { sbuEditado: true, sbuOficial: 482, anioOficial: "2026" });
+  await expect(page.locator("#preciosV")).toContainText("La hoja de Google dice");
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Volver al SBU de la hoja" }).click();
+  await expect.poll(() => pedidos.length).toBe(1);
+  expect(pedidos[0]).toEqual({ accion: "restaurarSBU" });
+});
+
+test("precios: sin SBU editado no aparece el botón de volver al de la hoja", async ({ page }) => {
+  await preparar(page, true);
+  await expect(page.getByRole("button", { name: "Volver al SBU de la hoja" })).toHaveCount(0);
+});
+
+test("precios: avisa que una conversación ya abierta con Sofía puede seguir citando el valor anterior", async ({ page }) => {
+  await preparar(page, true);
+  await expect(page.locator("#preciosV")).toContainText("conversación ya abierta");
 });

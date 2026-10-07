@@ -236,7 +236,7 @@ it("valida y guarda precios, restaura y ajusta SBU", async () => {
 });
 
 it("rechaza extremos inválidos sin guardar nada y permite los límites válidos", async () => {
-  for (const valor of [-1, NaN, 10000.01]) {
+  for (const valor of [-1, NaN, 1000.01]) {
     await expect(panel.guardarPrecio({ tramiteId: "compraventa", tipo: "fija", valor }, "admin")).rejects.toBeInstanceOf(Aviso);
   }
   for (const sbu of ["500", NaN, Infinity, 5000.01]) {
@@ -244,7 +244,7 @@ it("rechaza extremos inválidos sin guardar nada y permite los límites válidos
   }
   expect(await almacen.precios()).toEqual([]);
   expect(await almacen.ajustes()).toEqual({});
-  await panel.guardarPrecio({ tramiteId: "compraventa", tipo: "fija", valor: 10000, unidad: "x".repeat(30) }, "admin");
+  await panel.guardarPrecio({ tramiteId: "compraventa", tipo: "fija", valor: 1000, unidad: "x".repeat(30) }, "admin");
   await panel.guardarSBU({ sbu: 100, anio: "2027" }, "admin");
   await panel.guardarSBU({ sbu: 5000, anio: "2027" }, "admin");
   expect(await almacen.ajustes()).toEqual({ sbu: 5000, anio: "2027" });

@@ -188,3 +188,7 @@ create index if not exists uso_creado on uso(creado);
 -- 2026-10-07: ticket de cuatro dígitos, único por día; las citas anteriores conservan null.
 alter table solicitudes_cita add column if not exists codigo text check (codigo ~ '^[1-9][0-9]{3}$');
 create unique index if not exists solicitudes_cita_fecha_codigo on solicitudes_cita(fecha, codigo);
+
+-- Un precio de tipo porcentaje o fijo siempre lleva un valor positivo (la validación del panel no es la única defensa).
+alter table precios drop constraint if exists precios_valor_valido;
+alter table precios add constraint precios_valor_valido check (tipo not in ('pct','fija') or (valor is not null and valor > 0));

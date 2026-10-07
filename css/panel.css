@@ -95,3 +95,4 @@ form.resp textarea{resize:none;height:46px}
 #preciosV select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);max-width:100%}
 #preciosV :focus-visible{outline:3px solid var(--acc);outline-offset:3px}
 @media(max-width:600px){header{flex-wrap:wrap}header .tabs{order:3;width:100%}#preciosV{padding:12px}.precio-campos label{max-width:none;width:100%}.tabs button{padding:6px 8px}}
+.aviso-sbu{flex-basis:100%;margin:8px 0 0;padding:10px 12px;border-radius:10px;background:var(--alt);font-size:14px}.aviso-sbu .btn{margin-top:8px}

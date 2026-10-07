@@ -64,6 +64,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     guardarPrecio: (b, email) => comoAdmin(email, () => panel.guardarPrecio(b, email)),
     restaurarPrecio: (b, email) => comoAdmin(email, () => panel.restaurarPrecio(b.tramiteId)),
     guardarSBU: (b, email) => comoAdmin(email, () => panel.guardarSBU(b, email)),
+    restaurarSBU: (b, email) => comoAdmin(email, () => panel.restaurarSBU()),
     responder: (b) => panel.responder(b.id, b.texto),
     devolver: (b) => panel.devolverAlAsistente(b.id),
     cita: (b) => panel.decidirCita(b.id, b.estado, b.motivo),
@@ -82,7 +83,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
       const a = await autorizar(request); if (a.no) return a.no;
       let b; try { b = await request.json(); } catch { return json({ error: "JSON inválido" }, 400); }
       const accion = b?.accion, fn = typeof accion === "string" && Object.hasOwn(acciones, accion) && acciones[accion];
-      return fn ? ejecutar(accion, b.tramiteId || b.id || (accion === "guardarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email), true) : json({ error: "Acción desconocida" }, 400);
+      return fn ? ejecutar(accion, b.tramiteId || b.id || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email), true) : json({ error: "Acción desconocida" }, 400);
     }
   };
 }
