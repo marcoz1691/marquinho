@@ -22,7 +22,7 @@ export default defineConfig({
     { name: "movil", use: { ...devices["Pixel 7"] }, grep: /@movil/ }
   ],
   webServer: {
-    command: `python3 -m http.server ${PUERTO}`,
+    command: `python3 e2e/servidor.py ${PUERTO}`,
     url: `http://localhost:${PUERTO}/index.html`,
     reuseExistingServer: !process.env.CI
   }

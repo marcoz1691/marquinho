@@ -5,7 +5,7 @@ const leer = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch 
 
 // Nombre del asistente: el mismo que usa el bot (campo "asistente" de la notaría, editable en la hoja).
 export const NOMBRE_POR_DEFECTO = "Sofía";
-export const bienvenida = (nombre) => "Hola, soy " + nombre + ". Respondo de forma automática por la Notaría 41: cuéntame tu caso y te digo qué trámite necesitas, qué llevar y cuánto cuesta.";
+export const bienvenida = (nombre) => "Hola, soy " + nombre + ", de la Notaría 41. Cuéntame qué necesitas hacer y te ayudo con los requisitos, el costo y tu cita.";
 export async function nombreAsistente() {
   const hoja = leer("n41-hoja");
   if (hoja && hoja.notaria && hoja.notaria.asistente) return hoja.notaria.asistente;

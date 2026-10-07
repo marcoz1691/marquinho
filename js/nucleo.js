@@ -135,7 +135,8 @@ export function desdeHoja(tabs, base) {
   var N = JSON.parse(JSON.stringify(base.notaria)), T = JSON.parse(JSON.stringify(base.tarifas));
   var set = function (k, fn) { if (C[k]) fn(C[k]); };
   set("nombre", function (v) { N.nombre = v; });
-  set("notario", function (v) { N.notario = v; });
+  // Si cambia el notario y la hoja no trae su nombre corto, no se conserva el nombre corto del anterior.
+  set("notario", function (v) { if (v !== N.notario) delete N.notarioCorto; N.notario = v; });
   set("eslogan", function (v) { N.eslogan = v; });
   set("direccion", function (v) { N.direccion = v; });
   set("telefonos", function (v) { N.telefonos = v.split(/[,;\/]+/).map(function (s) { return s.trim(); }).filter(Boolean); });
@@ -149,6 +150,8 @@ export function desdeHoja(tabs, base) {
   set("longitud", function (v) { if (num(v) !== null) N.mapa.lng = num(v); });
   set("enlaceparaagendar", function (v) { N.agenda = v; });
   set("nombredelasistente", function (v) { N.asistente = v; });
+  set("cargodelnotario", function (v) { N.cargo = v; });
+  set("nombrecortodelnotario", function (v) { N.notarioCorto = v; });
   set("citasporhora", function (v) { if (num(v)) N.citas = Object.assign({}, N.citas, { porHora: num(v) }); });
   set("feriados", function (v) { N.citas = Object.assign({}, N.citas, { feriados: v.split(/[,;\n]+/).map(fecha).filter(Boolean) }); });
   ["facebook", "instagram", "tiktok", "linkedin", "x"].forEach(function (k) { set(k, function (v) { N.redes[k] = v; }); });
@@ -195,6 +198,34 @@ export function calcularTarifa(t, T, opciones) {
   }
   if (r.base !== null) { r.base = redondear(r.base); r.iva = redondear(r.base * T.iva); r.total = redondear(r.base + r.iva); }
   return r;
+}
+
+// Documentos habilitantes: se cobran aparte, por hoja, con el precio de su propio trámite.
+export const AVISO_HABILITANTES = "Este valor no incluye documentos habilitantes, como copias certificadas, compulsas o materializaciones de documentos electrónicos.";
+export const HABILITANTES = [
+  { id: "copias", tramite: "copias-certificadas", nombre: "Copias certificadas o compulsas", etiqueta: "copias certificadas" },
+  { id: "materializaciones", tramite: "certificacion-electronica", nombre: "Materialización de documentos electrónicos", etiqueta: "materializaciones" }
+];
+// Los trámites de copias y materializaciones son en sí mismos habilitantes: el aviso no aplica a su propio precio.
+export function esHabilitante(id) { return HABILITANTES.some(function (h) { return h.tramite === id; }); }
+
+// Tarifa del trámite más los habilitantes que la persona agregue. extras: { copias: n, materializaciones: m }.
+// Devuelve { tramite, habilitantes: [{ id, nombre, cantidad, base, iva, total }], base, iva, total } (null si el trámite no se puede calcular).
+export function calcularConHabilitantes(t, T, opciones, extras, tramites) {
+  var r = calcularTarifa(t, T, opciones), e = extras || {}, lista = [];
+  HABILITANTES.forEach(function (h) {
+    var n = Math.floor(Number(e[h.id]));
+    n = isFinite(n) ? Math.min(200, Math.max(0, n)) : 0;
+    var th = (tramites || []).find(function (x) { return x.id === h.tramite; });
+    if (!n || !th) return;
+    var p = calcularTarifa(th, T, { cantidad: n });
+    if (p.total === null) return;
+    lista.push({ id: h.id, nombre: h.nombre, cantidad: n, base: p.base, iva: p.iva, total: p.total });
+  });
+  var suma = function (k) { return lista.reduce(function (a, h) { return redondear(a + h[k]); }, r[k]); };
+  var ok = r.total !== null;
+  var habilitantesBase = lista.reduce(function (a, h) { return redondear(a + h.base); }, 0);
+  return { tramite: r, habilitantes: lista, habilitantesBase: habilitantesBase, base: ok ? suma("base") : null, iva: ok ? suma("iva") : null, total: ok ? suma("total") : null };
 }
 
 export function precioTexto(t, T) {

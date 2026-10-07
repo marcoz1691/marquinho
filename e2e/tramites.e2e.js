@@ -1,12 +1,13 @@
 import { test, expect, abrirPortada, datos, notaria, tramite } from "./fixtures.js";
 
-const DESTACADOS = ["poder-natural", "compraventa", "declaracion-natural", "reconocimiento-firmas", "posesion-efectiva", "divorcio", "salida-pais", "copias-certificadas"];
+// Lista de los más pedidos que dio el notario, en su orden.
+const DESTACADOS = ["compraventa-vehiculo", "declaracion-natural", "poder-natural", "salida-pais", "copias-certificadas", "certificacion-electronica", "posesion-efectiva", "disolucion-sociedad-conyugal", "divorcio"];
 const items = (page) => page.locator("#lista .tl__item");
 const detalle = (page) => page.locator("#detalleTramite");
 const pestana = (page, nombre) => page.locator("#chips .tab", { hasText: nombre });
 
 test.describe("Catálogo de trámites", () => {
-  test("CF-10 la pestaña inicial muestra los 8 trámites más pedidos, en orden", async ({ page }) => {
+  test("CF-10 la pestaña inicial muestra los trámites más pedidos según el notario, en orden", async ({ page }) => {
     await abrirPortada(page);
     await expect(pestana(page, "Más pedidos")).toHaveAttribute("aria-pressed", "true");
     await expect(items(page).locator("span:first-child")).toHaveText(DESTACADOS.map((id) => tramite(id).nombre));
@@ -15,7 +16,7 @@ test.describe("Catálogo de trámites", () => {
   test("CF-11 el primer trámite de la lista se abre en el detalle por defecto", async ({ page }) => {
     await abrirPortada(page);
     await expect(items(page).first()).toHaveAttribute("aria-current", "true");
-    await expect(detalle(page).locator(".tp__nombre")).toHaveText(tramite("poder-natural").nombre);
+    await expect(detalle(page).locator(".tp__nombre")).toHaveText(tramite("compraventa-vehiculo").nombre);
   });
 
   test("CF-12 cada pestaña de categoría filtra solo sus trámites", async ({ page }) => {
@@ -59,9 +60,10 @@ test.describe("Catálogo de trámites", () => {
   test("CF-16 los precios se muestran con formato de dólar ecuatoriano + IVA", async ({ page }) => {
     await abrirPortada(page);
     // 12% del SBU 2026 ($482) = $57,84
-    await expect(items(page).first().locator(".tl__precio")).toHaveText("$57,84 + IVA");
-    await expect(items(page).filter({ hasText: "Compraventa de inmuebles" }).locator(".tl__precio")).toHaveText("Según cuantía");
+    await expect(items(page).filter({ hasText: tramite("poder-natural").nombre }).locator(".tl__precio")).toHaveText("$57,84 + IVA");
     await expect(items(page).filter({ hasText: "Copias certificadas" }).locator(".tl__precio")).toHaveText("$1,79 + IVA por hoja");
+    await page.fill("#buscar", "Compraventa de inmuebles");
+    await expect(items(page).filter({ hasText: "Compraventa de inmuebles" }).locator(".tl__precio")).toHaveText("Según cuantía");
   });
 
   test("CF-17 un trámite con tarifa 'Consultar' no ofrece calcular costo", async ({ page }) => {
@@ -206,7 +208,7 @@ test.describe("Enlaces directos a trámites", () => {
     await expect(pestana(page, "Empresas")).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("CF-130 al imprimir en la computadora se ve el detalle completo del trámite", async ({ page }) => {
+  test("CF-150 al imprimir en la computadora se ve el detalle completo del trámite", async ({ page }) => {
     await abrirPortada(page);
     await page.locator("#lista .tl__item").nth(1).click();
     await page.evaluate(() => { document.body.dataset.print = "1"; });

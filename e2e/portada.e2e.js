@@ -4,12 +4,37 @@ import { test, expect, abrirPortada, datos, notaria } from "./fixtures.js";
 const QUITO = (fechaHora) => new Date(fechaHora + "-05:00");
 
 test.describe("Contacto y datos de la notaría", () => {
-  test("CF-70 muestra nombre, notario y eslogan desde los datos", async ({ page }) => {
+  test("CF-70 la portada destaca al notario: cargo, nombre y lema desde los datos", async ({ page }) => {
     await abrirPortada(page);
-    await expect(page).toHaveTitle(notaria.nombre + " | Trámites, requisitos y tarifas");
-    await expect(page.locator("#brandName")).toHaveText(notaria.nombre);
-    await expect(page.locator("#heroNotario")).toHaveText(notaria.nombre + " · " + notaria.notario);
-    await expect(page.locator("#heroTitle")).toHaveText(notaria.eslogan);
+    await expect(page).toHaveTitle(notaria.notarioCorto + " · " + notaria.nombre);
+    await expect(page.locator("#brandName")).toHaveText(notaria.notarioCorto);
+    await expect(page.locator("#brandSub")).toHaveText("Notaría 41 · Quito");
+    await expect(page.locator("#heroNotario")).toHaveText(notaria.cargo);
+    await expect(page.locator("#heroTitle")).toHaveText(notaria.notario);
+    await expect(page.locator("#heroLema")).toHaveText(notaria.eslogan);
+    expect(notaria.eslogan).toBe("Fe pública al servicio de la comunidad.");
+    await expect(page.locator(".hero")).not.toContainText("Prepara tu trámite por WhatsApp");
+  });
+
+  test("CF-70b el HTML ya trae cargo, nombre y lema antes de cargar los datos", async ({ page }) => {
+    await page.route("**/data/notaria.json", () => {});
+    await page.goto("/");
+    await expect(page.locator("#heroNotario")).toHaveText("Notario Cuadragésimo Primero del Cantón Quito");
+    await expect(page.locator("#heroTitle")).toHaveText("Dr. Dobri Miguel Albornoz Donoso");
+    await expect(page.locator("#heroLema")).toHaveText("Fe pública al servicio de la comunidad.");
+    await expect(page.locator("#brandName")).toHaveText("Dr. Dobri Albornoz Donoso");
+    await expect(page).toHaveTitle("Dr. Dobri Albornoz Donoso · Notaría 41 de Quito");
+  });
+
+  test("CF-70c @movil el nombre del notario cabe en la portada sin cortar palabras", async ({ page }) => {
+    await abrirPortada(page);
+    const h1 = page.locator("#heroTitle");
+    const m = await h1.evaluate((el) => {
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.1;
+      return { lineas: Math.round(el.getBoundingClientRect().height / lh), desborda: el.scrollWidth > el.clientWidth + 1 };
+    });
+    expect(m.desborda).toBe(false);
+    expect(m.lineas).toBeLessThanOrEqual(3);
   });
 
   test("CF-71 teléfonos y correo son enlaces que se pueden pulsar", async ({ page }) => {
@@ -206,7 +231,7 @@ test.describe("Navegación", () => {
     await expect(hoja).not.toHaveClass(/tp--abierto/);
   });
 
-  test("CF-131 @movil las preguntas están en acordeón y quedan abiertas al pasar a pantalla ancha", async ({ page }) => {
+  test("CF-151 @movil las preguntas están en acordeón y quedan abiertas al pasar a pantalla ancha", async ({ page }) => {
     await abrirPortada(page);
     const preguntas = page.locator("#faqList details");
     await expect(preguntas.first()).not.toHaveAttribute("open", "");

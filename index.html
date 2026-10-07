@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Notaría 41 de Quito | Trámites, requisitos y tarifas</title>
+<title>Dr. Dobri Albornoz Donoso · Notaría 41 de Quito</title>
 <meta name="description" content="Trámites notariales en Ecuador: requisitos, procesos paso a paso, tarifas 2026, atención por WhatsApp, dirección y horarios de la Notaría 41 de Quito.">
 <meta name="theme-color" content="#F4F7F4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1712" media="(prefers-color-scheme: dark)">
-<meta property="og:title" content="Notaría 41 de Quito">
+<meta property="og:title" content="Dr. Dobri Albornoz Donoso · Notaría 41 de Quito">
 <meta property="og:image" content="assets/logo/logo-notaria41.png">
-<meta property="og:description" content="Fe pública, con claridad. Trámites, requisitos y tarifas.">
+<meta property="og:description" content="Fe pública al servicio de la comunidad. Trámites, requisitos y tarifas.">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/logo/icono-512.png">
@@ -27,7 +27,7 @@
 
 <header class="nav" id="nav">
   <div class="nav__in">
-    <a class="nav__brand" href="#inicio"><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt=""><img class="brand--dark" src="assets/logo/logo-notaria41-blanco.svg" alt=""><span id="brandName">Notaría 41</span></a>
+    <a class="nav__brand" href="#inicio"><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt=""><img class="brand--dark" src="assets/logo/logo-notaria41-blanco.svg" alt=""><span class="brand__txt"><b id="brandName">Dr. Dobri Albornoz Donoso</b><small id="brandSub">Notaría 41 · Quito</small></span></a>
     <nav class="nav__links" id="menu" aria-label="Principal">
       <a href="#servicios">Servicios</a>
       <a href="#tramites">Trámites</a>
@@ -50,9 +50,9 @@
     <div class="hero__pin">
       <div class="hero__grid">
         <div class="hero__copy">
-          <p class="eyebrow" id="heroNotario">Servicio notarial</p>
-          <h1 id="heroTitle">Fe pública, con claridad.</h1>
-          <p class="lead">Prepara tu trámite por WhatsApp y fírmalo en una sola visita.</p>
+          <p class="eyebrow" id="heroNotario">Notario Cuadragésimo Primero del Cantón Quito</p>
+          <h1 id="heroTitle">Dr. Dobri Miguel Albornoz Donoso</h1>
+          <p class="lema" id="heroLema">Fe pública al servicio de la comunidad.</p>
           <div class="cta">
             <a class="btn btn--primary" href="#tramites">Ver trámites</a>
             <a class="link" href="#contacto">Contacto <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
@@ -119,14 +119,21 @@
           <label id="calcQtyWrap">Cantidad <span id="calcUnit"></span>
             <input id="calcQty" type="number" min="1" value="1" inputmode="numeric">
           </label>
+          <fieldset class="calc__hab">
+            <legend>Documentos habilitantes <span>(opcional)</span></legend>
+            <p class="calc__habtxt">Agrega las hojas que necesites certificar o materializar.</p>
+            <div class="calc__habs" id="calcHabs"></div>
+          </fieldset>
         </div>
         <div class="calc__out" aria-live="polite">
-          <div class="calc__total"><span>Total a pagar</span><strong id="rTotal">-</strong></div>
+          <div class="calc__total"><span>Total estimado</span><strong id="rTotal">-</strong></div>
           <div class="calc__split">
             <div><span>Tarifa</span><strong id="rBase">-</strong></div>
+            <div id="rHabWrap" hidden><span>Habilitantes</span><strong id="rHab">-</strong></div>
             <div><span>IVA</span><strong id="rIva">-</strong></div>
           </div>
           <p class="note" id="calcNote"></p>
+          <p class="calc__aviso" id="calcAviso"></p>
         </div>
       </form>
     </div>

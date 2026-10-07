@@ -1,6 +1,6 @@
 // Asistente de WhatsApp de la notaría: conversa con Claude, ejecuta sus herramientas y guarda la conversación.
 // Interfaz: crearAsistente(dependencias).atender(mensaje) -> textos a enviar al cliente.
-import { calcularTarifa, money, precioTexto, minutos } from "../../js/nucleo.js";
+import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
 
 const MODELO = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const ESFUERZO = process.env.CLAUDE_EFFORT || "medium";
@@ -88,6 +88,9 @@ function construirSistema(C) {
       t.nota ? "Nota: " + t.nota : ""].filter(Boolean).join("\n");
   }).join("\n\n");
   const faq = C.data.faq.map((f) => `- ${f.q} ${f.a}`).join("\n");
+  // Precio por hoja de cada documento habilitante, tomado de su propio trámite.
+  const precioHoja = (id) => { const t = C.data.tramites.find((x) => x.id === id); return t && t.tarifa.tipo === "fija" ? money(t.tarifa.valor) + " + IVA" : null; };
+  const porHoja = HABILITANTES.map((h) => precioHoja(h.tramite) && `${h.etiqueta} ${precioHoja(h.tramite)}`).filter(Boolean).join(", ");
 
   return `Eres ${nombre} y atiendes de forma automática el WhatsApp de la ${N.nombre}${N.notario ? " (" + N.notario + ")" : ""}, en Quito, Ecuador.
 
@@ -112,6 +115,7 @@ Lo que puedes y no puedes hacer:
 - Responde solo con la información de la base de conocimiento de abajo. Si algo no está ahí (requisitos especiales, plazos, casos particulares), no lo inventes: dilo y ofrece pasar con una persona.
 - Muchas personas cuentan su situación sin saber el nombre del trámite (por ejemplo, "mi papá falleció y dejó una casa" o "me voy de viaje y alguien debe firmar por mí"). Identifica qué trámite de la base de conocimiento corresponde y, antes de listar requisitos, pregunta, de una en una, lo que cambia los requisitos o el costo en su caso (estado civil, si hay menores, si alguien está fuera del país, el valor del bien). Luego dale solo los requisitos que aplican a su situación, no la lista completa. Esto es orientación sobre el trámite, no asesoría legal.
 - Para cualquier costo usa la herramienta calcular_costo. Aclara que son tarifas oficiales referenciales más IVA. En trámites según cuantía, pide el valor del contrato o el avalúo catastral (se usa el mayor).
+- Cada vez que des un costo, menciona en una frase corta que no incluye documentos habilitantes (copias certificadas, compulsas o materializaciones de documentos electrónicos), que se cobran por hoja${porHoja ? ` (${porHoja})` : ""}. No lo digas cuando el costo es el de las propias copias o materializaciones.
 - Todos los trámites se firman en persona en la notaría. Por este chat el cliente solo prepara su visita: información, costo, documentos para pre-revisión y solicitud de cita. Nunca digas que un trámite quedó hecho, firmado, aprobado o validado por chat; la pre-revisión de documentos no tiene valor legal.
 - No des asesoría legal personalizada (por ejemplo, qué le conviene hacer en su caso). Explica de forma general y ofrece pasar con una persona.
 - Citas: pide el trámite, el día y la hora que prefiere dentro del horario de atención y su nombre completo; luego usa solicitar_cita. Según lo que devuelva, dile si quedó confirmada o pendiente de confirmación del personal. Si no hay cupo, ofrécele las horas libres que te devuelve.
@@ -192,7 +196,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         if (r.total === null) return ok(`${t.nombre} se calcula según la cuantía: pide el valor del contrato o el avalúo catastral en USD.`);
         return ok(`${t.nombre}: tarifa ${money(r.base)} + IVA ${money(r.iva)} = total ${money(r.total)}` +
           (r.factor ? ` (rango hasta ${r.hasta === null ? "en adelante" : money(r.hasta)}, ${r.factor} SBU)` : "") +
-          `. ${t.nota || ""} Valores oficiales referenciales (SBU ${money(C.tarifas.sbu)}).`.replace(/\s+/g, " ").trim());
+          `. ${t.nota || ""} Valores oficiales referenciales (SBU ${money(C.tarifas.sbu)}). ${HABILITANTES.some((h) => h.tramite === t.id) ? "" : AVISO_HABILITANTES}`.replace(/\s+/g, " ").trim());
       }
 
       case "solicitar_cita": {
