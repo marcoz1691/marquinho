@@ -2,6 +2,14 @@ import { test, expect, notaria, simularApi, respuestaRetenida } from "./fixtures
 
 const mensajes = (page, autor) => page.locator("#mensajes .ac-msg--" + autor);
 const historial = (page) => page.locator("#historial .ac-item");
+// Los cinco trámites más pedidos según el notario: caso real, trámite y la pregunta completa que se envía.
+const TARJETAS = [
+  ["Voy a vender mi carro", "Compraventa de vehículos", "Voy a vender mi carro, ¿qué necesito en la notaría?"],
+  ["Necesito una declaración juramentada", "Declaraciones juramentadas", "Necesito hacer una declaración juramentada, ¿qué debo llevar?"],
+  ["Necesito que alguien firme por mí", "Poderes", "Necesito que alguien haga un trámite y firme por mí, ¿qué poder necesito?"],
+  ["Mi hijo menor va a viajar al exterior", "Autorización de salida del país", "Mi hijo menor de edad va a viajar al exterior, ¿qué permiso necesita?"],
+  ["Necesito copias certificadas o materializar un documento electrónico", "Copias certificadas y materializaciones", "Necesito copias certificadas de un documento o materializar un documento electrónico, ¿cómo lo hago y cuánto cuesta?"]
+];
 
 async function escribir(page, texto) {
   await page.fill("#texto", texto);
@@ -14,7 +22,7 @@ test.describe("Asistente a pantalla completa", () => {
     page.on("pageerror", (e) => errores.push(e.message));
     await page.goto("/asistente.html");
     await expect(page.locator("h1")).toHaveText("¿En qué te ayudo hoy?");
-    await expect(page.locator("#tarjetas button")).toHaveCount(4);
+    await expect(page.locator("#tarjetas button")).toHaveCount(5);
     await expect(page.locator("#historial")).toHaveText("Tus conversaciones aparecerán aquí.");
     await expect(page.locator("#texto")).toBeFocused();
     expect(errores).toEqual([]);
@@ -30,17 +38,42 @@ test.describe("Asistente a pantalla completa", () => {
   });
 
   test("CF-132 una tarjeta envía su pregunta y la conversación aparece en el historial", async ({ page }) => {
-    const pedidos = await simularApi(page, () => ({ json: { respuestas: ["Un poder especial cuesta $57,84 + IVA."] } }));
+    const pedidos = await simularApi(page, () => ({ json: { respuestas: ["Para vender tu carro trae la matrícula."] } }));
     await page.goto("/asistente.html");
-    await page.locator("#tarjetas button", { hasText: "Pedir una cita" }).click();
-    await expect(mensajes(page, "cliente")).toHaveText(["Quiero pedir una cita en la notaría"]);
-    await expect(mensajes(page, "asistente").locator(".ac-texto")).toHaveText(["Un poder especial cuesta $57,84 + IVA."]);
+    const [titulo, , pregunta] = TARJETAS[0];
+    await page.locator("#tarjetas button", { hasText: titulo }).click();
+    await expect(mensajes(page, "cliente")).toHaveText([pregunta]);
+    await expect(mensajes(page, "asistente").locator(".ac-texto")).toHaveText(["Para vender tu carro trae la matrícula."]);
     await expect(page.locator("#inicio")).toBeHidden();
     await expect(historial(page)).toHaveCount(1);
-    await expect(historial(page).first()).toContainText("Quiero pedir una cita en la notaría");
+    await expect(historial(page).first()).toContainText(pregunta);
     await expect(page.locator("#historial .ac-grupo")).toHaveText(["Hoy"]);
-    expect(pedidos[0].texto).toBe("Quiero pedir una cita en la notaría");
+    expect(pedidos[0].texto).toBe(pregunta);
   });
+
+  test("CF-141 las tarjetas son los 5 trámites más pedidos del notario, en orden, y cada una envía su pregunta completa", async ({ page }) => {
+    const pedidos = await simularApi(page, () => ({ json: { respuestas: ["ok"] } }));
+    await page.goto("/asistente.html");
+    const tarjetas = page.locator("#tarjetas button");
+    await expect(tarjetas.locator("b")).toHaveText(TARJETAS.map((t) => t[0]));
+    await expect(tarjetas.locator("span")).toHaveText(TARJETAS.map((t) => t[1]));
+    for (let i = 0; i < TARJETAS.length; i++) {
+      await page.getByRole("button", { name: "Nueva conversación" }).first().click();
+      await expect(page.locator("#inicio")).toBeVisible();
+      await tarjetas.nth(i).click();
+      await expect(mensajes(page, "cliente")).toHaveText([TARJETAS[i][2]]);
+      await expect.poll(() => pedidos.length).toBe(i + 1);
+      expect(pedidos[i].texto).toBe(TARJETAS[i][2]);
+    }
+  });
+
+  for (const [id, etiqueta] of [["CF-142", ""], ["CF-143", " @movil"]]) {
+    test(id + " la pantalla de inicio cabe sin esconder el campo de texto" + etiqueta, async ({ page }) => {
+      await page.goto("/asistente.html");
+      await expect(page.locator("#tarjetas button").last()).toBeInViewport({ ratio: 1 });
+      await expect(page.locator("#texto")).toBeInViewport({ ratio: 1 });
+    });
+  }
 
   test("CF-133 se puede volver a una conversación anterior desde el historial", async ({ page }) => {
     await simularApi(page, (b) => ({ json: { respuestas: ["respuesta a: " + b.texto] } }));

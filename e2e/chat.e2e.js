@@ -1,6 +1,8 @@
 import { test, expect, notaria, simularApi, respuestaRetenida } from "./fixtures.js";
 
 const BIENVENIDA = "Hola, soy Sofía. Respondo de forma automática por la Notaría 41";
+// Los cinco trámites más pedidos según el notario, como casos reales.
+const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas"];
 const chat = (page) => page.locator("#chat");
 const mensajes = (page, autor) => page.locator("#chatMensajes .chat__msg--" + autor);
 
@@ -16,11 +18,11 @@ async function escribir(page, texto) {
 }
 
 test.describe("Chat del asistente", () => {
-  test("CF-110 el botón '¿Te ayudo?' abre el chat con bienvenida y sugerencias", async ({ page }) => {
+  test("CF-110 el botón '¿Te ayudo?' abre el chat con bienvenida y los 5 casos más pedidos", async ({ page }) => {
     await abrirChat(page);
     await expect(page.locator("#chatAbrir")).toHaveAttribute("aria-expanded", "true");
     await expect(mensajes(page, "asistente").first()).toContainText(BIENVENIDA);
-    await expect(page.locator("#chatSugerencias .chat__sug")).toHaveCount(3);
+    await expect(page.locator("#chatSugerencias .chat__sug")).toHaveText(SUGERENCIAS);
     await expect(page.locator("#chatTexto")).toBeFocused();
   });
 
@@ -40,9 +42,9 @@ test.describe("Chat del asistente", () => {
   test("CF-112 una sugerencia se envía como pregunta", async ({ page }) => {
     const pedidos = await simularApi(page, () => ({ json: { respuestas: ["Claro."] } }));
     await abrirChat(page);
-    await page.locator(".chat__sug", { hasText: "Quiero pedir una cita" }).click();
-    await expect(mensajes(page, "cliente")).toHaveText(["Quiero pedir una cita"]);
-    expect(pedidos[0].texto).toBe("Quiero pedir una cita");
+    await page.locator(".chat__sug", { hasText: "Voy a vender mi carro" }).click();
+    await expect(mensajes(page, "cliente")).toHaveText(["Voy a vender mi carro"]);
+    expect(pedidos[0].texto).toBe("Voy a vender mi carro");
   });
 
   test("CF-113 varias respuestas del asistente se muestran como burbujas separadas", async ({ page }) => {

@@ -2,7 +2,8 @@
 import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, enviarMensaje, formato } from "./chat-nucleo.js";
 
 const $ = (s) => document.querySelector(s);
-const SUGERENCIAS = ["Mi papá falleció y dejó una casa", "Voy a viajar y alguien debe firmar por mí", "Quiero pedir una cita"];
+// Los cinco trámites más pedidos según el notario, como casos reales.
+const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas"];
 const raiz = $("#chat"), lista = $("#chatMensajes"), form = $("#chatForm"), campo = $("#chatTexto"), lanzador = $("#chatAbrir");
 let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
 nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); });

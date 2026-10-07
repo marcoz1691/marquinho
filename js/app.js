@@ -10,8 +10,8 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
   };
 
   var state = { cat: "destacados", q: "", sel: null, data: null, tarifas: null, notaria: null };
-  // La pestaña inicial muestra los trámites más pedidos.
-  var DESTACADOS = ["poder-natural", "compraventa", "declaracion-natural", "reconocimiento-firmas", "posesion-efectiva", "divorcio", "salida-pais", "copias-certificadas"];
+  // La pestaña inicial "Más pedidos": la lista de los trámites más pedidos que dio el notario, en su orden.
+  var DESTACADOS = ["compraventa-vehiculo", "declaracion-natural", "poder-natural", "salida-pais", "copias-certificadas", "certificacion-electronica", "posesion-efectiva", "disolucion-sociedad-conyugal", "divorcio"];
 
   /* ---------- Contenido: Google Sheets con respaldo local ---------- */
 
