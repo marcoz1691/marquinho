@@ -6,7 +6,7 @@ const HORA = 3600 * 1000;
 const GENERICO = "No se pudo completar la acción. Intenta de nuevo en unos segundos.";
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDescargas = 60, ahora = () => Date.now() }) {
+export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDescargas = 60, ahora = () => Date.now(), avisar = async () => {} }) {
   async function autorizar(request) {
     const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
     const usuario = token ? await auth.usuarioDeToken(token) : null;
@@ -14,19 +14,32 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     if (!usuario.email_confirmed_at) return { no: json({ error: "Tu cuenta aún no confirmó su correo" }, 403) };
     if (exigirMfa && usuario.aal !== "aal2") return { no: json({ error: "Ingresa el código de tu app de verificación", mfa: true }, 401) };
     if (!(await auth.esPersonal(usuario.email))) return { no: json({ error: "Tu cuenta no está autorizada para el panel" }, 403) };
-    return { email: String(usuario.email).toLowerCase() };
+    const email = String(usuario.email).toLowerCase();
+    // Primera vez con verificación en dos pasos: queda registrado y se avisa, para que el administrador note si alguien
+    // distinto al dueño activó la verificación de una cuenta nueva (ver docs/notario: «activa tu verificación el mismo día»).
+    if (exigirMfa && (await auth.marcarMfa(email).catch(() => false))) {
+      await auth.auditar({ email, accion: "mfa_activado", objetivo: email, ok: true }).catch(() => {});
+      await avisar(`Se activó la verificación en dos pasos de ${email} en el panel. Si no fue esa persona, avisa de inmediato al administrador.`).catch(() => {});
+    }
+    return { email };
   }
   // Las lecturas de datos personales y todas las acciones quedan en la auditoría, también si fallan.
-  async function ejecutar(accion, objetivo, email, fn, auditar) {
+  async function ejecutar(accion, objetivo, email, fn, auditar, estricta = false) {
     let ok = true;
-    try { return json((await fn()) ?? { ok: true }); }
+    objetivo = String(objetivo ?? "").slice(0, 80);
+    const registrar = (exito) => auth.auditar({ email, accion, objetivo, ok: exito });
+    try {
+      // Ver un documento exige poder dejar constancia: si la auditoría falla, no se entrega (falla cerrado).
+      if (estricta) await registrar(true);
+      return json((await fn()) ?? { ok: true });
+    }
     catch (e) {
       ok = false;
       if (e instanceof Aviso) return json({ error: e.message }, e.status || 400);
       console.error(`Panel: error en "${accion}":`, e?.message || e);
       return json({ error: GENERICO }, 500);
     } finally {
-      if (auditar) await auth.auditar({ email, accion, objetivo: String(objetivo ?? ""), ok }).catch((e) => console.error("Auditoría no registrada:", e?.message));
+      if (auditar && !estricta) await registrar(ok).catch((e) => console.error("Auditoría no registrada:", e?.message));
     }
   }
 
@@ -34,7 +47,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     conversaciones: { fn: () => panel.conversaciones() },
     agenda: { fn: (q) => panel.agenda(q.get("fecha")) },
     detalle: { fn: (q) => panel.detalle(q.get("id")), auditar: true },
-    documento: { auditar: true, fn: async (q, email) => {
+    documento: { auditar: true, estricta: true, fn: async (q, email) => {
       if ((await auth.contarUso("panel:descargas:" + email, HORA, ahora())) > limiteDescargas) {
         throw Object.assign(new Aviso("Abriste muchos documentos en la última hora. Espera un momento o pide ayuda al administrador."), { status: 429 });
       }
@@ -54,7 +67,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     async GET(request) {
       const a = await autorizar(request); if (a.no) return a.no;
       const q = new URL(request.url).searchParams, accion = q.get("accion"), l = Object.hasOwn(lecturas, accion) && lecturas[accion];
-      return l ? ejecutar(accion, q.get("id"), a.email, () => l.fn(q, a.email), l.auditar) : json({ error: "Acción desconocida" }, 400);
+      return l ? ejecutar(accion, q.get("id"), a.email, () => l.fn(q, a.email), l.auditar, l.estricta) : json({ error: "Acción desconocida" }, 400);
     },
     async POST(request) {
       const a = await autorizar(request); if (a.no) return a.no;

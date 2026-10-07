@@ -23,5 +23,7 @@ describe("purgarDatos", () => {
     expect(almacen.purgar.mock.calls[0][0].inactivasAntesDe).toBe(ahora().getTime() - 30 * DIA);
     await purgarDatos({ almacen, ahora, retencionDias: "abc" });
     expect(almacen.purgar.mock.calls[1][0].inactivasAntesDe).toBe(ahora().getTime() - 90 * DIA);
+    await purgarDatos({ almacen, ahora, retencionDias: "  " });
+    expect(almacen.purgar.mock.calls[2][0].inactivasAntesDe).toBe(ahora().getTime() - 90 * DIA);
   });
 });

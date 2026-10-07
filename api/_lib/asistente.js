@@ -20,7 +20,9 @@ const LIMITE_DIARIO = 150;          // mensajes de WhatsApp por número y día (
 const DIA_MS = 24 * 60 * 60 * 1000;
 const LIMITE_ALCANZADO = "Hoy recibimos muchos mensajes desde tu número y por ahora no puedo seguir respondiendo. Escríbenos mañana o llama a la notaría y te ayudamos.";
 const AVISO_PRIVACIDAD = "2026-10-07"; // versión del aviso de privacidad que el cliente acepta (ver privacidad.html)
-const NOMBRE = /^[\p{L} .'-]{2,60}$/u;
+const NOMBRE = /^[\p{L}\p{M} .'\u2019-]{2,60}$/u;   // \p{M}: tildes escritas en dos partes; \u2019: apóstrofo del teclado del iPhone
+// Respuestas con las que una persona acepta el aviso de privacidad.
+const AFIRMATIVO = /(^|[^\p{L}])(s[ií]|acepto|aceptamos|ok|okay|dale|claro|listo|vale|bueno|correcto|confirmo|adelante|de acuerdo|est[aá] bien|por supuesto|perfecto)([^\p{L}]|$)/iu;
 // Texto del cliente dentro de avisos y registros: una sola línea y con largo máximo.
 const corto = (v, n) => String(v ?? "").replace(/[\s\u0000-\u001f\u007f]+/g, " ").trim().slice(0, n);
 
@@ -218,7 +220,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "solicitar_cita": {
-        const nombre = String(i.nombre || "").trim();
+        const nombre = String(i.nombre || "").normalize("NFC").trim();
         if (!NOMBRE.test(nombre)) return error("El nombre no es válido: pide al cliente su nombre completo (solo letras, de 2 a 60 caracteres).");
         if (!/^\d{4}-\d{2}-\d{2}$/.test(i.fecha || "") || !/^\d{1,2}:\d{2}$/.test(i.hora || "")) return error("Fecha u hora con formato inválido (usa AAAA-MM-DD y HH:MM).");
         const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(ctx.t);
@@ -270,6 +272,10 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "registrar_consentimiento":
+        // Solo vale si el cliente respondió con palabras afirmativas en este turno: un archivo o una pregunta no es aceptar.
+        if (!AFIRMATIVO.test(String(ctx.textoCliente || "").replace(/^\[El cliente envió[^\]]*\]/, ""))) {
+          return error("El cliente todavía no aceptó con palabras: muéstrale el aviso de privacidad y pregúntale si acepta (que responda «Acepto» o «Sí»). No registres el consentimiento hasta que lo diga.");
+        }
         // Evidencia del consentimiento (Reglamento LOPDP, art. 5): qué escribió el cliente, cuándo y qué versión del aviso aceptó.
         await almacen.actualizarConversacion(conv.id, { consentimiento: true, consentimientoEn: ctx.t.toISOString(),
           consentimientoTexto: corto(ctx.textoCliente, 500), consentimientoAviso: AVISO_PRIVACIDAD });

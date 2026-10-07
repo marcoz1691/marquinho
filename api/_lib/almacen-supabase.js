@@ -149,6 +149,9 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       return ok(await db.rpc("incrementar_uso", { p_clave: clave, p_ventana: Math.floor(ahora / ventanaMs) }));
     },
 
+    async marcarMfa(email) {
+      return ok(await db.from("personal").update({ mfa_en: new Date().toISOString() }).eq("email", email).is("mfa_en", null).select("email")).length > 0;
+    },
     async auditar(e) { ok(await db.from("auditoria").insert({ email: e.email || "", accion: e.accion, objetivo: e.objetivo || "", ok: e.ok !== false })); },
     async auditoria() {
       return ok(await db.from("auditoria").select("*").order("id", { ascending: false }).limit(500))
@@ -156,24 +159,44 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     },
 
     // Retención: borra las conversaciones sin actividad desde `inactivasAntesDe` (salvo las que tienen una cita por venir)
-    // y los documentos borrados desde el panel antes de `borradosAntesDe`. Primero los archivos del bucket, luego las filas.
+    // y los documentos borrados desde el panel antes de `borradosAntesDe`.
+    // Va en lotes pequeños (las listas de ids viajan en la URL). Primero se borran las filas y después los archivos: si el
+    // almacenamiento falla queda un archivo huérfano (se avisa en el registro), nunca una fila con un enlace roto, y la purga
+    // del día siguiente no repite el mismo error.
     async purgar({ inactivasAntesDe, borradosAntesDe, hoy }) {
-      const corte = new Date(inactivasAntesDe).toISOString();
-      const candidatas = ok(await db.from("conversaciones").select("id").lt("ultima_actividad_ms", inactivasAntesDe).lt("cliente_en_ms", inactivasAntesDe)
-        .lt("creada", corte).limit(200)).map((r) => r.id);
-      const conCita = candidatas.length ? new Set(ok(await db.from("solicitudes_cita").select("conversacion_id").in("conversacion_id", candidatas)
-        .gte("fecha", hoy).in("estado", ["pendiente", "confirmada"])).map((r) => r.conversacion_id)) : new Set();
-      const viejas = candidatas.filter((id) => !conCita.has(id));
-      const deViejas = viejas.length ? ok(await db.from("documentos").select("id, ruta").in("conversacion_id", viejas)) : [];
-      const borrados = ok(await db.from("documentos").select("id, ruta").not("borrado_en", "is", null).lt("borrado_en", new Date(borradosAntesDe).toISOString()).limit(500));
-      const docs = [...new Map([...deViejas, ...borrados].map((d) => [d.id, d])).values()];
-      if (docs.length) {
-        ok(await db.storage.from(BUCKET).remove(docs.map((d) => d.ruta)));
-        ok(await db.from("documentos").delete().in("id", docs.map((d) => d.id)));
+      const LOTE = 50, LOTES = 4, corte = new Date(inactivasAntesDe).toISOString();
+      let conversaciones = 0, documentos = 0;
+      const quitarArchivos = async (rutas) => {
+        if (!rutas.length) return;
+        const { error } = await db.storage.from(BUCKET).remove(rutas);
+        if (error) console.warn(`Purga: ${rutas.length} archivo(s) no se pudieron eliminar del almacenamiento: ${error.message}`);
+      };
+      for (let n = 0; n < LOTES; n++) {
+        const candidatas = ok(await db.from("conversaciones").select("id").lt("ultima_actividad_ms", inactivasAntesDe).lt("cliente_en_ms", inactivasAntesDe)
+          .lt("creada", corte).order("ultima_actividad_ms", { ascending: true }).limit(LOTE)).map((r) => r.id);
+        if (!candidatas.length) break;
+        const conCita = new Set(ok(await db.from("solicitudes_cita").select("conversacion_id").in("conversacion_id", candidatas)
+          .gte("fecha", hoy).in("estado", ["pendiente", "confirmada"])).map((r) => r.conversacion_id));
+        const viejas = candidatas.filter((id) => !conCita.has(id));
+        if (!viejas.length) break;
+        const rutas = ok(await db.from("documentos").select("ruta").in("conversacion_id", viejas)).map((d) => d.ruta);
+        // Se repiten las condiciones: si el cliente escribió mientras tanto, esa conversación no se borra.
+        const borradas = ok(await db.from("conversaciones").delete().in("id", viejas).lt("ultima_actividad_ms", inactivasAntesDe)
+          .lt("cliente_en_ms", inactivasAntesDe).lt("creada", corte).select("id")).length;   // en cascada: sesiones, mensajes, citas, archivos y documentos
+        await quitarArchivos(rutas);
+        conversaciones += borradas; documentos += rutas.length;
+        if (candidatas.length < LOTE) break;
       }
-      if (viejas.length) ok(await db.from("conversaciones").delete().in("id", viejas));   // borra en cascada sesiones, mensajes, citas y archivos
+      for (let n = 0; n < LOTES; n++) {
+        const lote = ok(await db.from("documentos").select("id, ruta").not("borrado_en", "is", null).lt("borrado_en", new Date(borradosAntesDe).toISOString()).limit(LOTE));
+        if (!lote.length) break;
+        ok(await db.from("documentos").delete().in("id", lote.map((d) => d.id)));
+        await quitarArchivos(lote.map((d) => d.ruta));
+        documentos += lote.length;
+        if (lote.length < LOTE) break;
+      }
       ok(await db.from("procesados").delete().lt("creado", new Date(Date.now() - 30 * 864e5).toISOString()));
-      return { conversaciones: viejas.length, documentos: docs.length };
+      return { conversaciones, documentos };
     },
 
     // Para el panel: comprueba que el usuario autenticado pertenece al personal.

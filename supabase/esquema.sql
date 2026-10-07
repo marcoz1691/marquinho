@@ -163,3 +163,6 @@ create trigger auditoria_inmutable before update or delete on auditoria for each
 
 -- La purga busca conversaciones inactivas.
 create index if not exists conversaciones_creada on conversaciones(creada);
+
+-- Primera vez que cada persona del personal entra con la verificación en dos pasos (para avisar al administrador).
+alter table personal add column if not exists mfa_en timestamptz;

@@ -281,9 +281,9 @@ describe("herramientas", () => {
     const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("ok"),
       herramienta("guardar_documento", { media_id: "M1", descripcion: "escritura" }, "tu_2"), texto("muy grande")]);
     const a = nuevo(claude);
-    await a.atender(mensaje());
+    await a.atender(mensaje({ texto: "Sí, acepto" }));
     await a.atender(mensaje({ tipo: "archivo", texto: "", media: { id: "M1", mime: "application/pdf" } }));
-    expect(claude.llamadas[3].messages.at(-1).content[0]).toMatchObject({ is_error: true });
+    expect(claude.llamadas[3].messages.at(-1).content[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/15 MB/) });
     expect(await almacen.documentos((await almacen.conversacion("593991112233")).id)).toEqual([]);
   });
 
@@ -319,6 +319,26 @@ describe("herramientas", () => {
     expect(r.content).toMatch(/20/);
   });
 
+  it("registrar_consentimiento no registra nada si el cliente no aceptó con palabras (un archivo o un saludo no es aceptar)", async () => {
+    for (const m of [mensaje({ tipo: "archivo", texto: "", media: { id: "M1", mime: "application/pdf" } }), mensaje({ texto: "Hola, ¿cuánto cuesta?" })]) {
+      const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("¿Aceptas?")]);
+      await nuevo(claude).atender(m);
+      expect(resultadoDe(claude)).toMatchObject({ is_error: true, content: expect.stringMatching(/acept/i) });
+      almacen = crearAlmacenMemoria();
+    }
+    const conv = await almacen.conversacion("593991112233");
+    expect(conv.consentimiento).toBe(false);
+  });
+
+  it("registrar_consentimiento acepta respuestas afirmativas comunes", async () => {
+    for (const t of ["Sí", "si, acepto", "Dale", "De acuerdo", "Claro que sí", "ok", "Está bien", "Por supuesto"]) {
+      almacen = crearAlmacenMemoria();
+      const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("Gracias")]);
+      await nuevo(claude).atender(mensaje({ texto: t }));
+      expect(resultadoDe(claude).is_error, t).toBeFalsy();
+    }
+  });
+
   it("registrar_consentimiento guarda como evidencia lo que escribió el cliente y la versión del aviso", async () => {
     const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("Gracias")]);
     await nuevo(claude).atender(mensaje({ texto: "Sí, acepto el aviso" }));
@@ -333,6 +353,15 @@ describe("herramientas", () => {
       expect(resultadoDe(claude)).toMatchObject({ is_error: true, content: expect.stringMatching(/nombre/) });
     }
     expect(await almacen.solicitudesCita((await almacen.conversacion("593991112233")).id)).toEqual([]);
+  });
+
+  it("solicitar_cita acepta el apóstrofo tipográfico del teclado del iPhone y las tildes escritas en dos partes", async () => {
+    for (const nombre of ["Sean O\u2019Brien", "Mari\u0301a Lopez"]) {
+      const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre }), texto("Listo")]);
+      await nuevo(claude).atender(mensaje());
+      expect(resultadoDe(claude).is_error).toBeFalsy();
+      almacen = crearAlmacenMemoria();
+    }
   });
 
   it("solicitar_cita acepta nombres con tildes, ñ, apóstrofo y guion, y recorta la nota", async () => {
@@ -352,9 +381,9 @@ describe("herramientas", () => {
   it("guardar_documento rechaza un archivo que el cliente no envió", async () => {
     const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("ok"), herramienta("guardar_documento", { media_id: "INVENTADO", descripcion: "x" }, "tu_2"), texto("no")]);
     const a = nuevo(claude);
+    await a.atender(mensaje({ texto: "Sí, acepto" }));
     await a.atender(mensaje());
-    await a.atender(mensaje());
-    expect(claude.llamadas[3].messages.at(-1).content[0].is_error).toBe(true);
+    expect(claude.llamadas[3].messages.at(-1).content[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/no fue recibido/) });
     expect(whatsapp.descargarArchivo).not.toHaveBeenCalled();
   });
 

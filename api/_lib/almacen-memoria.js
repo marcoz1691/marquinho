@@ -4,7 +4,7 @@ import { textoVisible } from "./mensajes.js";
 export function crearAlmacenMemoria() {
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
   let archivos = [], docs = [], citas = [], pendientes = [];
-  const turnos = new Map(), usos = new Map(), auditoria = [];
+  const turnos = new Map(), usos = new Map(), auditoria = [], conMfa = new Set();
   let seq = 0;
   const nuevoId = () => String(++seq);
   const copia = (x) => structuredClone(x);
@@ -110,6 +110,8 @@ export function crearAlmacenMemoria() {
     // Registro de quién hizo qué en el panel (solo se agrega, nunca se edita).
     async auditar(e) { auditoria.push({ creado: Date.now(), ...copia(e) }); },
     async auditoria() { return auditoria.map(copia); },
+    // true solo la primera vez que esa cuenta entra con verificación en dos pasos.
+    async marcarMfa(email) { if (conMfa.has(email)) return false; conMfa.add(email); return true; },
 
     // Retención: borra las conversaciones sin actividad desde `inactivasAntesDe` (salvo las que tienen una cita por venir)
     // y los documentos borrados desde el panel antes de `borradosAntesDe`.

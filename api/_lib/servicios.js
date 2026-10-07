@@ -26,6 +26,6 @@ export function obtenerServicios(env = process.env) {
   const asistente = crearAsistente({ claude: new Anthropic({ timeout: 90 * 1000, maxRetries: 1 }), almacen, whatsapp, contenido, avisar });
   const panel = crearPanel({ almacen, whatsapp, contenido,
     plantillas: { citaConfirmada: env.CITA_CONFIRMADA_PLANTILLA || "cita_confirmada", citaRechazada: env.CITA_RECHAZADA_PLANTILLA || "cita_rechazada" } });
-  servicios = { whatsapp, almacen, contenido, asistente, panel, env };
+  servicios = { whatsapp, almacen, contenido, asistente, panel, env, avisar };
   return servicios;
 }

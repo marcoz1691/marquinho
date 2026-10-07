@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { autorizadoCron } from "../api/_lib/cron.js";
 
 const pedir = (auth) => new Request("https://x/api/recordatorios", { headers: auth ? { authorization: auth } : {} });
@@ -21,5 +21,14 @@ describe("autorizadoCron", () => {
 
   it("rechaza un CRON_SECRET demasiado corto para ser seguro", () => {
     expect(autorizadoCron(pedir("Bearer abc"), "abc")).toBe(false);
+  });
+
+  it("deja constancia en el registro cuando rechaza por falta de secreto o por uno corto (para no fallar en silencio)", () => {
+    const aviso = vi.spyOn(console, "error").mockImplementation(() => {});
+    autorizadoCron(pedir("Bearer x"), undefined);
+    autorizadoCron(pedir("Bearer abc"), "abc");
+    expect(aviso).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(aviso.mock.calls)).not.toContain("abc");
+    aviso.mockRestore();
   });
 });
