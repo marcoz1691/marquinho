@@ -150,6 +150,7 @@ export function desdeHoja(tabs, base) {
   set("enlaceparaagendar", function (v) { N.agenda = v; });
   set("nombredelasistente", function (v) { N.asistente = v; });
   set("cargodelnotario", function (v) { N.cargo = v; });
+  set("nombrecortodelnotario", function (v) { N.notarioCorto = v; });
   set("citasporhora", function (v) { if (num(v)) N.citas = Object.assign({}, N.citas, { porHora: num(v) }); });
   set("feriados", function (v) { N.citas = Object.assign({}, N.citas, { feriados: v.split(/[,;\n]+/).map(fecha).filter(Boolean) }); });
   ["facebook", "instagram", "tiktok", "linkedin", "x"].forEach(function (k) { set(k, function (v) { N.redes[k] = v; }); });

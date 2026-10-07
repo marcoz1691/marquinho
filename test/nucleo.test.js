@@ -77,6 +77,11 @@ describe("desdeHoja", () => {
     expect(r.notaria.cargo).toBe("Notario Cuadragésimo Primero del Cantón Quito");
   });
 
+  it("lee el nombre corto del notario para el menú", () => {
+    const r = desdeHoja({ ...tabs, configuracion: "Dato,Valor\nNombre corto del notario,Dr. Dobri Albornoz Donoso\n" }, base);
+    expect(r.notaria.notarioCorto).toBe("Dr. Dobri Albornoz Donoso");
+  });
+
   it("rechaza una hoja sin trámites", () => {
     expect(() => desdeHoja({ ...tabs, tramites: "Código\n" }, base)).toThrow();
   });
