@@ -1,5 +1,9 @@
 {
   "functions": {
+    "api/documentos.js": {
+      "maxDuration": 30,
+      "includeFiles": "data/**"
+    },
     "api/whatsapp.js": {
       "maxDuration": 300,
       "includeFiles": "data/**"
