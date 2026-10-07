@@ -248,7 +248,7 @@ $("#agBuscar").addEventListener("submit", async (e) => {
     if (turno !== busquedaTicket) return;
     const citas = Array.isArray(r) ? r : r.citas || [];
     $("#agEstado").textContent = citas.length ? "Citas encontradas: " + citas.length : "No hay citas activas con ese ticket.";
-    $("#agResultados").innerHTML = citas.map((x) => `<div class="ficha"><b>${esc(x.fecha)} · ${esc(x.hora)} · Ticket ${esc(x.codigo)}</b><span>${esc(x.nombre)} · ${esc(x.tramite)} · ${esc(x.estado)}</span><small>${esc(x.telefono)}</small><div class="acc"><button type="button" class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div></div>`).join("");
+    $("#agResultados").innerHTML = citas.map((x) => `<div class="ficha"><b>${esc(x.fecha)} · ${esc(x.hora)} · Ticket ${esc(x.codigo)}</b><span>${esc(x.nombre)} · ${esc(x.tramite)} · ${esc(x.estado)}</span><small>${x.telefono && !String(x.telefono).startsWith("web:") ? esc(x.telefono) : ""}</small><div class="acc"><button type="button" class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div></div>`).join("");
   } catch (err) { if (turno === busquedaTicket) $("#agEstado").textContent = err.message; }
 });
 $("#agLimpiar").addEventListener("click", () => {

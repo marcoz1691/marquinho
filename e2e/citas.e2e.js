@@ -9,7 +9,12 @@ for (const pagina of [false, true]) {
       await simularApi(page, () => ({ json: { respuestas: ["Listo"], tarjetas: [resumen] } }));
       const pedidos = [];
       await page.route("**/api/documentos**", async (route) => {
-        if (route.request().method() === "GET") return route.fulfill({ json: { documentos: [{ nombre: "anterior.pdf", descripcion: "Documento anterior", estado: "recibido" }] } });
+        if (route.request().method() === "GET") {
+          // La sesión es la credencial de la conversación: va en una cabecera, nunca en la URL.
+          expect(route.request().url()).not.toContain("sesion");
+          expect(route.request().headers()["x-sesion"]).toMatch(/^s_[0-9a-f]{24}$/);
+          return route.fulfill({ json: { documentos: [{ nombre: "anterior.pdf", descripcion: "Documento anterior", estado: "recibido" }] } });
+        }
         pedidos.push(route.request().postDataJSON());
         await route.fulfill({ json: { ok: true, documentos: [{ nombre: "cedula.pdf", descripcion: "Mi cédula", estado: "recibido" }] } });
       });

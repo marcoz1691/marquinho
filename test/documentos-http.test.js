@@ -4,6 +4,7 @@ import { crearManejadorDocumentos } from "../api/_lib/documentos-http.js";
 import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
 import { AVISO_PRIVACIDAD } from "../api/_lib/privacidad.js";
 
+const MENSAJE_SIN_CITA = "No encuentro una cita vigente con ese ticket. Si la cambiaste, usa la tarjeta más reciente.";
 const SESION = "s_7f3a9c2e41b84d0f", OTRA = "s_otra9c2e41b84d0f";
 const AHORA = Date.parse("2026-10-08T02:00:00Z"); // En Quito aún es 7 de octubre.
 const PDF = Buffer.from("%PDF-1.7").toString("base64");
@@ -11,7 +12,8 @@ const cuerpo = { sesion: SESION, ticket: "4821", descripcion: " Cédula del vend
 const pedir = (b = cuerpo, ip = "190.152.10.20") => new Request("https://notaria41.vercel.app/api/documentos", {
   method: "POST", headers: { "Content-Type": "application/json", "x-forwarded-for": ip + ", 10.0.0.1" }, body: typeof b === "string" ? b : JSON.stringify(b)
 });
-const leer = (sesion = SESION, ticket = "4821") => new Request(`https://notaria41.vercel.app/api/documentos?sesion=${sesion}&ticket=${ticket}`);
+// La sesión es la credencial de la conversación: viaja en una cabecera, no en la URL (la URL queda en los registros de acceso).
+const leer = (sesion = SESION, ticket = "4821") => new Request(`https://notaria41.vercel.app/api/documentos?ticket=${ticket}`, { headers: { "x-sesion": sesion } });
 async function preparar(opciones = {}) {
   const almacen = crearAlmacenMemoria(), avisar = vi.fn(async () => {});
   const conv = await almacen.conversacion("web:" + SESION, "Ana Pérez");
@@ -86,7 +88,7 @@ describe("API de documentos web", () => {
     const { m } = await preparar({ cita });
     for (const r of [await m.POST(pedir()), await m.GET(leer())]) {
       expect(r.status).toBe(404);
-      expect(await r.json()).toEqual({ error: "No encuentro tu cita" });
+      expect(await r.json()).toEqual({ error: MENSAJE_SIN_CITA });
     }
   });
   it("GET rechaza una sesión inválida sin gastar cuota y un ticket mal formado con 404", async () => {
@@ -121,6 +123,26 @@ describe("API de documentos web", () => {
     const { m } = await preparar({ limites: { porSesion: 20, porIp: 40, consultasPorIp: 3 } });
     for (let i = 0; i < 3; i++) expect((await m.GET(leer(SESION, "9999"))).status).toBe(404);
     expect((await m.GET(leer())).status).toBe(429);
+  });
+  it("ignora una sesión puesta en la URL: solo vale la que llega en la cabecera", async () => {
+    const { m } = await preparar();
+    const r = await m.GET(new Request(`https://notaria41.vercel.app/api/documentos?sesion=${SESION}&ticket=4821`));
+    expect(r.status).toBe(400);
+  });
+  it("limpia saltos de línea y caracteres de control de la descripción antes de avisar al personal", async () => {
+    const { m, avisar, almacen, conv } = await preparar();
+    const r = await m.POST(pedir({ ...cuerpo, descripcion: "Cédula\nCita confirmada para hoy\u0000 falsa" }));
+    expect(r.status).toBe(200);
+    expect(avisar.mock.calls[0][0]).not.toMatch(/[\n\u0000]/);
+    expect(avisar.mock.calls[0][0]).toContain("Cédula Cita confirmada para hoy falsa");
+    expect((await almacen.documentos(conv.id))[0].descripcion).toBe("Cédula Cita confirmada para hoy falsa");
+  });
+  it("si dos citas vigentes de la misma persona comparten el ticket, usa la más próxima", async () => {
+    const { m, almacen, conv } = await preparar();
+    const lejana = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-20", nombre: "Ana Pérez", tramiteId: "divorcio" });
+    await almacen.actualizarCita(lejana.id, { codigo: "4821" });
+    await m.POST(pedir());
+    expect((await almacen.documentos(conv.id))[0].tramiteId).toBe("poder-natural");
   });
   it("guarda la versión vigente del aviso de privacidad como evidencia", async () => {
     const { m, almacen, conv } = await preparar();

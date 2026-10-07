@@ -34,4 +34,6 @@ it("la agenda permite buscar tickets de cuatro dígitos y ver el chat de los res
   expect(html).toContain('pattern="[0-9]{4}"');
   expect(js).toContain('accion: "buscarTicket"');
   expect(js).toContain('esc(x.codigo)');
+  // El teléfono de una cita web es "web:<sesión>", la credencial de esa conversación: nunca se muestra.
+  expect(js).toMatch(/startsWith\("web:"\) \? esc\(x\.telefono\) : ""/);
 });

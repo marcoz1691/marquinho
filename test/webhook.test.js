@@ -82,3 +82,25 @@ it("envía el resumen después de las respuestas de Sofía", async () => {
   await m.POST(post(cuerpo)); await terminar();
   expect(deps.whatsapp.enviarTexto.mock.calls.map((c) => c[1])).toEqual(["Listo", "Tu ticket es 4821", expect.stringContaining("Tu cita quedó confirmada. Ticket 4821")]);
 });
+
+const conCita = async (_, { eventos }) => {
+  eventos.push({ tipo: "cita", resumen: { codigo: "4821", estado: "confirmada", fechaTexto: "jueves 8 de octubre", hora: "10:00", direccion: "Quito", requisitos: [], costo: null } });
+  return ["Listo", "Tu ticket es 4821"];
+};
+
+it("si falla el envío de una respuesta, igual envía el resumen de la cita (el ticket no se pierde)", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const { m, deps, terminar } = preparar(conCita);
+  deps.whatsapp.enviarTexto.mockRejectedValueOnce(new Error("WhatsApp API 500"));
+  await m.POST(post(cuerpo)); await terminar();
+  expect(deps.whatsapp.enviarTexto.mock.calls.map((c) => c[1])).toEqual(expect.arrayContaining([expect.stringContaining("Ticket 4821")]));
+});
+
+it("si falla el envío del resumen, no manda la disculpa genérica: la cita sí quedó creada", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const { m, deps, terminar } = preparar(conCita);
+  deps.whatsapp.enviarTexto.mockResolvedValueOnce({}).mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("WhatsApp API 500"));
+  await m.POST(post(cuerpo)); await terminar();
+  expect(deps.whatsapp.enviarTexto.mock.calls.map((c) => c[1]).some((t) => /problema/i.test(t))).toBe(false);
+});
+

@@ -321,6 +321,19 @@ describe("herramientas", () => {
     expect(r.content).toMatch(/20/);
   });
 
+  it("al reprogramar en el mismo turno, el cliente solo recibe la tarjeta de la cita que quedó vigente", async () => {
+    const eventos = [];
+    const claude = claudeFalso([
+      herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Ana Pérez" }, "tu_1"),
+      herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "11:00", nombre: "Ana Pérez", reprogramar: true }, "tu_2"),
+      texto("Listo, quedó a las 11:00")]);
+    await nuevo(claude).atender(mensaje(), { eventos });
+    expect(eventos).toHaveLength(1);
+    expect(eventos[0].resumen).toMatchObject({ hora: "11:00" });
+    const citas = await almacen.solicitudesCita((await almacen.conversacion("593991112233")).id);
+    expect(citas.filter((c) => c.estado !== "rechazada")).toHaveLength(1);
+  });
+
   it("registrar_consentimiento no registra nada si el cliente no aceptó con palabras (un archivo o un saludo no es aceptar)", async () => {
     for (const m of [mensaje({ tipo: "archivo", texto: "", media: { id: "M1", mime: "application/pdf" } }), mensaje({ texto: "Hola, ¿cuánto cuesta?" })]) {
       const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("¿Aceptas?")]);
