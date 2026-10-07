@@ -6,15 +6,17 @@ import { crearAlmacenMemoria } from "./almacen-memoria.js";
 import { crearContenido } from "./contenido.js";
 import { crearAsistente } from "./asistente.js";
 import { crearPanel } from "./panel.js";
+import { limitarPlantillas } from "./limites.js";
 
 let servicios;
 
 export function obtenerServicios(env = process.env) {
   if (servicios) return servicios;
-  const whatsapp = crearWhatsApp({ token: env.WHATSAPP_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID, version: env.WHATSAPP_API_VERSION || "v23.0" });
   // Sin Supabase configurado se usa memoria: solo sirve para pruebas locales, se pierde al reiniciar.
   if (!env.SUPABASE_URL && env.VERCEL_ENV === "production") throw new Error("Falta SUPABASE_URL: en producción el almacén en memoria perdería conversaciones y documentos.");
   const almacen = env.SUPABASE_URL ? crearAlmacenSupabase({ url: env.SUPABASE_URL, clave: env.SUPABASE_SERVICE_ROLE_KEY }) : crearAlmacenMemoria();
+  const whatsapp = limitarPlantillas(crearWhatsApp({ token: env.WHATSAPP_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID, version: env.WHATSAPP_API_VERSION || "v23.0" }),
+    almacen, { exentos: [env.AVISOS_WHATSAPP].filter(Boolean) });
   const contenido = crearContenido();
   const avisar = async (texto) => {
     if (!env.AVISOS_WHATSAPP) return;

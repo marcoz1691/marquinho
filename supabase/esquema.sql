@@ -130,3 +130,36 @@ language sql as $$
   returning cuenta;
 $$;
 revoke execute on function incrementar_uso(text, bigint) from public, anon, authenticated;
+
+-- Seguridad (oct. 2026) ------------------------------------------------------------------------------------------
+
+-- Evidencia del consentimiento (Reglamento LOPDP, art. 5): lo que escribió el cliente y la versión del aviso aceptado.
+alter table conversaciones add column if not exists consentimiento_texto text not null default '';
+alter table conversaciones add column if not exists consentimiento_aviso text not null default '';
+
+-- Borrado recuperable de documentos: el panel los marca y la purga diaria elimina el archivo días después.
+alter table documentos add column if not exists borrado_en timestamptz;
+alter table documentos add column if not exists borrado_por text not null default '';
+create index if not exists documentos_borrados on documentos(borrado_en) where borrado_en is not null;
+
+-- Auditoría del panel: quién vio o cambió qué. Solo se agrega; no se puede editar ni borrar.
+create table if not exists auditoria (
+  id bigserial primary key,
+  creado timestamptz not null default now(),
+  email text not null default '',
+  accion text not null,
+  objetivo text not null default '',
+  ok boolean not null default true
+);
+create index if not exists auditoria_creado on auditoria(creado desc);
+alter table auditoria enable row level security;
+
+create or replace function auditoria_inmutable() returns trigger language plpgsql as $$
+begin
+  raise exception 'La auditoría no se puede modificar ni borrar';
+end $$;
+drop trigger if exists auditoria_inmutable on auditoria;
+create trigger auditoria_inmutable before update or delete on auditoria for each row execute function auditoria_inmutable();
+
+-- La purga busca conversaciones inactivas.
+create index if not exists conversaciones_creada on conversaciones(creada);

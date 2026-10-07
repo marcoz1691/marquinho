@@ -155,4 +155,43 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     await a.agregarMensajes(s.id, [{ role: "user", content: "hola" }], 6000);
     expect((await a.conversaciones()).find((x) => x.id === c.id)).toMatchObject({ nombre: "Luis", ultimaActividad: 6000 });
   });
+
+  it("borrar un documento lo oculta y la purga elimina después el archivo", async () => {
+    const a = crear(), c = await a.conversacion(tel());
+    const { id } = await a.guardarDocumento({ conversacionId: c.id, mediaId: "M1", nombre: "c.pdf", mime: "application/pdf", bytes: new Uint8Array([1]), descripcion: "cédula" });
+    await a.borrarDocumento(id, { por: "carla@notaria41.ec" });
+    expect(await a.documento(id)).toBeNull();
+    expect(await a.urlDocumento(id)).toBeNull();
+    expect(await a.documentos(c.id)).toEqual([]);
+    const r = await a.purgar({ inactivasAntesDe: 0, borradosAntesDe: Date.now() + 60000, hoy: "2026-10-07" });
+    expect(r.documentos).toBeGreaterThanOrEqual(1);
+  });
+
+  it("purga las conversaciones inactivas con sus documentos, salvo las que tienen una cita por venir", async () => {
+    const a = crear(), antes = Date.now() + 5000;
+    const vieja = await a.conversacion(tel(), "Vieja");
+    await a.guardarDocumento({ conversacionId: vieja.id, mediaId: "M1", nombre: "c.pdf", mime: "application/pdf", bytes: new Uint8Array([1]), descripcion: "cédula" });
+    const activa = await a.conversacion(tel(), "Activa");
+    const s = await a.sesionActiva(activa.id, { ahora: antes + 1e7, sistema: "S", inactividadMs: DIA });
+    await a.agregarMensajes(s.id, [{ role: "user", content: "hola" }], antes + 1e7);
+    const conCita = await a.conversacion(tel(), "Con cita");
+    await a.crearSolicitudCita({ conversacionId: conCita.id, tramiteId: null, fecha: "2099-01-05", hora: "10:00", nombre: "X" });
+    await a.purgar({ inactivasAntesDe: antes, borradosAntesDe: 0, hoy: "2026-10-07" });
+    expect(await a.conversacionPorId(vieja.id)).toBeNull();
+    expect(await a.documentos(vieja.id)).toEqual([]);
+    expect(await a.conversacionPorId(activa.id)).not.toBeNull();
+    expect(await a.conversacionPorId(conCita.id)).not.toBeNull();
+  });
+
+  it("guarda la evidencia del consentimiento", async () => {
+    const a = crear(), c = await a.conversacion(tel());
+    await a.actualizarConversacion(c.id, { consentimiento: true, consentimientoEn: new Date().toISOString(), consentimientoTexto: "Sí, acepto", consentimientoAviso: "2026-10-07" });
+    expect(await a.conversacionPorId(c.id)).toMatchObject({ consentimiento: true, consentimientoTexto: "Sí, acepto", consentimientoAviso: "2026-10-07" });
+  });
+
+  it("registra la auditoría del panel", async () => {
+    const a = crear(), objetivo = "doc-" + Math.random();
+    await a.auditar({ email: "carla@notaria41.ec", accion: "documento", objetivo, ok: true });
+    expect((await a.auditoria()).find((x) => x.objetivo === objetivo)).toMatchObject({ email: "carla@notaria41.ec", accion: "documento", ok: true });
+  });
 });

@@ -124,6 +124,15 @@ test.describe("Calculadora de tarifas", () => {
     await resultado(page, "$299,32", "$260,28");
   });
 
+  test("CF-157 presionar Enter en el monto no recarga la página", async ({ page }) => {
+    await page.selectOption("#calcTramite", "compraventa");
+    await page.fill("#calcMonto", "85000");
+    await page.locator("#calcMonto").press("Enter");
+    await page.waitForTimeout(300);
+    await expect(page).toHaveURL(/\/$|index\.html$/);
+    await resultado(page, "$443,44");
+  });
+
   test("CF-65 la nota del trámite se muestra bajo el resultado", async ({ page }) => {
     await page.selectOption("#calcTramite", "poder-natural");
     await expect(page.locator("#calcNote")).toHaveText("Cada otorgante adicional suma 3% del SBU.");

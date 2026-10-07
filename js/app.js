@@ -223,6 +223,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     habs.addEventListener("input", calc);
     habs.addEventListener("change", function (e) { if (e.target.matches("input")) { e.target.value = acotar(e.target.value); calc(); } });
     sel.addEventListener("change", calc); $("#calcQty").addEventListener("input", calc); $("#calcMonto").addEventListener("input", calc);
+    $("#calc").addEventListener("submit", function (e) { e.preventDefault(); });
     setupCalc.elegir = function (id) {
       sel.value = id;
       [].forEach.call(habs.querySelectorAll("input"), function (i) { i.value = 0; });

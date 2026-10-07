@@ -15,6 +15,24 @@ const ERROR_DE_HISTORIAL = /thinking|tool_use|tool_result|messages\.\d|prefix|ro
 const SIN_TEXTO = "Disculpa, no pude completar tu consulta. ¿Quieres que te comunique con una persona de la notaría?";
 const ZONA = "America/Guayaquil";
 const MAX_DOC_BYTES = 15 * 1024 * 1024;
+const MAX_DOCS = 20;                // documentos por conversación
+const LIMITE_DIARIO = 150;          // mensajes de WhatsApp por número y día (acota el costo si alguien abusa)
+const DIA_MS = 24 * 60 * 60 * 1000;
+const LIMITE_ALCANZADO = "Hoy recibimos muchos mensajes desde tu número y por ahora no puedo seguir respondiendo. Escríbenos mañana o llama a la notaría y te ayudamos.";
+const AVISO_PRIVACIDAD = "2026-10-07"; // versión del aviso de privacidad que el cliente acepta (ver privacidad.html)
+const NOMBRE = /^[\p{L} .'-]{2,60}$/u;
+// Texto del cliente dentro de avisos y registros: una sola línea y con largo máximo.
+const corto = (v, n) => String(v ?? "").replace(/[\s\u0000-\u001f\u007f]+/g, " ").trim().slice(0, n);
+
+// Tipo real del archivo según sus primeros bytes; el MIME que declara WhatsApp no basta.
+function tipoArchivo(b) {
+  const empieza = (...x) => x.every((v, i) => b[i] === v);
+  if (empieza(0x25, 0x50, 0x44, 0x46, 0x2d)) return "application/pdf";
+  if (empieza(0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (empieza(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "image/png";
+  if (empieza(0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  return null;
+}
 
 const HERRAMIENTAS = [
   {
@@ -179,13 +197,13 @@ function textoUsuario(m) {
   return m.texto;
 }
 
-export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)), limiteDiario = LIMITE_DIARIO }) {
   async function ejecutar(bloque, ctx) {
     const { conv, C } = ctx, i = bloque.input || {};
     const ok = (content) => ({ type: "tool_result", tool_use_id: bloque.id, content });
     const error = (content) => ({ type: "tool_result", tool_use_id: bloque.id, content, is_error: true });
     const tramite = (id) => C.data.tramites.find((t) => t.id === id);
-    const quien = `${conv.nombre || "Cliente"} (${conv.telefono})`;
+    const quien = `${corto(conv.nombre, 60) || "Cliente"} (${conv.telefono})`;
 
     switch (bloque.name) {
       case "calcular_costo": {
@@ -200,6 +218,8 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "solicitar_cita": {
+        const nombre = String(i.nombre || "").trim();
+        if (!NOMBRE.test(nombre)) return error("El nombre no es válido: pide al cliente su nombre completo (solo letras, de 2 a 60 caracteres).");
         if (!/^\d{4}-\d{2}-\d{2}$/.test(i.fecha || "") || !/^\d{1,2}:\d{2}$/.test(i.hora || "")) return error("Fecha u hora con formato inválido (usa AAAA-MM-DD y HH:MM).");
         const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(ctx.t);
         const dia = new Date(i.fecha + "T12:00:00Z").getUTCDay(), hora = i.hora.padStart(5, "0"), H = C.notaria.horario, m = minutos(hora);
@@ -234,9 +254,9 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         // El recordatorio sale a las 17:00 del día anterior.
         const manana = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(new Date(ctx.t.getTime() + 864e5));
         const recordatorio = i.fecha > manana || (i.fecha === manana && enQuito(ctx.t).min < 17 * 60);
-        await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre: i.nombre, nota: i.nota || "",
+        await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre, nota: corto(i.nota, 200),
           estado: confirmada ? "confirmada" : "pendiente", ...(contacto ? { contacto } : {}) });
-        const cliente = `${i.nombre} ${contacto ? "(" + contacto + ")" : quien}`;
+        const cliente = `${nombre} ${contacto ? "(" + contacto + ")" : quien}`;
         // La anterior se cancela después de crear la nueva, para que el cliente nunca quede sin cita.
         for (const a of activas) {
           await almacen.actualizarCita(a.id, { estado: "rechazada", motivo: "Reprogramada por el cliente" });
@@ -250,33 +270,38 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "registrar_consentimiento":
-        await almacen.actualizarConversacion(conv.id, { consentimiento: true, consentimientoEn: ctx.t.toISOString() });
+        // Evidencia del consentimiento (Reglamento LOPDP, art. 5): qué escribió el cliente, cuándo y qué versión del aviso aceptó.
+        await almacen.actualizarConversacion(conv.id, { consentimiento: true, consentimientoEn: ctx.t.toISOString(),
+          consentimientoTexto: corto(ctx.textoCliente, 500), consentimientoAviso: AVISO_PRIVACIDAD });
         conv.consentimiento = true;
         return ok("Consentimiento registrado.");
 
       case "guardar_documento": {
         if (esWeb(conv)) return error("En el chat de la página web no se pueden recibir documentos: pide al cliente que los envíe por WhatsApp.");
         if (!conv.consentimiento) return error("El cliente aún no ha dado su consentimiento de datos: muéstrale el aviso de privacidad y pide que acepte antes de guardar documentos.");
+        if ((await almacen.documentos(conv.id)).length >= MAX_DOCS) return error(`Esta conversación ya tiene ${MAX_DOCS} documentos guardados: no se pueden recibir más por aquí. Ofrece pasar con una persona.`);
         const archivo = await almacen.archivoRecibido(conv.id, i.media_id);
         if (!archivo) return error(`El archivo ${i.media_id} no fue recibido en esta conversación.`);
         const { bytes, mime } = await whatsapp.descargarArchivo(archivo.id);
         if (bytes.length > MAX_DOC_BYTES) return error("El archivo pesa más de 15 MB: pide al cliente una versión más liviana (por ejemplo, una foto o un PDF comprimido).");
-        const t = i.tramite_id ? tramite(i.tramite_id) : null;
-        await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: archivo.id, nombre: archivo.nombre || "", mime: mime || archivo.mime, bytes,
-          descripcion: i.descripcion, tramiteId: t ? t.id : null });
-        await avisar(`Documento recibido de ${quien}: ${i.descripcion}${t ? " — " + t.nombre : ""}. Revísalo en el panel.`);
+        const tipo = tipoArchivo(bytes);
+        if (!tipo) return error("Ese archivo no es un PDF ni una foto (JPG, PNG o WEBP): pide al cliente que envíe el documento en uno de esos formatos.");
+        const t = i.tramite_id ? tramite(i.tramite_id) : null, descripcion = corto(i.descripcion, 120);
+        await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: archivo.id, nombre: corto(archivo.nombre, 120), mime: tipo, bytes,
+          descripcion, tramiteId: t ? t.id : null });
+        await avisar(`Documento recibido de ${quien}: ${descripcion}${t ? " — " + t.nombre : ""}. Revísalo en el panel.`);
         return ok("Documento guardado para la pre-revisión del personal.");
       }
 
       case "derivar_a_persona":
         if (esWeb(conv)) {
           const contacto = celular(i.telefono);
-          if (contacto) await avisar(`Cliente del chat web (${contacto}) pide que lo contacten: ${i.motivo || "sin motivo"}.`);
+          if (contacto) await avisar(`Cliente del chat web (${contacto}) pide que lo contacten: ${corto(i.motivo, 200) || "sin motivo"}.`);
           return ok(contacto ? "Aviso enviado al personal: lo contactarán a ese número. Ofrécele también el WhatsApp o el teléfono de la notaría."
             : "No hay atención en vivo en la web: ofrécele el WhatsApp o el teléfono de la notaría, o pídele su celular para que lo contacten.");
         }
         await almacen.actualizarConversacion(conv.id, { derivada: true });
-        await avisar(`${quien} pide atención de una persona: ${i.motivo || "sin motivo"}. Respóndele desde el panel.`);
+        await avisar(`${quien} pide atención de una persona: ${corto(i.motivo, 200) || "sin motivo"}. Respóndele desde el panel.`);
         return ok("Conversación derivada. No vuelvas a responder; despídete diciendo que una persona le escribirá pronto.");
 
       case "estado_de_mi_tramite": {
@@ -348,13 +373,13 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         if (r.stop_reason === "refusal" && !respuestas.length) respuestas.push("Disculpa, no puedo ayudarte con eso por aquí. Si quieres, te comunico con una persona de la notaría.");
         if (r.stop_reason !== "tool_use") { await guardar(); break; }
         const resultados = [];
-        for (const b of r.content.filter((x) => x.type === "tool_use")) resultados.push(await ejecutar(b, { conv, C, t }));
+        for (const b of r.content.filter((x) => x.type === "tool_use")) resultados.push(await ejecutar(b, { conv, C, t, textoCliente: usuario.content }));
         const res = { role: "user", content: resultados };
         historial.push(res); porGuardar.push(res);
         await guardar();
       }
     } catch (e) {
-      console.error(`Error en el turno de ${conv.telefono}: ${e?.status || ""} ${e?.message || e}`);
+      console.error(`Error en el turno de la conversación ${conv.id}: ${e?.status || ""} ${e?.message || e}`);
       porGuardar.push({ role: "assistant", content: [{ type: "text", text: DISCULPA }] });
       await guardar();
       return [...respuestas, DISCULPA];
@@ -366,6 +391,11 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
     if (!(await almacen.marcarProcesado(m.id))) return [];
     const conv = await almacen.conversacion(m.de, m.nombre);
     await almacen.marcarClienteEscribio(conv.id, m.timestamp ? Number(m.timestamp) * 1000 : ahora().getTime());
+    // La web tiene sus propios límites (chat-http.js); en WhatsApp se acota por número y día.
+    if (m.canal !== "web") {
+      const n = await almacen.contarUso("wa:dia:" + conv.id, DIA_MS, ahora().getTime());
+      if (n > limiteDiario) return n === limiteDiario + 1 ? [LIMITE_ALCANZADO] : [];
+    }
     if (m.media) await almacen.registrarArchivo(conv.id, m.media);
     await almacen.encolar(conv.id, m);
 

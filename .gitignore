@@ -9,3 +9,6 @@ e2e/resultados/
 .env*
 .DS_Store
 .claude/worktrees/
+assessment.txt
+supabase/.temp/
+~$*
