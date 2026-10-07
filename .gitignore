@@ -8,3 +8,4 @@ e2e/resultados/
 .vercel
 .env*
 .DS_Store
+.claude/worktrees/

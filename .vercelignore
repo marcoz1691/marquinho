@@ -10,3 +10,4 @@ GLOSSARY.md
 video
 .env
 .env.local
+vitest.config.js
