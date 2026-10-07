@@ -119,14 +119,21 @@
           <label id="calcQtyWrap">Cantidad <span id="calcUnit"></span>
             <input id="calcQty" type="number" min="1" value="1" inputmode="numeric">
           </label>
+          <fieldset class="calc__hab">
+            <legend>Documentos habilitantes <span>(opcional)</span></legend>
+            <p class="calc__habtxt">Agrega las hojas que necesites certificar o materializar.</p>
+            <div class="calc__habs" id="calcHabs"></div>
+          </fieldset>
         </div>
         <div class="calc__out" aria-live="polite">
-          <div class="calc__total"><span>Total a pagar</span><strong id="rTotal">-</strong></div>
+          <div class="calc__total"><span>Total estimado</span><strong id="rTotal">-</strong></div>
           <div class="calc__split">
             <div><span>Tarifa</span><strong id="rBase">-</strong></div>
+            <div id="rHabWrap" hidden><span>Habilitantes</span><strong id="rHab">-</strong></div>
             <div><span>IVA</span><strong id="rIva">-</strong></div>
           </div>
           <p class="note" id="calcNote"></p>
+          <p class="calc__aviso" id="calcAviso"></p>
         </div>
       </form>
     </div>

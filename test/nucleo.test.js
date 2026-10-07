@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCSV, num, fecha, desdeHoja, calcularTarifa, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
+import { parseCSV, num, fecha, desdeHoja, calcularTarifa, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
 
 const TARIFAS = {
   sbu: 482, iva: 0.15, anio: 2026,
@@ -102,6 +102,52 @@ describe("calcularTarifa", () => {
     // 0,35 SBU = 168,70; IVA exacto 25,305
     const t = { tarifa: { tipo: "cuantia", tabla: "transferencia" } };
     expect(calcularTarifa(t, TARIFAS, { monto: 20000 })).toMatchObject({ base: 168.7, iva: 25.31, total: 194.01 });
+  });
+});
+
+describe("calcularConHabilitantes", () => {
+  const poder = { id: "poder-natural", tarifa: { tipo: "pct", valor: 0.12 } };
+  const copias = { id: "copias-certificadas", tarifa: { tipo: "fija", valor: 1.79, unidad: "por hoja" } };
+  const electronica = { id: "certificacion-electronica", tarifa: { tipo: "fija", valor: 1.34, unidad: "por hoja" } };
+  const compraventa = { id: "compraventa", tarifa: { tipo: "cuantia", tabla: "transferencia" } };
+  const tramites = [poder, copias, electronica, compraventa];
+
+  it("expone el aviso y los habilitantes con su trámite de precio", () => {
+    expect(AVISO_HABILITANTES).toMatch(/no incluye documentos habilitantes/);
+    expect(HABILITANTES.map((h) => h.tramite)).toEqual(["copias-certificadas", "certificacion-electronica"]);
+  });
+
+  it("suma el trámite y las copias certificadas", () => {
+    const r = calcularConHabilitantes(poder, TARIFAS, {}, { copias: 2 }, tramites);
+    expect(r.tramite.total).toBe(66.52);
+    expect(r.habilitantes).toEqual([{ id: "copias", nombre: "Copias certificadas o compulsas", cantidad: 2, base: 3.58, iva: 0.54, total: 4.12 }]);
+    expect(r).toMatchObject({ base: 61.42, iva: 9.22, total: 70.64 });
+  });
+
+  it("sin habilitantes el total es el del trámite", () => {
+    const r = calcularConHabilitantes(poder, TARIFAS, {}, {}, tramites);
+    expect(r.habilitantes).toEqual([]);
+    expect(r).toMatchObject({ base: 57.84, iva: 8.68, total: 66.52 });
+  });
+
+  it("acota las cantidades a enteros entre 0 y 200", () => {
+    expect(calcularConHabilitantes(poder, TARIFAS, {}, { copias: 0, materializaciones: -4 }, tramites).habilitantes).toEqual([]);
+    const r = calcularConHabilitantes(poder, TARIFAS, {}, { copias: 1e6, materializaciones: 2.7 }, tramites);
+    expect(r.habilitantes.map((h) => h.cantidad)).toEqual([200, 2]);
+    expect(r.habilitantes[0].base).toBe(358);
+    expect(calcularConHabilitantes(poder, TARIFAS, {}, { copias: "abc" }, tramites).habilitantes).toEqual([]);
+  });
+
+  it("cuantía sin monto no tiene total, pero lista los habilitantes", () => {
+    const r = calcularConHabilitantes(compraventa, TARIFAS, {}, { materializaciones: 1 }, tramites);
+    expect(r).toMatchObject({ base: null, iva: null, total: null });
+    expect(r.habilitantes).toHaveLength(1);
+    expect(r.habilitantes[0]).toMatchObject({ id: "materializaciones", base: 1.34 });
+  });
+
+  it("omite un habilitante cuyo trámite no existe", () => {
+    const r = calcularConHabilitantes(poder, TARIFAS, {}, { copias: 1, materializaciones: 1 }, [poder, electronica]);
+    expect(r.habilitantes.map((h) => h.id)).toEqual(["materializaciones"]);
   });
 });
 
