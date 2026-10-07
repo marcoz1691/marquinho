@@ -467,3 +467,17 @@ h2,.sub,.hscroll__head{text-align:left}
   .faq__item[open] summary i{transform:rotate(45deg)}
   .faq__item p{padding:0 0 20px}
 }
+
+/* Resumen de cita compartido por los dos chats. Los tokens siguen el tema del sitio. */
+.cita-tarjeta{width:100%;min-width:0;padding:16px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--card);color:var(--fg);overflow-wrap:anywhere;font-size:14px;line-height:1.5}
+.cita-tarjeta h3{margin:0;font-size:18px}.cita-tarjeta p{margin:8px 0}.cita-tarjeta ul{padding-left:20px;margin:8px 0}
+.cita-ticket{display:block;font-size:28px;color:var(--accent);font-variant-numeric:tabular-nums}
+.cita-aviso,.cita-estado{color:var(--muted)}
+.cita-botones{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.cita-tarjeta button{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-input);background:var(--accent-soft);color:var(--fg);font:inherit;cursor:pointer;max-width:100%}
+.cita-tarjeta button:disabled{opacity:.6;cursor:wait}
+.cita-subida{display:grid;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.cita-subida label{display:grid;gap:6px}.cita-subida input:not([type=checkbox]){width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:var(--r-input);background:var(--bg);color:var(--fg);font:inherit}
+.cita-subida .cita-consentimiento{display:flex;align-items:flex-start;gap:8px}.cita-consentimiento input{flex:none;margin-top:4px}
+.cita-subida progress{width:100%;accent-color:var(--accent)}
+.chat__msg--tarjeta{max-width:100%;padding:0;width:100%}.ac-msg--tarjeta{min-width:0;width:100%}

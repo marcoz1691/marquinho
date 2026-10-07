@@ -19,13 +19,13 @@ describe("API del chat web", () => {
     const { m, asistente } = preparar();
     const r = await m.POST(pedir({ sesion: SESION, texto: "hola" }));
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ respuestas: ["¡Hola! ¿En qué te ayudo?"] });
+    expect(await r.json()).toEqual({ respuestas: ["¡Hola! ¿En qué te ayudo?"], tarjetas: [] });
     expect(asistente.atender.mock.calls[0][0]).toMatchObject({ de: "web:" + SESION, canal: "web", tipo: "texto", texto: "hola" });
   });
 
   it("indica que hay otra respuesta en curso cuando el asistente no tomó el turno", async () => {
     const { m } = preparar({ respuestas: [] });
-    expect(await (await m.POST(pedir({ sesion: SESION, texto: "hola" }))).json()).toEqual({ respuestas: [], ocupado: true });
+    expect(await (await m.POST(pedir({ sesion: SESION, texto: "hola" }))).json()).toEqual({ respuestas: [], tarjetas: [], ocupado: true });
   });
 
   it("rechaza una sesión inválida, un texto vacío o demasiado largo", async () => {
@@ -64,4 +64,13 @@ describe("API del chat web", () => {
     await m.POST(pedir({ sesion: SESION, texto: "hola" }));
     expect(JSON.stringify(espia.mock.calls)).not.toContain("190.152.10.20");
   });
+});
+
+it("devuelve las tarjetas de cita con subida habilitada", async () => {
+  const { m, asistente } = preparar();
+  asistente.atender.mockImplementation(async (_, { eventos }) => {
+    eventos.push({ tipo: "cita", resumen: { tipo: "cita", codigo: "4821", subirDocumentos: false } });
+    return ["Tu ticket es 4821"];
+  });
+  expect(await (await m.POST(pedir({ sesion: SESION, texto: "cita" }))).json()).toMatchObject({ tarjetas: [{ codigo: "4821", subirDocumentos: true }] });
 });

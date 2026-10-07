@@ -26,6 +26,22 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     expect(await a.ajustes()).toMatchObject({ sbu: 500, anio: "2027" });
   });
 
+  it("crea tickets de cuatro dígitos, los conserva y busca solo citas activas desde la fecha", async () => {
+    const a = crear(), c = await a.conversacion(tel());
+    const nueva = await a.crearSolicitudCita({ conversacionId: c.id, fecha: "2099-01-05", hora: "10:00", nombre: "Ana", contacto: "593991112233" });
+    expect(nueva.codigo).toMatch(/^[1-9]\d{3}$/);
+    expect(await a.cita(nueva.id)).toMatchObject({ codigo: nueva.codigo });
+    expect(await a.solicitudesCita(c.id)).toEqual([expect.objectContaining({ codigo: nueva.codigo })]);
+    expect(await a.agenda("2099-01-05")).toContainEqual(expect.objectContaining({ codigo: nueva.codigo }));
+    expect(await a.citasPorCodigo(nueva.codigo, "2099-01-05")).toContainEqual(expect.objectContaining({ id: nueva.id, telefono: "593991112233" }));
+    expect(await a.citasPorCodigo(nueva.codigo, "2099-01-06")).not.toContainEqual(expect.objectContaining({ id: nueva.id }));
+    await a.actualizarCita(nueva.id, { estado: "confirmada" });
+    expect(await a.citasDelDia("2099-01-05")).toContainEqual(expect.objectContaining({ codigo: nueva.codigo }));
+    await a.actualizarCita(nueva.id, { estado: "rechazada" });
+    expect((await a.cita(nueva.id)).codigo).toBe(nueva.codigo);
+    expect(await a.citasPorCodigo(nueva.codigo, "2099-01-05")).not.toContainEqual(expect.objectContaining({ id: nueva.id }));
+  });
+
   it("marca cada mensaje de WhatsApp una sola vez", async () => {
     const a = crear(), id = "wamid.test." + Math.random();
     expect(await a.marcarProcesado(id)).toBe(true);
@@ -195,6 +211,14 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     expect(await a.documentos(vieja.id)).toEqual([]);
     expect(await a.conversacionPorId(activa.id)).not.toBeNull();
     expect(await a.conversacionPorId(conCita.id)).not.toBeNull();
+  });
+
+  it("busca una conversación por teléfono sin crearla", async () => {
+    const a = crear(), t = "web:" + Math.random().toString(36).slice(2, 14);
+    expect(await a.conversacionPorTelefono(t)).toBeNull();
+    expect(await a.conversacionPorTelefono(t)).toBeNull();   // seguir sin existir: la búsqueda no la crea
+    const c = await a.conversacion(t, "Ana");
+    expect(await a.conversacionPorTelefono(t)).toMatchObject({ id: c.id, telefono: t, nombre: "Ana" });
   });
 
   it("guarda la evidencia del consentimiento", async () => {

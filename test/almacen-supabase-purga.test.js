@@ -64,6 +64,16 @@ describe("purgar (Supabase)", () => {
     expect(log.findIndex((l) => l.tabla === "storage")).toBeGreaterThan(iFilas);
   });
 
+  it("borra los contadores de uso con más de 7 días (guardan celulares y huellas de IP)", async () => {
+    const { cliente, log } = clienteFalso({});
+    await crearAlmacenSupabase({ cliente }).purgar(args);
+    const uso = log.find((l) => l.tabla === "uso" && l.ops.some((o) => o[0] === "delete"));
+    expect(uso).toBeTruthy();
+    const corte = Date.parse(uso.ops.find((o) => o[0] === "lt" && o[1] === "creado")[2]);
+    expect(Date.now() - corte).toBeGreaterThan(6.9 * 864e5);
+    expect(Date.now() - corte).toBeLessThan(7.1 * 864e5);
+  });
+
   it("limita cada lote a 50 conversaciones", async () => {
     const { cliente, log } = clienteFalso({ conversaciones: Array.from({ length: 50 }, (_, i) => "c" + i) });
     await crearAlmacenSupabase({ cliente }).purgar(args);

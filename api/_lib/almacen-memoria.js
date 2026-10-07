@@ -29,6 +29,8 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
       else if (nombre && !c.nombre) c.nombre = nombre;
       return copia(c);
     },
+    // Busca sin crear (conversacion() crea si no existe).
+    async conversacionPorTelefono(telefono) { return copia(convs.get(telefono) || null); },
     async conversacionPorId(id) { return copia(porId(id) || null); },
     async actualizarConversacion(id, cambios) { Object.assign(porId(id), cambios); },
     async resumenConversaciones() {
@@ -95,7 +97,21 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async borrarDocumento(id, { por = "", ahora = Date.now() } = {}) { const d = docs.find((x) => x.id === id); if (d && !d.borradoEn) Object.assign(d, { borradoEn: ahora, borradoPor: por }); },
     async urlDocumento(id) { return docs.some((d) => d.id === id && !d.borradoEn) ? `memoria://documentos/${id}` : null; },
 
-    async crearSolicitudCita(c) { const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c }; citas.push(x); return { id: x.id }; },
+    async crearSolicitudCita(c) {
+      for (let intento = 0; intento < 8; intento++) {
+        const codigo = String(1000 + Math.floor(Math.random() * 9000));
+        if (citas.some((x) => x.fecha === c.fecha && x.codigo === codigo)) continue;
+        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c, codigo };
+        citas.push(x);
+        return { id: x.id, codigo };
+      }
+      throw new Error("No se pudo generar un ticket único para ese día.");
+    },
+    async citasPorCodigo(codigo, desdeFecha) {
+      return citas.filter((c) => c.codigo === codigo && c.fecha >= desdeFecha && ["pendiente", "confirmada"].includes(c.estado))
+        .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
+        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));
+    },
     async solicitudesCita(conversacionId) { return citas.filter((c) => c.conversacionId === conversacionId).map(copia); },
     async cita(id) { return copia(citas.find((c) => c.id === id) || null); },
     async actualizarCita(id, cambios) { Object.assign(citas.find((c) => c.id === id), cambios); },

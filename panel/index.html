@@ -6,98 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Panel Notaría 41</title>
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<style>
-:root{--bg:#FBFAF7;--alt:#F3F1EA;--card:#fff;--fg:#1C2620;--muted:#5A6660;--line:#E4E1D8;--acc:#0E6B4F;--acc-fg:#fff;--soft:#E6F2EC;--gold:#87631F;--deep:#0A3B2E;--warn:#B3261E;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0B1712;--alt:#0F1F18;--card:#13261E;--fg:#EEF2EE;--muted:#9FB2A8;--line:#22372D;--acc:#5FD3A2;--acc-fg:#0B1712;--soft:#163428;--gold:#E2C27A;--deep:#07130E;--warn:#FF8A80;color-scheme:dark}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-button,input,textarea{font:inherit}button{cursor:pointer}
-header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--deep);color:#fff}
-header img{width:34px;height:34px}header b{font-weight:600}header .sp{flex:1}
-header button{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 14px}
-[hidden]{display:none!important}
-.acceso{min-height:calc(100vh - 54px);display:grid;place-items:center;padding:32px 16px}
-.auth{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px;display:grid;gap:16px;box-shadow:0 18px 40px -20px rgba(10,59,46,.25)}
-.auth__sello{width:56px;height:56px}
-.auth h1{margin:0;font-size:24px;letter-spacing:-.01em}
-.auth__sub{margin:-8px 0 0;color:var(--muted)}
-.auth__cuenta{margin:-6px 0 0;font-weight:600;word-break:break-all}
-.campo{display:grid;gap:6px}
-.campo label{font-size:13px;font-weight:600;color:var(--fg)}
-.campo small{color:var(--muted);font-size:13px}
-.pwd{position:relative}
-.pwd input{padding-right:84px}
-.pwd button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--acc);font-weight:600;font-size:13px;padding:6px 10px;border-radius:8px}
-.pwd button:hover{background:var(--soft)}
-.auth .btn{width:100%;padding:12px 18px}
-.btn[disabled]{opacity:.6;cursor:wait}
-.link-btn{border:0;background:none;color:var(--acc);font-weight:600;padding:4px 0;justify-self:start}
-.link-btn:hover{text-decoration:underline}
-.mfa__qr{width:180px;height:180px;justify-self:center;background:#fff;padding:8px;border-radius:12px}
-.mfa__clave{font-size:13px;word-break:break-all;background:var(--alt);padding:2px 6px;border-radius:6px}
-.fila{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.msg{margin:0;padding:10px 12px;border-radius:10px;font-size:14px}
-.msg:empty{display:none}
-.msg--error{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn)}
-.msg--info{background:var(--soft);color:var(--fg)}
-input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
-.btn{background:var(--acc);color:var(--acc-fg);border:0;border-radius:999px;padding:10px 18px;font-weight:600}
-.btn--line{background:none;color:var(--fg);border:1px solid var(--line);font-weight:500}
-.btn--warn{background:none;color:var(--warn);border:1px solid var(--line);font-weight:500}
-.err{color:var(--warn);min-height:1.2em;margin:0;font-size:14px}
-main{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 54px)}
-#lista{border-right:1px solid var(--line);overflow:auto;background:var(--alt)}
-.item{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 16px;color:inherit}
-.item:hover,.item.on{background:var(--card)}
-.item b{display:flex;gap:8px;align-items:center}.item small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--acc)}
-.tag--der{background:var(--warn);color:#fff}
-#detalle{display:grid;grid-template-columns:1fr 300px;overflow:hidden}
-.chat{display:flex;flex-direction:column;overflow:hidden}
-.top{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.top h2{margin:0;font-size:18px;flex:1}
-#mensajes{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:8px}
-.m{max-width:78%;padding:9px 13px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word}
-.m small{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
-.m--cliente{align-self:flex-start;background:var(--card);border:1px solid var(--line)}
-.m--asistente{align-self:flex-end;background:var(--soft)}
-.m--personal{align-self:flex-end;background:var(--acc);color:var(--acc-fg)}.m--personal small{color:inherit;opacity:.8}
-form.resp{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
-form.resp textarea{resize:none;height:46px}
-.lado{border-left:1px solid var(--line);overflow:auto;padding:16px;display:grid;gap:18px;align-content:start;background:var(--alt)}
-.lado h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.ficha{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;margin-bottom:8px}
-.ficha .acc{display:flex;gap:6px;flex-wrap:wrap}.ficha .acc button{padding:5px 12px;font-size:13px}
-.vacio{color:var(--muted);padding:40px;text-align:center}
-.aviso{margin:0;padding:8px 12px;border-radius:10px;background:var(--alt);color:var(--muted);font-size:13px}
-.tabs{display:flex;gap:4px;margin-left:12px}
-.tabs button{background:none;border:0;color:rgba(255,255,255,.75);padding:6px 12px;border-radius:999px;font-weight:600}
-.tabs button.on{background:rgba(255,255,255,.16);color:#fff}
-#agendaV{height:calc(100vh - 54px);overflow:auto;padding:20px}
-.ag-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:980px;margin:0 auto 16px}
-.ag-top h2{margin:0 auto 0 0;font-size:20px}
-.ag-cita a{color:var(--acc)}
-.ag-top input{width:auto;padding:7px 10px}
-.ag-top button{padding:7px 14px}
-.ag-lista{max-width:980px;margin:0 auto;display:grid;gap:8px}
-.ag-cita{display:grid;grid-template-columns:64px 1fr 190px auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.ag-cita--rechazada{opacity:.55}
-.ag-hora{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
-.ag-cita b{display:block}.ag-cita small{color:var(--muted)}
-.ag-cita select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit}
-.ag-cita .acc{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.ag-cita .acc button{padding:5px 12px;font-size:13px}
-.tag--pend{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
-@media (max-width:600px){header{padding:10px 12px;gap:8px}header b{display:none}.tabs{margin-left:0}.tabs button{padding:6px 10px}#agendaV{padding:14px}}
-@media (max-width:900px){main{grid-template-columns:1fr}.ag-cita{grid-template-columns:56px 1fr}.ag-cita select,.ag-cita .acc{grid-column:1/-1}.ag-cita .acc{justify-content:flex-start}#lista{max-height:40vh}#detalle{grid-template-columns:1fr}.lado{border-left:0;border-top:1px solid var(--line)}}
-#preciosV{height:calc(100vh - 54px);overflow:auto;padding:20px}
-.precios-top,.precio-campos{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
-.precios-top label,.precio-campos label{display:grid;gap:4px;max-width:220px}
-.precio-fila{padding:18px;margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-.precio-fila h3{margin:0 0 8px}.precio-fila output{display:block;font-weight:600;margin:8px 0}
-.precio-fila small{display:block;color:var(--muted);overflow-wrap:anywhere}
-#preciosV select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);max-width:100%}
-#preciosV :focus-visible{outline:3px solid var(--acc);outline-offset:3px}
-@media(max-width:600px){header{flex-wrap:wrap}header .tabs{order:3;width:100%}#preciosV{padding:12px}.precio-campos label{max-width:none;width:100%}.tabs button{padding:6px 8px}}
-</style>
+<link rel="stylesheet" href="../css/panel.css">
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
@@ -203,6 +112,8 @@ form.resp textarea{resize:none;height:46px}
     <input type="date" id="agFecha" aria-label="Fecha">
     <button class="btn btn--line" data-dia="1" aria-label="Día siguiente">›</button>
     <button class="btn btn--line" data-dia="0">Hoy</button></div>
+  <form class="ag-top" id="agBuscar"><label class="ag-ticket" for="agTicket">Buscar ticket<input id="agTicket" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Buscar</button><button class="btn btn--line" type="button" id="agLimpiar">Limpiar búsqueda</button><p id="agEstado" aria-live="polite"></p></form>
+  <div class="ag-lista ag-resultados" id="agResultados"></div>
   <div class="ag-lista" id="agLista"></div>
 </section>
 
