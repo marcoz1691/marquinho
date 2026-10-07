@@ -179,6 +179,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .tp__precio{display:flex;align-items:baseline;gap:14px;margin:22px 0 26px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .tp__precio span{color:var(--muted)}
 .tp__precio strong{font-family:var(--mono);font-weight:500;font-size:19px;color:var(--accent)}
+.tp__aviso{margin:-14px 0 26px;font-size:13.5px;line-height:1.5;color:var(--muted);max-width:62ch}
 .tp__cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
 .tp h4{margin:0 0 10px;color:var(--fg)}
 .pasos{margin:0;padding-left:20px;color:var(--muted)}
@@ -225,6 +226,27 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .calc__split{display:flex;gap:40px}
 .calc__split strong{font-family:var(--mono);font-size:18px;font-weight:500}
 .calc__out strong{font-variant-numeric:tabular-nums}
+.calc__split{flex-wrap:wrap;row-gap:14px}
+.calc__aviso{margin:0;padding-top:12px;border-top:1px dashed var(--line);font-size:13.5px;line-height:1.5;color:var(--muted);max-width:60ch}
+/* Documentos habilitantes: filas con contador de hojas */
+.calc__hab{border:0;margin:4px 0 0;padding:18px 0 0;border-top:1px solid var(--line);display:grid;gap:4px;min-width:0}
+.calc__hab[hidden]{display:none}
+.calc__hab legend{float:left;width:100%;padding:0;font-family:var(--font);font-weight:600;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.calc__hab legend span{letter-spacing:.06em;text-transform:none;font-weight:500}
+.calc__habtxt{margin:2px 0 6px;font-size:14px;color:var(--muted)}
+.calc__habs{display:grid}
+.hab{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+.hab+.hab{border-top:1px solid var(--line)}
+.hab__txt{margin:0;display:grid;gap:2px;min-width:0}
+.hab__nombre{font-size:16px;color:var(--fg);line-height:1.3}
+.hab__precio{font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hab__step{display:flex;align-items:center;gap:6px;flex:none}
+.hab__btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--fg);font:500 20px/1 var(--font);display:grid;place-items:center;padding:0;cursor:pointer;transition:border-color .2s,background .2s}
+.hab__btn:hover{border-color:var(--accent);color:var(--accent)}
+.hab__btn:active{transform:scale(.94)}
+.hab__btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.calc .hab__n{width:52px;padding:6px 2px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;border-radius:var(--r-input);-moz-appearance:textfield;appearance:textfield}
+.hab__n::-webkit-inner-spin-button,.hab__n::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .note{margin:0;font-size:14px;color:var(--muted);min-height:1em;max-width:60ch}
 
 /* Contact */

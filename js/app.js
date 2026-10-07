@@ -1,4 +1,4 @@
-import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoEscrito, estaAbierto } from "./nucleo.js";
+import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES } from "./nucleo.js";
 
 (function () {
   "use strict";
@@ -91,6 +91,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     return '<button class="tp__cerrar" type="button" data-cerrar aria-label="Cerrar el trámite"><i class="ph ph-x" aria-hidden="true"></i></button>' +
       '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
       '<p class="tp__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
+      '<p class="tp__aviso">' + esc(AVISO_HABILITANTES) + "</p>" +
       '<div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
       t.req.map(function (r, i) {
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
@@ -161,14 +162,31 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
   }
 
   function setupCalc() {
-    var T = state.tarifas, sel = $("#calcTramite");
+    var T = state.tarifas, sel = $("#calcTramite"), habs = $("#calcHabs");
+    var tramite = function (id) { return state.data.tramites.find(function (x) { return x.id === id; }); };
     $("#anioTarifa").textContent = T.anio; $("#sbuTxt").textContent = money(T.sbu);
     sel.innerHTML = state.data.categorias.map(function (c) {
       var ts = state.data.tramites.filter(function (t) { return t.cat === c.id && t.tarifa.tipo !== "consultar"; });
       return ts.length ? '<optgroup label="' + esc(c.nombre) + '">' + ts.map(function (t) { return '<option value="' + esc(t.id) + '">' + esc(t.nombre) + "</option>"; }).join("") + "</optgroup>" : "";
     }).join("");
+    // Documentos habilitantes: la persona elige cuántas hojas; el precio sale del trámite de cada uno.
+    var disponibles = HABILITANTES.filter(function (h) { var t = tramite(h.tramite); return t && t.tarifa.tipo !== "consultar"; });
+    habs.closest("fieldset").hidden = !disponibles.length;
+    habs.innerHTML = disponibles.map(function (h) {
+      var n = esc(h.nombre.charAt(0).toLowerCase() + h.nombre.slice(1));
+      return '<div class="hab" data-hab="' + esc(h.id) + '"><p class="hab__txt"><span class="hab__nombre">' + esc(h.nombre) + '</span><span class="hab__precio">' + esc(precioTexto(tramite(h.tramite), T)) + "</span></p>" +
+        '<div class="hab__step"><button class="hab__btn" type="button" data-menos aria-label="Quitar una hoja de ' + n + '"><span aria-hidden="true">−</span></button>' +
+        '<input class="hab__n" type="number" min="0" max="200" step="1" value="0" inputmode="numeric" aria-label="Hojas de ' + n + '">' +
+        '<button class="hab__btn" type="button" data-mas aria-label="Agregar una hoja de ' + n + '"><span aria-hidden="true">+</span></button></div></div>';
+    }).join("");
+    var acotar = function (v) { var n = Math.floor(Number(v)); return isFinite(n) ? Math.min(200, Math.max(0, n)) : 0; };
+    var extras = function () {
+      var e = {};
+      [].forEach.call(habs.querySelectorAll("[data-hab]"), function (row) { e[row.dataset.hab] = acotar(row.querySelector("input").value); });
+      return e;
+    };
     function calc() {
-      var t = state.data.tramites.find(function (x) { return x.id === sel.value; });
+      var t = tramite(sel.value);
       if (!t) return;
       var f = t.tarifa, note = t.nota || "";
       var multi = f.unidad && /por/.test(f.unidad), esCuantia = f.tipo === "cuantia";
@@ -176,18 +194,35 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
       $("#calcMontoWrap").hidden = !esCuantia;
       $("#calcUnit").textContent = multi ? "(" + f.unidad + ")" : "";
       var monto = montoEscrito($("#calcMonto").value);
-      var r = calcularTarifa(t, T, { cantidad: parseInt($("#calcQty").value, 10) || 1, monto: monto });
+      var c = calcularConHabilitantes(t, T, { cantidad: parseInt($("#calcQty").value, 10) || 1, monto: monto }, extras(), state.data.tramites), r = c.tramite;
       if (esCuantia) {
         if (r.total !== null) note = "Rango " + (r.hasta === null ? "desde " + money(r.desde + .01) : money(r.desde ? r.desde + .01 : 0) + " a " + money(r.hasta)) + ": " +
           r.factor.toLocaleString("es-EC") + " SBU. " + note;
         else note = monto > 0 ? "Para este valor, consulta con la notaría." : "Ingresa el valor del contrato o del avalúo.";
       }
-      if (r.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
-      else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(r.iva); $("#rTotal").textContent = money(r.total); }
+      var habBase = c.habilitantes.reduce(function (a, h) { return Math.round((a + h.base) * 100) / 100; }, 0);
+      $("#rHabWrap").hidden = !c.habilitantes.length;
+      $("#rHab").textContent = money(habBase);
+      if (c.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
+      else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); $("#rTotal").textContent = money(c.total); }
       $("#calcNote").textContent = note;
+      $("#calcAviso").textContent = c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : AVISO_HABILITANTES;
     }
+    habs.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-mas],[data-menos]");
+      if (!b) return;
+      var input = b.closest("[data-hab]").querySelector("input");
+      input.value = acotar(acotar(input.value) + (b.hasAttribute("data-mas") ? 1 : -1));
+      calc();
+    });
+    habs.addEventListener("input", calc);
+    habs.addEventListener("change", function (e) { if (e.target.matches("input")) { e.target.value = acotar(e.target.value); calc(); } });
     sel.addEventListener("change", calc); $("#calcQty").addEventListener("input", calc); $("#calcMonto").addEventListener("input", calc);
-    setupCalc.elegir = function (id) { sel.value = id; calc(); $("#calculadora").scrollIntoView({ behavior: "smooth" }); };
+    setupCalc.elegir = function (id) {
+      sel.value = id;
+      [].forEach.call(habs.querySelectorAll("input"), function (i) { i.value = 0; });
+      calc(); $("#calculadora").scrollIntoView({ behavior: "smooth" });
+    };
     calc();
   }
 

@@ -9,7 +9,9 @@ const contenido = {
       { id: "compraventa", cat: "inmuebles", nombre: "Compraventa de inmuebles", desc: "Transferir una casa", req: ["Minuta"], pasos: ["Firma"],
         tarifa: { tipo: "cuantia", tabla: "transferencia" }, revision: true },
       { id: "poder", cat: "inmuebles", nombre: "Poder especial", desc: "Que alguien firme por ti", req: ["Cédula"], pasos: ["Firma"],
-        tarifa: { tipo: "pct", valor: 0.12 } }
+        tarifa: { tipo: "pct", valor: 0.12 } },
+      { id: "copias-certificadas", cat: "inmuebles", nombre: "Copias certificadas", desc: "", req: [], pasos: [], tarifa: { tipo: "fija", valor: 1.79, unidad: "por hoja" } },
+      { id: "certificacion-electronica", cat: "inmuebles", nombre: "Certificación de documentos electrónicos", desc: "", req: [], pasos: [], tarifa: { tipo: "fija", valor: 1.34, unidad: "por hoja" } }
     ],
     faq: [], avisos: []
   },
@@ -121,6 +123,21 @@ describe("herramientas", () => {
     const r = resultadoDe(claude);
     expect(r.type).toBe("tool_result");
     expect(r.content).toContain("$443,44");
+  });
+
+  it("calcular_costo aclara que no incluye documentos habilitantes", async () => {
+    const claude = claudeFalso([herramienta("calcular_costo", { tramite_id: "poder" }), texto("Son $66,52")]);
+    await nuevo(claude).atender(mensaje({ texto: "cuánto cuesta un poder" }));
+    expect(resultadoDe(claude).content).toContain("no incluye documentos habilitantes");
+  });
+
+  it("el prompt explica que los costos no incluyen habilitantes y su precio por hoja", async () => {
+    const claude = claudeFalso([texto("ok")]);
+    await nuevo(claude).atender(mensaje());
+    const s = claude.llamadas[0].system[0].text;
+    expect(s).toContain("documentos habilitantes");
+    expect(s).toMatch(/copias certificadas \$1,79 \+ IVA/);
+    expect(s).toMatch(/materializaciones \$1,34 \+ IVA/);
   });
 
   it("calcular_costo con un trámite inexistente devuelve error", async () => {

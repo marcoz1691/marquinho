@@ -197,6 +197,31 @@ export function calcularTarifa(t, T, opciones) {
   return r;
 }
 
+// Documentos habilitantes: se cobran aparte, por hoja, con el precio de su propio trámite.
+export const AVISO_HABILITANTES = "Este valor no incluye documentos habilitantes, como copias certificadas, compulsas o materializaciones de documentos electrónicos.";
+export const HABILITANTES = [
+  { id: "copias", tramite: "copias-certificadas", nombre: "Copias certificadas o compulsas" },
+  { id: "materializaciones", tramite: "certificacion-electronica", nombre: "Materialización de documentos electrónicos" }
+];
+
+// Tarifa del trámite más los habilitantes que la persona agregue. extras: { copias: n, materializaciones: m }.
+// Devuelve { tramite, habilitantes: [{ id, nombre, cantidad, base, iva, total }], base, iva, total } (null si el trámite no se puede calcular).
+export function calcularConHabilitantes(t, T, opciones, extras, tramites) {
+  var r = calcularTarifa(t, T, opciones), e = extras || {}, lista = [];
+  HABILITANTES.forEach(function (h) {
+    var n = Math.floor(Number(e[h.id]));
+    n = isFinite(n) ? Math.min(200, Math.max(0, n)) : 0;
+    var th = (tramites || []).find(function (x) { return x.id === h.tramite; });
+    if (!n || !th) return;
+    var p = calcularTarifa(th, T, { cantidad: n });
+    if (p.total === null) return;
+    lista.push({ id: h.id, nombre: h.nombre, cantidad: n, base: p.base, iva: p.iva, total: p.total });
+  });
+  var suma = function (k) { return lista.reduce(function (a, h) { return redondear(a + h[k]); }, r[k]); };
+  var ok = r.total !== null;
+  return { tramite: r, habilitantes: lista, base: ok ? suma("base") : null, iva: ok ? suma("iva") : null, total: ok ? suma("total") : null };
+}
+
 export function precioTexto(t, T) {
   var f = t.tarifa, u = f.unidad ? " " + f.unidad : "";
   if (f.tipo === "pct") return money(f.valor * T.sbu) + " + IVA" + u;
