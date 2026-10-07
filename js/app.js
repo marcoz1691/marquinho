@@ -229,10 +229,12 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   function renderContacto() {
     var N = state.notaria, rows = "";
     var tels = (N.telefonos || []).filter(Boolean);
-    $("#brandName").textContent = N.nombre;
-    $("#heroTitle").textContent = N.eslogan || $("#heroTitle").textContent;
-    $("#heroNotario").textContent = N.notario ? N.nombre + " · " + N.notario : N.nombre;
-    document.title = N.nombre + " | Trámites, requisitos y tarifas";
+    var corto = N.notarioCorto || N.notario || N.nombre;
+    $("#brandName").textContent = corto;
+    $("#heroNotario").textContent = N.cargo || N.nombre;
+    $("#heroTitle").textContent = N.notario || N.nombre;
+    if (N.eslogan) $("#heroLema").textContent = N.eslogan;
+    document.title = corto + " · " + N.nombre;
     rows += "<div><h3>Dirección</h3><p>" + esc(N.direccion) + "</p></div>";
     if (tels.length) rows += "<div><h3>Teléfonos</h3><p>" + tels.map(function (t) { return '<a href="tel:+593' + esc(t.replace(/\D/g, "").replace(/^0/, "")) + '">' + esc(t) + "</a>"; }).join("<br>") + "</p></div>";
     if (N.correo) rows += '<div><h3>Correo</h3><p><a href="mailto:' + esc(N.correo) + '">' + esc(N.correo) + "</a></p></div>";
