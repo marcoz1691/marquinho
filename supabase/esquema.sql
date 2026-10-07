@@ -166,3 +166,7 @@ create index if not exists conversaciones_creada on conversaciones(creada);
 
 -- Primera vez que cada persona del personal entra con la verificación en dos pasos (para avisar al administrador).
 alter table personal add column if not exists mfa_en timestamptz;
+
+-- Los contadores de uso guardan celulares y huellas de IP: se purgan a los 7 días.
+alter table uso add column if not exists creado timestamptz not null default now();
+create index if not exists uso_creado on uso(creado);

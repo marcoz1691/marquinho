@@ -196,6 +196,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
         if (lote.length < LOTE) break;
       }
       ok(await db.from("procesados").delete().lt("creado", new Date(Date.now() - 30 * 864e5).toISOString()));
+      ok(await db.from("uso").delete().lt("creado", new Date(Date.now() - 7 * 864e5).toISOString()));   // contadores: guardan celulares y huellas de IP
       return { conversaciones, documentos };
     },
 
