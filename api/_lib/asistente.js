@@ -258,6 +258,8 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         // La anterior se cancela después de crear la nueva, para que el cliente nunca quede sin cita.
         for (const a of activas) {
           await almacen.actualizarCita(a.id, { estado: "rechazada", motivo: "Reprogramada por el cliente" });
+          // Si la cita cancelada se creó en este mismo turno, su tarjeta no se le muestra al cliente.
+          if (Array.isArray(ctx.eventos) && a.codigo) for (let k = ctx.eventos.length - 1; k >= 0; k--) if (ctx.eventos[k].resumen?.codigo === a.codigo && ctx.eventos[k].resumen?.fecha === a.fecha) ctx.eventos.splice(k, 1);
           if (a.fecha === hoy) await avisar(`${cliente} cambió su cita de hoy a las ${a.hora}: queda cancelada.`);
         }
         if (!confirmada) await avisar(`Nueva solicitud de cita${esWeb(conv) ? " (web)" : ""}: ${cliente} — ${t ? t.nombre : "trámite por definir"} — ${i.fecha} ${hora}. Confírmala en el panel.`);

@@ -50,7 +50,8 @@ export function tarjetaCita(resumen, sesion) {
     if (form.hidden || cargando || enviando) return;
     cargando = true; estado.textContent = "Buscando tus documentos…";
     try {
-      const data = await pedir("/api/documentos?" + new URLSearchParams({ sesion, ticket: resumen.codigo }));
+      // La sesión va en una cabecera: la URL queda en los registros de acceso del servidor.
+      const data = await pedir("/api/documentos?" + new URLSearchParams({ ticket: resumen.codigo }), { headers: { "X-Sesion": sesion } });
       pintarDocumentos(data.documentos); estado.textContent = "";
     } catch (err) { estado.textContent = err.message; }
     finally { cargando = false; }
@@ -62,6 +63,8 @@ export function tarjetaCita(resumen, sesion) {
     const archivo = form.elements.archivo.files[0], descripcion = form.elements.descripcion.value.trim();
     if (!archivo) { estado.textContent = "Elige un archivo para enviar."; return; }
     if (descripcion.length < 2 || descripcion.length > 120) { estado.textContent = "Escribe una descripción de 2 a 120 caracteres."; return; }
+    // Una foto enorme se decodifica entera en memoria antes de reducirla: se acota lo que se acepta de entrada.
+    if (archivo.size > 25 * 1024 * 1024) { estado.textContent = "El archivo es muy grande. Elige uno de menos de 25 MB."; return; }
     enviando = true; enviar.disabled = true; progreso.hidden = false; estado.textContent = "Preparando tu archivo…";
     try {
       const file = await reducirImagen(archivo);
