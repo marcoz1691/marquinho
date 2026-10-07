@@ -72,6 +72,11 @@ describe("desdeHoja", () => {
     expect(r.notaria.citas).toEqual({ porHora: 3, feriados: ["2026-11-02", "2026-11-03"] });
   });
 
+  it("lee el cargo del notario de la configuración", () => {
+    const r = desdeHoja({ ...tabs, configuracion: "Dato,Valor\nCargo del notario,Notario Cuadragésimo Primero del Cantón Quito\n" }, base);
+    expect(r.notaria.cargo).toBe("Notario Cuadragésimo Primero del Cantón Quito");
+  });
+
   it("rechaza una hoja sin trámites", () => {
     expect(() => desdeHoja({ ...tabs, tramites: "Código\n" }, base)).toThrow();
   });
