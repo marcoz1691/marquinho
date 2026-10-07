@@ -211,7 +211,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       if (c.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
       else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); $("#rTotal").textContent = money(c.total); }
       $("#calcNote").textContent = note;
-      $("#calcAviso").textContent = esHabilitante(t.id) ? "" : c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : AVISO_HABILITANTES;
+      $("#calcAviso").textContent = c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : esHabilitante(t.id) ? "" : AVISO_HABILITANTES;
     }
     habs.addEventListener("click", function (e) {
       var b = e.target.closest("[data-mas],[data-menos]");

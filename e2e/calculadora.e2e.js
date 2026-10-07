@@ -217,7 +217,9 @@ test.describe("Calculadora de tarifas", () => {
       await page.selectOption("#calcTramite", "copias-certificadas");
       await expect(page.locator('[data-hab="copias"]')).toBeHidden();
       await expect(page.locator('[data-hab="materializaciones"]')).toBeVisible();
-      await expect(page.locator("#calcAviso")).toHaveText("");
+      await expect(page.locator("#calcAviso")).toBeHidden();
+      await mas(page, "materializaciones").click();
+      await expect(page.locator("#calcAviso")).toContainText("Incluye los documentos habilitantes");
     });
   });
 });

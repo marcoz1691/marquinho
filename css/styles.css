@@ -235,6 +235,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .calc__split strong{font-family:var(--mono);font-size:18px;font-weight:500}
 .calc__out strong{font-variant-numeric:tabular-nums}
 .calc__aviso{margin:0;padding-top:12px;border-top:1px dashed var(--line);font-size:13.5px;line-height:1.5;color:var(--muted);max-width:60ch}
+.calc__aviso:empty{display:none}
 /* Documentos habilitantes: filas con contador de hojas */
 .calc__hab{border:0;margin:4px 0 0;padding:18px 0 0;border-top:1px solid var(--line);display:grid;gap:4px;min-width:0}
 .calc__hab[hidden]{display:none}
