@@ -335,13 +335,13 @@ async function cargarAgenda(opciones = {}) {
   const texto = (a.fecha === hoyQuito() ? "Hoy, " : "") + titulo + ` · ${activas} cita${activas === 1 ? "" : "s"}`;
   $("#agTitulo").textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
   const personas = a.personal.map((p) => p.nombre || p.email);
-  const opciones = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
+  const opcionesDe = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
     .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
   const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
   $("#agLista").innerHTML = a.citas.map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
       <span class="ag-hora">${esc(x.hora)}</span>
       <div><b>${esc(x.nombre)} ${ESTADO[x.estado] || ""}</b><small>${esc(x.tramite)}${x.telefono && !String(x.telefono).startsWith("web:") ? ` · <a href="https://wa.me/${esc(x.telefono)}" target="_blank" rel="noopener">+${esc(x.telefono)}</a>` : ""}${x.nota ? " · " + esc(x.nota) : ""}</small></div>
-      ${x.estado === "rechazada" ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opciones(x.asignadaA)}</select>`}
+      ${x.estado === "rechazada" ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}
       <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada">Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada">Rechazar</button>` : ""}
         ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Atendida</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada">Cancelar</button>` : ""}
         <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div>
