@@ -33,6 +33,8 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       }
       return conv(r);
     },
+    // Busca sin crear (conversacion() crea si no existe).
+    async conversacionPorTelefono(telefono) { return conv(ok(await db.from("conversaciones").select("*").eq("telefono", telefono).maybeSingle())); },
     async conversacionPorId(id) { return conv(ok(await db.from("conversaciones").select("*").eq("id", id).maybeSingle())); },
     async actualizarConversacion(id, cambios) {
       const fila = {};

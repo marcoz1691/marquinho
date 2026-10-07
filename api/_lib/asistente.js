@@ -2,6 +2,7 @@
 // Interfaz: crearAsistente(dependencias).atender(mensaje) -> textos a enviar al cliente.
 import { construirResumen } from "./resumen.js";
 import { tipoArchivo } from "./archivos.js";
+import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
 
 const MODELO = process.env.CLAUDE_MODEL || "claude-opus-5-5";
@@ -21,7 +22,6 @@ const MAX_DOCS = 20;                // documentos por conversación
 const LIMITE_DIARIO = 150;          // mensajes de WhatsApp por número y día (acota el costo si alguien abusa)
 const DIA_MS = 24 * 60 * 60 * 1000;
 const LIMITE_ALCANZADO = "Hoy recibimos muchos mensajes desde tu número y por ahora no puedo seguir respondiendo. Escríbenos mañana o llama a la notaría y te ayudamos.";
-const AVISO_PRIVACIDAD = "2026-10-07"; // versión del aviso de privacidad que el cliente acepta (ver privacidad.html)
 const NOMBRE = /^[\p{L}\p{M} .'\u2019-]{2,60}$/u;   // \p{M}: tildes escritas en dos partes; \u2019: apóstrofo del teclado del iPhone
 // Respuestas con las que una persona acepta el aviso de privacidad.
 const AFIRMATIVO = /(^|[^\p{L}])(s[ií]|acepto|aceptamos|ok|okay|dale|claro|listo|vale|bueno|correcto|confirmo|adelante|de acuerdo|est[aá] bien|por supuesto|perfecto)([^\p{L}]|$)/iu;

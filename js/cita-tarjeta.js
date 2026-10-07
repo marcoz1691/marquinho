@@ -45,6 +45,8 @@ export function tarjetaCita(resumen, sesion) {
   let cargando = false, enviando = false;
   tarjeta.querySelector("[data-subir]").addEventListener("click", async (e) => {
     form.hidden = !form.hidden; e.currentTarget.setAttribute("aria-expanded", String(!form.hidden));
+    // El formulario se abre debajo de los botones: se baja hasta verlo completo para que no quede tapado por la caja de escritura.
+    if (!form.hidden) form.scrollIntoView({ block: "end", inline: "nearest" });
     if (form.hidden || cargando || enviando) return;
     cargando = true; estado.textContent = "Buscando tus documentos…";
     try {
@@ -63,7 +65,7 @@ export function tarjetaCita(resumen, sesion) {
     enviando = true; enviar.disabled = true; progreso.hidden = false; estado.textContent = "Preparando tu archivo…";
     try {
       const file = await reducirImagen(archivo);
-      if (file.size > 4 * 1024 * 1024) throw new Error("El archivo pesa más de 4 MB. Elige uno más pequeño.");
+      if (file.size > 3 * 1024 * 1024) throw new Error("El archivo pesa más de 3 MB. Elige uno más pequeño o una foto.");
       const base64 = await base64Archivo(file);
       estado.textContent = "Enviando tu documento…";
       const data = await pedir("/api/documentos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sesion, ticket: resumen.codigo, descripcion, nombre: file.name, base64, aceptaAviso: true }) });

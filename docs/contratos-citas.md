@@ -80,7 +80,7 @@ Reglas, en este orden (cada falla devuelve `{ error }` en español con el status
 3. `descripcion`: 2–120 caracteres tras recortar; `nombre` se limpia a `[\w. -]` y máx. 120.
 4. Tope de uso (`almacen.contarUso`): 20 por sesión por hora, 40 por huella de IP por hora (huella = sha256 de `"notaria41:" + ip`, igual que `chat-http.js`) → 429.
 5. Conversación = `almacen.conversacion("web:" + sesion)` (si no existe, 404 «No encuentro tu cita»; no la crees). Debe tener una cita con `codigo === ticket`, estado `pendiente` o `confirmada` y `fecha >= hoy` (zona America/Guayaquil) → si no, 404 con el mismo mensaje.
-6. `base64` válido, máximo **4 MB ya decodificado** → 413 «El archivo pesa más de 4 MB…».
+6. `base64` válido, máximo **3 MB ya decodificado** (Vercel rechaza pedidos de más de 4,5 MB y el base64 pesa un tercio más) → 413 «El archivo pesa más de 3 MB…».
 7. Tipo real por bytes con `tipoArchivo()` de `api/_lib/archivos.js` (PDF, JPG, PNG, WEBP) → 415 si no.
 8. Máximo 20 documentos en la conversación (`almacen.documentos`) → 409.
 9. Guarda con `almacen.guardarDocumento({ conversacionId, mediaId: "web-" + uuid, nombre, mime: tipo, bytes, descripcion, tramiteId: cita.tramiteId })`.

@@ -22,6 +22,8 @@ export function crearAlmacenMemoria() {
       else if (nombre && !c.nombre) c.nombre = nombre;
       return copia(c);
     },
+    // Busca sin crear (conversacion() crea si no existe).
+    async conversacionPorTelefono(telefono) { return copia(convs.get(telefono) || null); },
     async conversacionPorId(id) { return copia(porId(id) || null); },
     async actualizarConversacion(id, cambios) { Object.assign(porId(id), cambios); },
     async resumenConversaciones() {

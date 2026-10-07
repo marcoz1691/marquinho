@@ -39,10 +39,29 @@ for (const pagina of [false, true]) {
       await expect(tarjeta.locator('[aria-live="polite"]')).toHaveText("Documento enviado.");
       expect(pedidos[0]).toMatchObject({ ticket: "4821", descripcion: "Mi cédula", nombre: "cedula.pdf", aceptaAviso: true, base64: Buffer.from("%PDF-1.4 prueba").toString("base64") });
       await expect(tarjeta.getByText("Mi cédula · cedula.pdf · recibido")).toBeVisible();
-      await page.route("**/api/documentos**", (route) => route.fulfill({ status: 413, json: { error: "El archivo pesa más de 4 MB… <script>" } }));
+      await page.route("**/api/documentos**", (route) => route.fulfill({ status: 413, json: { error: "El archivo pesa más de 3 MB… <script>" } }));
       await tarjeta.getByRole("button", { name: "Enviar", exact: true }).click();
-      await expect(tarjeta.locator('[aria-live="polite"]')).toHaveText("El archivo pesa más de 4 MB… <script>");
+      await expect(tarjeta.locator('[aria-live="polite"]')).toHaveText("El archivo pesa más de 3 MB… <script>");
       expect(await tarjeta.evaluate((el) => el.getBoundingClientRect().right <= innerWidth)).toBe(true);
     });
   }
+}
+
+for (const pagina of [false, true]) {
+  test(`cita ${pagina ? "página" : "burbuja"}: al abrir «Subir documentos» el formulario queda a la vista y no lo tapa la caja de escritura @movil`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 700 });
+    await simularApi(page, () => ({ json: { respuestas: ["Listo"], tarjetas: [resumen] } }));
+    await page.route("**/api/documentos**", (route) => route.fulfill({ json: { documentos: [] } }));
+    await page.goto(pagina ? "/asistente.html" : "/");
+    if (!pagina) await page.locator("#chatAbrir").click();
+    await page.locator(pagina ? "#texto" : "#chatTexto").fill("Quiero una cita");
+    await page.locator(pagina ? "#texto" : "#chatTexto").press("Enter");
+    const tarjeta = page.locator(".cita-tarjeta");
+    await expect(tarjeta.getByText("Ticket 4821", { exact: true })).toBeVisible();
+    await tarjeta.getByRole("button", { name: "Subir documentos" }).click();
+    const enviar = tarjeta.getByRole("button", { name: "Enviar", exact: true });
+    await expect(enviar).toBeInViewport({ ratio: 1 });
+    // Nada encima: el elemento que está en el centro del botón es el propio botón (no la caja de escritura).
+    await expect.poll(async () => enviar.evaluate((el) => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })).toBe(true);
+  });
 }

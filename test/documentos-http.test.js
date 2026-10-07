@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { crearManejadorDocumentos } from "../api/_lib/documentos-http.js";
 import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
+import { AVISO_PRIVACIDAD } from "../api/_lib/privacidad.js";
 
 const SESION = "s_7f3a9c2e41b84d0f", OTRA = "s_otra9c2e41b84d0f";
 const AHORA = Date.parse("2026-10-08T02:00:00Z"); // En Quito aún es 7 de octubre.
@@ -14,7 +15,9 @@ const leer = (sesion = SESION, ticket = "4821") => new Request(`https://notaria4
 async function preparar(opciones = {}) {
   const almacen = crearAlmacenMemoria(), avisar = vi.fn(async () => {});
   const conv = await almacen.conversacion("web:" + SESION, "Ana Pérez");
-  const cita = await almacen.crearSolicitudCita({ conversacionId: conv.id, codigo: "4821", fecha: "2026-10-07", nombre: "Ana Pérez", tramiteId: "poder-natural", ...opciones.cita });
+  // El almacén genera el ticket al crear la cita; aquí se fija uno conocido para poder escribir el pedido.
+  const cita = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-07", nombre: "Ana Pérez", tramiteId: "poder-natural" });
+  await almacen.actualizarCita(cita.id, { codigo: "4821", ...opciones.cita });
   const m = crearManejadorDocumentos({ almacen, avisar, ahora: () => AHORA, limites: opciones.limites });
   return { almacen, avisar, conv, cita, m };
 }
@@ -72,7 +75,8 @@ describe("API de documentos web", () => {
   it("aísla documentos entre sesiones y no acepta un ticket de otro cliente", async () => {
     const { m, almacen } = await preparar();
     const otra = await almacen.conversacion("web:" + OTRA);
-    await almacen.crearSolicitudCita({ conversacionId: otra.id, codigo: "1234", fecha: "2026-10-09" });
+    const ajena = await almacen.crearSolicitudCita({ conversacionId: otra.id, fecha: "2026-10-09" });
+    await almacen.actualizarCita(ajena.id, { codigo: "1234" });
     await m.POST(pedir());
     expect(await (await m.GET(leer(OTRA, "1234"))).json()).toEqual({ documentos: [] });
     expect((await m.GET(leer(OTRA))).status).toBe(404);
@@ -85,25 +89,43 @@ describe("API de documentos web", () => {
       expect(await r.json()).toEqual({ error: "No encuentro tu cita" });
     }
   });
-  it("GET valida sesión y ticket sin gastar cuota", async () => {
+  it("GET rechaza una sesión inválida sin gastar cuota y un ticket mal formado con 404", async () => {
     const { m, almacen } = await preparar();
     const uso = vi.spyOn(almacen, "contarUso");
     expect((await m.GET(leer("x"))).status).toBe(400);
-    for (const ticket of ["", "482", "48210", "abcd"]) expect((await m.GET(leer(SESION, ticket))).status).toBe(404);
-    await m.GET(leer());
     expect(uso).not.toHaveBeenCalled();
+    for (const ticket of ["", "482", "48210", "abcd"]) expect((await m.GET(leer(SESION, ticket))).status).toBe(404);
   });
   it.each(["", "%%%", "JVBERi0*", "JVBERi0===", 42])("rechaza base64 inválido: %j", async (base64) => {
     const { m } = await preparar();
     expect((await m.POST(pedir({ ...cuerpo, base64 }))).status).toBe(400);
   });
-  it("rechaza más de 4 MB y acepta exactamente 4 MB", async () => {
+  // Vercel rechaza pedidos de más de 4,5 MB: 3 MB en bytes son 4 MB en base64, que caben con el resto del JSON.
+  it("rechaza más de 3 MB y acepta exactamente 3 MB", async () => {
     const { m } = await preparar();
-    const bytes = Buffer.alloc(4 * 1024 * 1024 + 1); bytes.write("%PDF-");
+    const bytes = Buffer.alloc(3 * 1024 * 1024 + 1); bytes.write("%PDF-");
     const r = await m.POST(pedir({ ...cuerpo, base64: bytes.toString("base64") }));
     expect(r.status).toBe(413);
-    expect((await r.json()).error).toMatch(/El archivo pesa más de 4 MB/);
+    expect((await r.json()).error).toMatch(/El archivo pesa más de 3 MB/);
     expect((await m.POST(pedir({ ...cuerpo, base64: bytes.subarray(0, -1).toString("base64") }))).status).toBe(200);
+  });
+  it("busca la conversación por su teléfono sin recorrer ni crear conversaciones", async () => {
+    const { m, almacen } = await preparar();
+    const todas = vi.spyOn(almacen, "conversaciones"), crear = vi.spyOn(almacen, "conversacion");
+    expect((await m.GET(leer())).status).toBe(200);
+    expect((await m.GET(leer("s_inexistente0001"))).status).toBe(404);
+    expect(todas).not.toHaveBeenCalled();
+    expect(crear).not.toHaveBeenCalled();
+  });
+  it("limita las consultas (GET) por IP para que no se use como buscador de tickets", async () => {
+    const { m } = await preparar({ limites: { porSesion: 20, porIp: 40, consultasPorIp: 3 } });
+    for (let i = 0; i < 3; i++) expect((await m.GET(leer(SESION, "9999"))).status).toBe(404);
+    expect((await m.GET(leer())).status).toBe(429);
+  });
+  it("guarda la versión vigente del aviso de privacidad como evidencia", async () => {
+    const { m, almacen, conv } = await preparar();
+    await m.POST(pedir());
+    expect((await almacen.conversacionPorId(conv.id)).consentimientoAviso).toBe(AVISO_PRIVACIDAD);
   });
   it("rechaza el tipo real no permitido aunque el nombre diga PDF", async () => {
     const { m, almacen, conv, avisar } = await preparar();

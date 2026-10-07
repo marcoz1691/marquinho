@@ -199,6 +199,14 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     expect(await a.conversacionPorId(conCita.id)).not.toBeNull();
   });
 
+  it("busca una conversación por teléfono sin crearla", async () => {
+    const a = crear(), t = "web:" + Math.random().toString(36).slice(2, 14);
+    expect(await a.conversacionPorTelefono(t)).toBeNull();
+    expect(await a.conversacionPorTelefono(t)).toBeNull();   // seguir sin existir: la búsqueda no la crea
+    const c = await a.conversacion(t, "Ana");
+    expect(await a.conversacionPorTelefono(t)).toMatchObject({ id: c.id, telefono: t, nombre: "Ana" });
+  });
+
   it("guarda la evidencia del consentimiento", async () => {
     const a = crear(), c = await a.conversacion(tel());
     await a.actualizarConversacion(c.id, { consentimiento: true, consentimientoEn: new Date().toISOString(), consentimientoTexto: "Sí, acepto", consentimientoAviso: "2026-10-07" });
