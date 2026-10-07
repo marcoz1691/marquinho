@@ -88,11 +88,20 @@ form.resp textarea{resize:none;height:46px}
 .tag--pend{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
 @media (max-width:600px){header{padding:10px 12px;gap:8px}header b{display:none}.tabs{margin-left:0}.tabs button{padding:6px 10px}#agendaV{padding:14px}}
 @media (max-width:900px){main{grid-template-columns:1fr}.ag-cita{grid-template-columns:56px 1fr}.ag-cita select,.ag-cita .acc{grid-column:1/-1}.ag-cita .acc{justify-content:flex-start}#lista{max-height:40vh}#detalle{grid-template-columns:1fr}.lado{border-left:0;border-top:1px solid var(--line)}}
+#preciosV{height:calc(100vh - 54px);overflow:auto;padding:20px}
+.precios-top,.precio-campos{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.precios-top label,.precio-campos label{display:grid;gap:4px;max-width:220px}
+.precio-fila{padding:18px;margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.precio-fila h3{margin:0 0 8px}.precio-fila output{display:block;font-weight:600;margin:8px 0}
+.precio-fila small{display:block;color:var(--muted);overflow-wrap:anywhere}
+#preciosV select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);max-width:100%}
+#preciosV :focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+@media(max-width:600px){header{flex-wrap:wrap}header .tabs{order:3;width:100%}#preciosV{padding:12px}.precio-campos label{max-width:none;width:100%}.tabs button{padding:6px 8px}}
 </style>
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
 
 <section class="acceso" id="acceso" hidden>
   <!-- Entrar -->
@@ -195,6 +204,15 @@ form.resp textarea{resize:none;height:46px}
     <button class="btn btn--line" data-dia="1" aria-label="Día siguiente">›</button>
     <button class="btn btn--line" data-dia="0">Hoy</button></div>
   <div class="ag-lista" id="agLista"></div>
+</section>
+
+<section id="preciosV" hidden>
+  <h2>Precios</h2>
+  <p>Los valores finales incluyen IVA. Los documentos habilitantes se cobran aparte.</p>
+  <div id="preciosAjustes" class="precios-top"></div>
+  <label for="preciosBuscar">Buscar trámite</label><input id="preciosBuscar" type="search">
+  <p id="preciosMensaje" role="status" aria-live="polite"></p>
+  <div id="preciosLista"></div>
 </section>
 
 <!-- Librería de Supabase alojada aquí con versión fija (no desde un CDN): nadie puede cambiar el código que maneja las sesiones. -->

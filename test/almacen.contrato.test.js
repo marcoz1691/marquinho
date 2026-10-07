@@ -12,6 +12,20 @@ const tel = () => "5939" + Math.floor(Math.random() * 1e8).toString().padStart(8
 const DIA = 864e5;
 
 describe.each(adaptadores)("almacén %s", (_, crear) => {
+  it("guarda precios, restaura y conserva solo los ajustes guardados", async () => {
+    const a = crear(), tramiteId = "prueba-" + Math.random();
+    expect(await a.esAdmin("nadie@example.invalid")).toBe(false);
+    await a.guardarPrecio({ tramiteId, tipo: "pct", valor: 0.12, unidad: "", tabla: "", actualizadoPor: "admin" });
+    expect((await a.precios()).find((p) => p.tramiteId === tramiteId)).toMatchObject({ tipo: "pct", valor: 0.12, actualizadoPor: "admin" });
+    await a.guardarPrecio({ tramiteId, tipo: "fija", valor: 20 });
+    expect((await a.precios()).filter((p) => p.tramiteId === tramiteId)).toHaveLength(1);
+    await a.restaurarPrecio(tramiteId);
+    expect((await a.precios()).some((p) => p.tramiteId === tramiteId)).toBe(false);
+    await a.guardarAjuste("sbu", 500, "admin");
+    await a.guardarAjuste("anio", "2027", "admin");
+    expect(await a.ajustes()).toMatchObject({ sbu: 500, anio: "2027" });
+  });
+
   it("marca cada mensaje de WhatsApp una sola vez", async () => {
     const a = crear(), id = "wamid.test." + Math.random();
     expect(await a.marcarProcesado(id)).toBe(true);

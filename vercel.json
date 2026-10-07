@@ -1,5 +1,6 @@
 {
   "functions": {
+    "api/precios.js": { "maxDuration": 10 },
     "api/whatsapp.js": {
       "maxDuration": 300,
       "includeFiles": "data/**"

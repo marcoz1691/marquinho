@@ -1,7 +1,8 @@
 // Adaptador en memoria del almacén: para pruebas y desarrollo local. Misma interfaz que almacen-supabase.js.
 import { textoVisible } from "./mensajes.js";
 
-export function crearAlmacenMemoria() {
+export function crearAlmacenMemoria({ personal = [] } = {}) {
+  const precios = new Map(), ajustes = {};
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
   let archivos = [], docs = [], citas = [], pendientes = [];
   const turnos = new Map(), usos = new Map(), auditoria = [], conMfa = new Set();
@@ -11,6 +12,12 @@ export function crearAlmacenMemoria() {
   const porId = (id) => [...convs.values()].find((c) => c.id === id);
 
   return {
+    async precios() { return [...precios.values()].map(copia); },
+    async guardarPrecio(p) { precios.set(p.tramiteId, { unidad: "", tabla: "", actualizadoPor: "", ...copia(p), actualizadoEn: new Date().toISOString() }); },
+    async restaurarPrecio(id) { precios.delete(id); },
+    async ajustes() { return copia(ajustes); },
+    async guardarAjuste(clave, valor, por) { ajustes[clave] = clave === "sbu" ? Number(valor) : String(valor); },
+    async esAdmin(email) { return personal.some((p) => p.email.toLowerCase() === String(email).toLowerCase() && p.rol === "admin"); },
     async marcarProcesado(waId) {
       if (procesados.has(waId)) return false;
       procesados.add(waId);

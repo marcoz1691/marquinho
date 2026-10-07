@@ -42,7 +42,37 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     return c;
   }
 
+  async function tramitePrecio(id) {
+    const C = await contenido();
+    if (!C.data.tramites.some((t) => t.id === id)) throw new Aviso("Trámite no encontrado.");
+    return C;
+  }
+
   return {
+    async precios() {
+      const C = await contenido({ oficial: true }), filas = await almacen.precios(), ajustes = await almacen.ajustes();
+      return { tarifas: { ...C.tarifas, ...ajustes }, tramites: C.data.tramites.map((t) => {
+        const p = filas.find((p) => p.tramiteId === t.id);
+        return { ...t, tarifa: p ? { tipo: p.tipo, valor: p.valor, unidad: p.unidad, tabla: p.tabla } : t.tarifa,
+          editada: !!p, actualizadoPor: p?.actualizadoPor || "", actualizadoEn: p?.actualizadoEn || "" };
+      }) };
+    },
+    async guardarPrecio(p, por) {
+      const C = await tramitePrecio(p.tramiteId);
+      if (!["pct", "fija", "cuantia", "consultar"].includes(p.tipo)) throw new Aviso("Tipo de precio inválido.");
+      if (["pct", "fija"].includes(p.tipo) && (typeof p.valor !== "number" || !Number.isFinite(p.valor) || p.valor <= 0 || p.valor > 10000)) throw new Aviso("El valor debe ser un número mayor que 0 y de hasta 10000.");
+      if (p.tipo === "cuantia" && !Object.hasOwn(C.tarifas.tablas || {}, p.tabla)) throw new Aviso("Tabla de cuantía inválida.");
+      if (typeof (p.unidad ?? "") !== "string" || (p.unidad || "").length > 30) throw new Aviso("La unidad debe tener hasta 30 caracteres.");
+      await almacen.guardarPrecio({ tramiteId: p.tramiteId, tipo: p.tipo, valor: ["pct", "fija"].includes(p.tipo) ? p.valor : null,
+        unidad: (p.unidad || "").trim(), tabla: p.tipo === "cuantia" ? p.tabla : "", actualizadoPor: por });
+    },
+    async restaurarPrecio(id) { await tramitePrecio(id); await almacen.restaurarPrecio(id); },
+    async guardarSBU({ sbu, anio }, por) {
+      if (typeof sbu !== "number" || !Number.isFinite(sbu) || sbu < 100 || sbu > 5000) throw new Aviso("El SBU debe estar entre 100 y 5000.");
+      if (!/^\d{4}$/.test(String(anio))) throw new Aviso("El año debe tener 4 dígitos.");
+      await almacen.guardarAjuste("sbu", sbu, por);
+      await almacen.guardarAjuste("anio", String(anio), por);
+    },
     async conversaciones() {
       const filas = (await almacen.resumenConversaciones()).map(({ ultimoTexto, ...c }) => ({ ...c, ultimo: ultimoTexto, canal: canalDe(c.telefono) }));
       return filas.sort((a, b) => (b.derivada - a.derivada) || (b.ultimaActividad - a.ultimaActividad));

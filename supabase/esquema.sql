@@ -166,3 +166,18 @@ create index if not exists conversaciones_creada on conversaciones(creada);
 
 -- Primera vez que cada persona del personal entra con la verificación en dos pasos (para avisar al administrador).
 alter table personal add column if not exists mfa_en timestamptz;
+
+-- 2026-10-07: precios y ajustes editables por administradores.
+create table if not exists precios (
+  tramite_id text primary key,
+  tipo text not null check (tipo in ('pct','fija','cuantia','consultar')),
+  valor numeric,
+  unidad text not null default '',
+  tabla text not null default '',
+  actualizado_por text not null default '',
+  actualizado_en timestamptz not null default now()
+);
+create table if not exists ajustes (clave text primary key, valor text not null, actualizado_por text not null default '', actualizado_en timestamptz not null default now());
+alter table personal add column if not exists rol text not null default 'personal' check (rol in ('admin','personal'));
+alter table precios enable row level security;
+alter table ajustes enable row level security;

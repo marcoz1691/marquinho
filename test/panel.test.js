@@ -213,3 +213,37 @@ describe("panel del personal", () => {
     });
   });
 });
+
+it("valida y guarda precios, restaura y ajusta SBU", async () => {
+  await expect(panel.guardarPrecio({ tramiteId: "no", tipo: "fija", valor: 10 }, "admin")).rejects.toBeInstanceOf(Aviso);
+  for (const precio of [{ tipo: "no" }, { tipo: "pct", valor: 0 }, { tipo: "fija", valor: Infinity }, { tipo: "fija", valor: "10" }, { tipo: "cuantia", tabla: "no" }, { tipo: "consultar", unidad: "x".repeat(31) }]) {
+    await expect(panel.guardarPrecio({ tramiteId: "compraventa", ...precio }, "admin")).rejects.toBeInstanceOf(Aviso);
+  }
+  await panel.guardarPrecio({ tramiteId: "compraventa", tipo: "pct", valor: 0.12 }, "admin");
+  expect((await panel.precios()).tramites[0]).toMatchObject({ editada: true, tarifa: { tipo: "pct", valor: 0.12 }, actualizadoPor: "admin" });
+  await panel.restaurarPrecio("compraventa");
+  expect((await panel.precios()).tramites[0].editada).toBe(false);
+  await expect(panel.guardarSBU({ sbu: 99, anio: "2027" }, "admin")).rejects.toBeInstanceOf(Aviso);
+  await expect(panel.guardarSBU({ sbu: 500, anio: "27" }, "admin")).rejects.toBeInstanceOf(Aviso);
+  await panel.guardarSBU({ sbu: 500, anio: "2027" }, "admin");
+  expect((await panel.precios()).tarifas.sbu).toBe(500);
+});
+
+it("rechaza extremos inválidos sin guardar nada y permite los límites válidos", async () => {
+  for (const valor of [-1, NaN, 10000.01]) {
+    await expect(panel.guardarPrecio({ tramiteId: "compraventa", tipo: "fija", valor }, "admin")).rejects.toBeInstanceOf(Aviso);
+  }
+  for (const sbu of ["500", NaN, Infinity, 5000.01]) {
+    await expect(panel.guardarSBU({ sbu, anio: "2027" }, "admin")).rejects.toBeInstanceOf(Aviso);
+  }
+  expect(await almacen.precios()).toEqual([]);
+  expect(await almacen.ajustes()).toEqual({});
+  await panel.guardarPrecio({ tramiteId: "compraventa", tipo: "fija", valor: 10000, unidad: "x".repeat(30) }, "admin");
+  await panel.guardarSBU({ sbu: 100, anio: "2027" }, "admin");
+  await panel.guardarSBU({ sbu: 5000, anio: "2027" }, "admin");
+  expect(await almacen.ajustes()).toEqual({ sbu: 5000, anio: "2027" });
+});
+
+it("el año contiene exactamente cuatro dígitos, sin saltos de línea", async () => {
+  await expect(panel.guardarSBU({ sbu: 500, anio: "2027\n" }, "admin")).rejects.toBeInstanceOf(Aviso);
+});
