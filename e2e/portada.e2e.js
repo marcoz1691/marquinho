@@ -37,6 +37,28 @@ test.describe("Contacto y datos de la notaría", () => {
     expect(m.lineas).toBeLessThanOrEqual(3);
   });
 
+  test("CF-98 @movil en el teléfono primero va el nombre del notario y luego el sello, todo en la primera pantalla", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await abrirPortada(page);
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    const nombre = await page.locator("#heroTitle").boundingBox();
+    const lema = await page.locator("#heroLema").boundingBox();
+    const boton = await page.getByRole("link", { name: "Ver trámites" }).boundingBox();
+    const sello = await page.locator(".hero__seal").boundingBox();
+    expect(nombre.y + nombre.height).toBeLessThanOrEqual(sello.y);
+    expect(nombre.y).toBeGreaterThanOrEqual(60);
+    expect(lema.y + lema.height).toBeLessThanOrEqual(844);
+    expect(boton.y + boton.height).toBeLessThanOrEqual(844);
+  });
+
+  test("CF-99 en pantalla ancha el nombre del notario va a la izquierda y el sello a la derecha", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await abrirPortada(page);
+    const nombre = await page.locator("#heroTitle").boundingBox();
+    const sello = await page.locator(".hero__seal").boundingBox();
+    expect(nombre.x + nombre.width).toBeLessThanOrEqual(sello.x);
+  });
+
   test("CF-71 teléfonos y correo son enlaces que se pueden pulsar", async ({ page }) => {
     await abrirPortada(page);
     const info = page.locator("#contactInfo");
