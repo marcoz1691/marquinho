@@ -166,3 +166,7 @@ create index if not exists conversaciones_creada on conversaciones(creada);
 
 -- Primera vez que cada persona del personal entra con la verificación en dos pasos (para avisar al administrador).
 alter table personal add column if not exists mfa_en timestamptz;
+
+-- 2026-10-07: ticket de cuatro dígitos, único por día; las citas anteriores conservan null.
+alter table solicitudes_cita add column if not exists codigo text check (codigo ~ '^[1-9][0-9]{3}$');
+create unique index if not exists solicitudes_cita_fecha_codigo on solicitudes_cita(fecha, codigo);
