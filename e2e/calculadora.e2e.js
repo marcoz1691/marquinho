@@ -165,7 +165,7 @@ test.describe("Calculadora de tarifas", () => {
       await expect(page.locator("#rHab")).toHaveText("$1,34");
     });
 
-    test("CF-70 quitar hojas nunca baja de cero y lo escrito se acota a 0–200", async ({ page }) => {
+    test("CF-152 quitar hojas nunca baja de cero y lo escrito se acota a 0–200", async ({ page }) => {
       await page.selectOption("#calcTramite", "poder-natural");
       await menos(page, "copias").click();
       await expect(hojas(page, "copias")).toHaveValue("0");
@@ -183,7 +183,7 @@ test.describe("Calculadora de tarifas", () => {
       await resultado(page, "$66,52");
     });
 
-    test("CF-71 el aviso cambia cuando se agregan habilitantes", async ({ page }) => {
+    test("CF-153 el aviso cambia cuando se agregan habilitantes", async ({ page }) => {
       await page.selectOption("#calcTramite", "poder-natural");
       await expect(page.locator("#calcAviso")).toHaveText(/no incluye documentos habilitantes/);
       await mas(page, "copias").click();
@@ -193,7 +193,7 @@ test.describe("Calculadora de tarifas", () => {
       await expect(page.locator("#calcNote")).toHaveText("Cada otorgante adicional suma 3% del SBU.");
     });
 
-    test("CF-72 elegir un trámite desde su ficha reinicia los habilitantes", async ({ page }) => {
+    test("CF-154 elegir un trámite desde su ficha reinicia los habilitantes", async ({ page }) => {
       await page.selectOption("#calcTramite", "poder-natural");
       await mas(page, "copias").click();
       await mas(page, "materializaciones").click();
@@ -206,8 +206,18 @@ test.describe("Calculadora de tarifas", () => {
       await expect(page.locator("#rHabWrap")).toBeHidden();
     });
 
-    test("CF-73 la ficha del trámite aclara que no incluye documentos habilitantes", async ({ page }) => {
+    test("CF-155 la ficha del trámite aclara que no incluye documentos habilitantes", async ({ page }) => {
       await expect(page.locator("#detalleTramite .tp__aviso")).toContainText("no incluye documentos habilitantes");
+    });
+
+    test("CF-156 en las propias copias certificadas no hay aviso ni se ofrece sumarlas otra vez", async ({ page }) => {
+      await page.locator('#lista [data-sel="copias-certificadas"]').click();
+      await expect(page.locator("#detalleTramite .tp__nombre")).toHaveText("Copias certificadas");
+      await expect(page.locator("#detalleTramite .tp__aviso")).toHaveCount(0);
+      await page.selectOption("#calcTramite", "copias-certificadas");
+      await expect(page.locator('[data-hab="copias"]')).toBeHidden();
+      await expect(page.locator('[data-hab="materializaciones"]')).toBeVisible();
+      await expect(page.locator("#calcAviso")).toHaveText("");
     });
   });
 });

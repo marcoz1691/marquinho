@@ -231,7 +231,7 @@ test.describe("Navegación", () => {
     await expect(hoja).not.toHaveClass(/tp--abierto/);
   });
 
-  test("CF-131 @movil las preguntas están en acordeón y quedan abiertas al pasar a pantalla ancha", async ({ page }) => {
+  test("CF-151 @movil las preguntas están en acordeón y quedan abiertas al pasar a pantalla ancha", async ({ page }) => {
     await abrirPortada(page);
     const preguntas = page.locator("#faqList details");
     await expect(preguntas.first()).not.toHaveAttribute("open", "");

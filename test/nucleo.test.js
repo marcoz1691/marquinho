@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCSV, num, fecha, desdeHoja, calcularTarifa, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
+import { parseCSV, num, fecha, desdeHoja, calcularTarifa, calcularConHabilitantes, esHabilitante, HABILITANTES, AVISO_HABILITANTES, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
 
 const TARIFAS = {
   sbu: 482, iva: 0.15, anio: 2026,
@@ -77,6 +77,12 @@ describe("desdeHoja", () => {
     expect(r.notaria.cargo).toBe("Notario Cuadragésimo Primero del Cantón Quito");
   });
 
+  it("si la hoja cambia el notario sin nombre corto, no deja el nombre corto anterior", () => {
+    const local = { ...base, notaria: { ...base.notaria, notario: "Dr. Uno", notarioCorto: "Dr. Uno C." } };
+    const r = desdeHoja({ ...tabs, configuracion: "Dato,Valor\nNotario,Dra. Dos Pérez\n" }, local);
+    expect(r.notaria.notarioCorto).toBeUndefined();
+  });
+
   it("lee el nombre corto del notario para el menú", () => {
     const r = desdeHoja({ ...tabs, configuracion: "Dato,Valor\nNombre corto del notario,Dr. Dobri Albornoz Donoso\n" }, base);
     expect(r.notaria.notarioCorto).toBe("Dr. Dobri Albornoz Donoso");
@@ -131,7 +137,13 @@ describe("calcularConHabilitantes", () => {
     const r = calcularConHabilitantes(poder, TARIFAS, {}, { copias: 2 }, tramites);
     expect(r.tramite.total).toBe(66.52);
     expect(r.habilitantes).toEqual([{ id: "copias", nombre: "Copias certificadas o compulsas", cantidad: 2, base: 3.58, iva: 0.54, total: 4.12 }]);
-    expect(r).toMatchObject({ base: 61.42, iva: 9.22, total: 70.64 });
+    expect(r).toMatchObject({ base: 61.42, iva: 9.22, total: 70.64, habilitantesBase: 3.58 });
+  });
+
+  it("reconoce los trámites que son ellos mismos habilitantes", () => {
+    expect(esHabilitante("copias-certificadas")).toBe(true);
+    expect(esHabilitante("certificacion-electronica")).toBe(true);
+    expect(esHabilitante("poder-natural")).toBe(false);
   });
 
   it("sin habilitantes el total es el del trámite", () => {

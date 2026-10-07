@@ -88,7 +88,6 @@ a:hover{text-decoration:underline}
 @keyframes in-up{from{opacity:0;transform:translateY(20px)}}
 .eyebrow{color:var(--gold-text);margin:0 0 22px}
 h1{font-family:var(--serif);font-size:clamp(54px,min(8vw,12vh),112px);line-height:.94;letter-spacing:-.018em;font-weight:400;margin:0;color:var(--fg)}
-.lead{font-size:clamp(18px,min(2vw,3vh),22px);color:var(--muted);margin:clamp(14px,2.6vh,24px) 0 0;max-width:34ch;line-height:1.45}
 /* Portada: el nombre del notario es el título; nunca se corta una palabra */
 .hero h1{font-size:clamp(44px,min(5.4vw,9vh),70px);line-height:1.02;text-wrap:balance;overflow-wrap:normal;word-break:normal;hyphens:none}
 .lema{font-size:clamp(22px,2.6vw,34px);font-weight:500;line-height:1.2;letter-spacing:-.012em;color:var(--muted);margin:clamp(12px,2.2vh,20px) 0 0;max-width:22ch;text-wrap:balance}
@@ -232,10 +231,9 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .calc__out{border-top:1px solid var(--line);padding-top:24px;display:grid;gap:14px}
 .calc__out span{display:block;font-size:13px;color:var(--muted)}
 .calc__total strong{font-family:var(--serif);font-weight:400;font-size:clamp(56px,7vw,84px);line-height:.9;color:var(--accent);letter-spacing:-.01em}
-.calc__split{display:flex;gap:40px}
+.calc__split{display:flex;flex-wrap:wrap;gap:14px 40px}
 .calc__split strong{font-family:var(--mono);font-size:18px;font-weight:500}
 .calc__out strong{font-variant-numeric:tabular-nums}
-.calc__split{flex-wrap:wrap;row-gap:14px}
 .calc__aviso{margin:0;padding-top:12px;border-top:1px dashed var(--line);font-size:13.5px;line-height:1.5;color:var(--muted);max-width:60ch}
 /* Documentos habilitantes: filas con contador de hojas */
 .calc__hab{border:0;margin:4px 0 0;padding:18px 0 0;border-top:1px solid var(--line);display:grid;gap:4px;min-width:0}
@@ -309,7 +307,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   .hero__seal{order:-1;justify-items:center}
   .seal{width:clamp(170px,min(54vw,30svh),250px)}
   .hero__copy .cta{justify-content:center}
-  .hero__copy .lead,.hero__copy .lema{margin-left:auto;margin-right:auto}
+  .hero__copy .lema{margin-left:auto;margin-right:auto}
   .hero h1{font-size:clamp(38px,11vw,56px)}
   .foot__in{grid-template-columns:1fr}
   .svc__head{position:static}
@@ -319,6 +317,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   .hscroll__track li{width:80vw;min-height:min(320px,42svh);padding:28px}
 }
 @media (max-width:520px){
+  .hab__btn{width:44px;height:44px}
   #brandSub{display:none}
   .nav__brand{max-width:calc(100vw - 110px);font-size:15px;gap:10px}
   .find{width:100%}
@@ -363,7 +362,7 @@ h2,.legal h2{font-size:var(--t-h2);line-height:1.06;letter-spacing:-.025em}
 .legal h2{margin-top:36px}
 .svc__row:hover .svc__name{color:var(--accent)}
 /* Texto: dos tamaños, introducción y cuerpo */
-.lead,.sub,.svc__intro,.legal__lead{font-size:var(--t-lead);line-height:1.5}
+.sub,.svc__intro,.legal__lead{font-size:var(--t-lead);line-height:1.5}
 .svc__desc,.tp__desc,.faq__item p,.hscroll__track p,.contact__info p,.body p,.legal p{font-size:var(--t-body);line-height:1.6}
 .note,.hint,.estado,.foot{font-size:var(--t-small)}
 /* Etiquetas: un único estilo pequeño en mayúsculas */

@@ -208,7 +208,7 @@ test.describe("Enlaces directos a trámites", () => {
     await expect(pestana(page, "Empresas")).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("CF-130 al imprimir en la computadora se ve el detalle completo del trámite", async ({ page }) => {
+  test("CF-150 al imprimir en la computadora se ve el detalle completo del trámite", async ({ page }) => {
     await abrirPortada(page);
     await page.locator("#lista .tl__item").nth(1).click();
     await page.evaluate(() => { document.body.dataset.print = "1"; });

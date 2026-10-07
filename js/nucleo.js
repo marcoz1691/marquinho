@@ -135,7 +135,8 @@ export function desdeHoja(tabs, base) {
   var N = JSON.parse(JSON.stringify(base.notaria)), T = JSON.parse(JSON.stringify(base.tarifas));
   var set = function (k, fn) { if (C[k]) fn(C[k]); };
   set("nombre", function (v) { N.nombre = v; });
-  set("notario", function (v) { N.notario = v; });
+  // Si cambia el notario y la hoja no trae su nombre corto, no se conserva el nombre corto del anterior.
+  set("notario", function (v) { if (v !== N.notario) delete N.notarioCorto; N.notario = v; });
   set("eslogan", function (v) { N.eslogan = v; });
   set("direccion", function (v) { N.direccion = v; });
   set("telefonos", function (v) { N.telefonos = v.split(/[,;\/]+/).map(function (s) { return s.trim(); }).filter(Boolean); });
@@ -202,9 +203,11 @@ export function calcularTarifa(t, T, opciones) {
 // Documentos habilitantes: se cobran aparte, por hoja, con el precio de su propio trámite.
 export const AVISO_HABILITANTES = "Este valor no incluye documentos habilitantes, como copias certificadas, compulsas o materializaciones de documentos electrónicos.";
 export const HABILITANTES = [
-  { id: "copias", tramite: "copias-certificadas", nombre: "Copias certificadas o compulsas" },
-  { id: "materializaciones", tramite: "certificacion-electronica", nombre: "Materialización de documentos electrónicos" }
+  { id: "copias", tramite: "copias-certificadas", nombre: "Copias certificadas o compulsas", etiqueta: "copias certificadas" },
+  { id: "materializaciones", tramite: "certificacion-electronica", nombre: "Materialización de documentos electrónicos", etiqueta: "materializaciones" }
 ];
+// Los trámites de copias y materializaciones son en sí mismos habilitantes: el aviso no aplica a su propio precio.
+export function esHabilitante(id) { return HABILITANTES.some(function (h) { return h.tramite === id; }); }
 
 // Tarifa del trámite más los habilitantes que la persona agregue. extras: { copias: n, materializaciones: m }.
 // Devuelve { tramite, habilitantes: [{ id, nombre, cantidad, base, iva, total }], base, iva, total } (null si el trámite no se puede calcular).
@@ -221,7 +224,8 @@ export function calcularConHabilitantes(t, T, opciones, extras, tramites) {
   });
   var suma = function (k) { return lista.reduce(function (a, h) { return redondear(a + h[k]); }, r[k]); };
   var ok = r.total !== null;
-  return { tramite: r, habilitantes: lista, base: ok ? suma("base") : null, iva: ok ? suma("iva") : null, total: ok ? suma("total") : null };
+  var habilitantesBase = lista.reduce(function (a, h) { return redondear(a + h.base); }, 0);
+  return { tramite: r, habilitantes: lista, habilitantesBase: habilitantesBase, base: ok ? suma("base") : null, iva: ok ? suma("iva") : null, total: ok ? suma("total") : null };
 }
 
 export function precioTexto(t, T) {

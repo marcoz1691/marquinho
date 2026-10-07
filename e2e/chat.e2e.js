@@ -2,7 +2,7 @@ import { test, expect, notaria, simularApi, respuestaRetenida } from "./fixtures
 
 const BIENVENIDA = "Hola, soy Sofía. Respondo de forma automática por la Notaría 41";
 // Los cinco trámites más pedidos según el notario, como casos reales.
-const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas"];
+const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas o materializar un documento"];
 const chat = (page) => page.locator("#chat");
 const mensajes = (page, autor) => page.locator("#chatMensajes .chat__msg--" + autor);
 

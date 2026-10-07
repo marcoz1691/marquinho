@@ -1,4 +1,4 @@
-import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES } from "./nucleo.js";
+import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES, esHabilitante } from "./nucleo.js";
 
 (function () {
   "use strict";
@@ -91,7 +91,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     return '<button class="tp__cerrar" type="button" data-cerrar aria-label="Cerrar el trámite"><i class="ph ph-x" aria-hidden="true"></i></button>' +
       '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
       '<p class="tp__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
-      '<p class="tp__aviso">' + esc(AVISO_HABILITANTES) + "</p>" +
+      (esHabilitante(t.id) ? "" : '<p class="tp__aviso">' + esc(AVISO_HABILITANTES) + "</p>") +
       '<div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
       t.req.map(function (r, i) {
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
@@ -194,19 +194,24 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       $("#calcMontoWrap").hidden = !esCuantia;
       $("#calcUnit").textContent = multi ? "(" + f.unidad + ")" : "";
       var monto = montoEscrito($("#calcMonto").value);
+      // Si el trámite elegido ya es una copia o materialización, no se ofrece sumarla otra vez.
+      HABILITANTES.forEach(function (h) {
+        var row = habs.querySelector('[data-hab="' + h.id + '"]'); if (!row) return;
+        row.hidden = h.tramite === t.id;
+        if (row.hidden) row.querySelector("input").value = 0;
+      });
       var c = calcularConHabilitantes(t, T, { cantidad: parseInt($("#calcQty").value, 10) || 1, monto: monto }, extras(), state.data.tramites), r = c.tramite;
       if (esCuantia) {
         if (r.total !== null) note = "Rango " + (r.hasta === null ? "desde " + money(r.desde + .01) : money(r.desde ? r.desde + .01 : 0) + " a " + money(r.hasta)) + ": " +
           r.factor.toLocaleString("es-EC") + " SBU. " + note;
         else note = monto > 0 ? "Para este valor, consulta con la notaría." : "Ingresa el valor del contrato o del avalúo.";
       }
-      var habBase = c.habilitantes.reduce(function (a, h) { return Math.round((a + h.base) * 100) / 100; }, 0);
       $("#rHabWrap").hidden = !c.habilitantes.length;
-      $("#rHab").textContent = money(habBase);
+      $("#rHab").textContent = money(c.habilitantesBase);
       if (c.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
       else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); $("#rTotal").textContent = money(c.total); }
       $("#calcNote").textContent = note;
-      $("#calcAviso").textContent = c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : AVISO_HABILITANTES;
+      $("#calcAviso").textContent = esHabilitante(t.id) ? "" : c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : AVISO_HABILITANTES;
     }
     habs.addEventListener("click", function (e) {
       var b = e.target.closest("[data-mas],[data-menos]");
