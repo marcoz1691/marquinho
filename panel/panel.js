@@ -314,6 +314,15 @@ $("#detalle").addEventListener("click", async (e) => {
 
 /* ---------- Precios y SBU ---------- */
 let preciosPanel = null;
+const ETIQUETA_VALOR = { pct: "Porcentaje del SBU (%)", fija: "Valor en dólares (USD)" };
+// "2026-10-07T15:00:00Z" → "7 oct 2026, 10:00" (hora de Quito).
+function fechaLegible(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = Object.fromEntries(new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.day} ${p.month.replace(".", "")} ${p.year}, ${p.hour}:${p.minute}`;
+}
 const TIPOS_PRECIO = { pct: "Porcentaje del SBU", fija: "Valor fijo (USD)", cuantia: "Según cuantía", consultar: "Consultar" };
 function finalPrecio(t, tarifas) {
   const r = calcularTarifa(t, tarifas);
@@ -339,11 +348,11 @@ function pintarPrecios() {
     const f = t.tarifa;
     const campos = preciosPanel.esAdmin ? `<div class="precio-campos">
       <label>Tipo<select data-campo="tipo">${Object.entries(TIPOS_PRECIO).map(([k, v]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
-      <label>Valor<input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? f.valor * 100 : f.valor ?? "")}"></label>
-      <label>Unidad<input data-campo="unidad" maxlength="30" value="${esc(f.unidad)}"></label>
+      <label><span data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? f.valor * 100 : f.valor ?? "")}"></label>
+      <label>Unidad (opcional, por ejemplo «por firma»)<input data-campo="unidad" maxlength="30" value="${esc(f.unidad)}"></label>
       <label>Tabla<select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
       <button class="btn" data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div>` : `<p>${esc(TIPOS_PRECIO[f.tipo])}</p>`;
-    return `<article class="precio-fila" data-tramite="${esc(t.id)}"><h3>${esc(t.nombre)}</h3><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><small>${t.editada ? `Editado por ${esc(t.actualizadoPor)} · ${esc(t.actualizadoEn)}` : "Valor oficial"}</small>${campos}</article>`;
+    return `<article class="precio-fila" data-tramite="${esc(t.id)}"><h3>${esc(t.nombre)}</h3><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><small>${t.editada ? `Editado por ${esc(t.actualizadoPor)} · ${esc(fechaLegible(t.actualizadoEn))}` : "Valor oficial"}</small>${campos}</article>`;
   }).join("") || "<p>No hay trámites con ese nombre.</p>";
   document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
 }
@@ -357,6 +366,9 @@ function actualizarPrecio(fila) {
   const p = precioDeFila(fila);
   fila.querySelector('[data-campo="valor"]').disabled = !["pct", "fija"].includes(p.tipo);
   fila.querySelector('[data-campo="tabla"]').disabled = p.tipo !== "cuantia";
+  // Solo se muestra lo que aplica al tipo elegido, y el valor dice si son % del SBU o dólares.
+  fila.querySelector('[data-campo="tabla"]').closest("label").hidden = p.tipo !== "cuantia";
+  fila.querySelector("[data-etiqueta-valor]").textContent = ETIQUETA_VALOR[p.tipo] || "Valor";
   fila.querySelector("output").textContent = finalPrecio({ tarifa: p }, tarifasEnPantalla());
 }
 $("#preciosBuscar").addEventListener("input", pintarPrecios);
