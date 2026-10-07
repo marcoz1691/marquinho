@@ -402,11 +402,13 @@ h2,.sub,.hscroll__head{text-align:left}
 .act--sofia:hover{filter:brightness(1.08)}
 @media print{.tp__sofia{display:none!important}}
 
-/* Celular: el detalle del trámite como hoja que sube desde abajo */
+/* Celular: el detalle del trámite como hoja que sube desde abajo (solo en pantalla: al imprimir se ve completo) */
 .tp__cerrar{display:none}
 .tp-velo{position:fixed;inset:0;z-index:69;background:rgba(7,19,14,.45);opacity:0;transition:opacity .3s}
 .tp-velo.on{opacity:1}
-@media (max-width:860px){
+@media print{.tp-velo,.tp__cerrar{display:none!important}}
+@media screen and (prefers-reduced-motion:reduce){.tp,.tp.tp--abierto,.tp-velo{transition:none}}
+@media screen and (max-width:860px){
   .tp{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;
     padding:20px 20px calc(28px + env(safe-area-inset-bottom));transform:translateY(105%);visibility:hidden;animation:none;
     transition:transform .4s cubic-bezier(.2,.7,.2,1),visibility 0s linear .4s}

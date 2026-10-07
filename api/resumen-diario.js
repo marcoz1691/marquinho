@@ -1,4 +1,4 @@
-// Cron de Vercel de lunes a viernes a las 07:00 de Quito: resumen de las citas de hoy al WhatsApp del personal.
+// Cron diario de Vercel a las 07:00 de Quito (si no hay citas, no envía nada): resumen de las citas de hoy al WhatsApp del personal.
 import { resumenDelDia } from "./_lib/recordatorios.js";
 import { obtenerServicios } from "./_lib/servicios.js";
 

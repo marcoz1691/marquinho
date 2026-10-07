@@ -87,6 +87,15 @@ describe("panel del personal", () => {
     expect(whatsapp.enviarTexto.mock.calls[0][1]).toMatch(/no estará/);
   });
 
+  it("no vuelve a decidir una cita cancelada ni repite el mismo estado (evita avisos dobles)", async () => {
+    const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana", estado: "confirmada" });
+    await expect(panel.decidirCita(id, "confirmada")).rejects.toThrow(/ya está/);
+    await panel.decidirCita(id, "rechazada");
+    await expect(panel.decidirCita(id, "rechazada")).rejects.toThrow();
+    await expect(panel.decidirCita(id, "confirmada")).rejects.toThrow();
+    expect(whatsapp.enviarTexto).toHaveBeenCalledTimes(1);
+  });
+
   it("no acepta estados de cita desconocidos", async () => {
     const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana" });
     await expect(panel.decidirCita(id, "borrada")).rejects.toThrow();

@@ -187,6 +187,43 @@ describe("herramientas", () => {
       expect(await citas()).toHaveLength(0);
     });
 
+    it("si ya tiene una cita activa, no crea otra: pide confirmar el cambio", async () => {
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje());
+      const claude = pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "15:00" });
+      await nuevo(claude).atender(mensaje());
+      expect(await citas()).toHaveLength(1);
+      expect(resultadoDe(claude).is_error).toBe(true);
+      expect(resultadoDe(claude).content).toMatch(/reprogramar/);
+    });
+
+    it("una cita de hoy cuya hora ya pasó no cuenta como activa", async () => {
+      const conv = await almacen.conversacion("593991112233", "Ana");
+      await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: "poder", fecha: "2026-10-06", hora: "09:00", nombre: "Ana", estado: "confirmada" });
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje()); // ahora: 10:00 en Quito
+      const [antigua, nueva] = await citas();
+      expect(antigua.estado).toBe("confirmada");
+      expect(nueva.estado).toBe("confirmada");
+    });
+
+    it("al reprogramar cancela la cita anterior y libera su cupo", async () => {
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" })).atender(mensaje());
+      const otra = await almacen.conversacion("593990000001", "Luis");
+      await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "poder", fecha: "2026-10-08", hora: "10:30", nombre: "Luis", estado: "confirmada" });
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:30", reprogramar: true })).atender(mensaje());
+      const [vieja, nueva] = await citas();
+      expect(vieja).toMatchObject({ hora: "10:00", estado: "rechazada", motivo: "Reprogramada por el cliente" });
+      expect(nueva).toMatchObject({ hora: "10:30", estado: "confirmada" });
+    });
+
+    it("solo promete el recordatorio si el cron de la tarde anterior todavía lo va a enviar", async () => {
+      const lejos = pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "10:00" });
+      await nuevo(lejos).atender(mensaje());
+      expect(resultadoDe(lejos).content).toMatch(/recordatorio/);
+      const hoy = pedir({ tramite_id: "poder", fecha: "2026-10-06", hora: "15:00", reprogramar: true });
+      await nuevo(hoy).atender(mensaje());
+      expect(resultadoDe(hoy).content).not.toMatch(/recordatorio/);
+    });
+
     it("avisa al personal si la cita confirmada es para hoy, porque ya pasó el resumen de la mañana", async () => {
       await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-06", hora: "14:00" })).atender(mensaje()); // ahora: 10:00 en Quito
       expect((await citas())[0].estado).toBe("confirmada");
@@ -401,6 +438,13 @@ describe("canal web", () => {
     const claude = claudeFalso([herramienta("solicitar_cita", { fecha: "2026-10-08", hora: "10:00", nombre: "Ana" }), texto("¿Tu celular?")]);
     await nuevo(claude).atender(web());
     expect(claude.llamadas[1].messages.at(-1).content[0]).toMatchObject({ is_error: true });
+  });
+
+  it("en la web la cita queda pendiente aunque el trámite sea simple: el celular no está verificado", async () => {
+    const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Ana", telefono: "0991112233" }), texto("Listo")]);
+    await nuevo(claude).atender(web());
+    const conv = await almacen.conversacion("web:abc123");
+    expect((await almacen.solicitudesCita(conv.id))[0].estado).toBe("pendiente");
   });
 
   it("en la web guarda el celular de contacto en la cita", async () => {

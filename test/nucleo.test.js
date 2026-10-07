@@ -62,6 +62,11 @@ describe("desdeHoja", () => {
     expect(compraventa.revision).toBe(true);
   });
 
+  it("si la hoja no tiene la columna de revisión, conserva la marca de los datos locales", () => {
+    const local = { ...base, data: { ...base.data, tramites: [{ id: "poder", revision: true }] } };
+    expect(desdeHoja(tabs, local).data.tramites[0].revision).toBe(true);
+  });
+
   it("lee el cupo de citas por hora y los feriados de la configuración", () => {
     const r = desdeHoja({ ...tabs, configuracion: "Dato,Valor\nCitas por hora,3\nFeriados,\"2/11/2026, 3/11/2026\"\n" }, base);
     expect(r.notaria.citas).toEqual({ porHora: 3, feriados: ["2026-11-02", "2026-11-03"] });

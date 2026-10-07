@@ -126,13 +126,20 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     $("#detalleTramite").innerHTML = t ? panel(t) : "";
   }
 
+  // En la computadora las respuestas siempre están a la vista; en el celular, en acordeón.
+  var faqAncha = matchMedia("(min-width: 861px)");
+  function setupFaq() {
+    $("#faqList").addEventListener("click", function (e) { if (e.target.closest("summary") && faqAncha.matches) e.preventDefault(); });
+    faqAncha.addEventListener("change", function () {
+      [].forEach.call(document.querySelectorAll("#faqList details"), function (d) { d.open = faqAncha.matches; });
+    });
+  }
   function renderFaq() {
-    var ancha = matchMedia("(min-width: 861px)").matches;
+    var ancha = faqAncha.matches;
     $("#faqList").innerHTML = state.data.faq.map(function (f, i) {
       return '<details class="faq__item reveal" style="--i:' + (i % 2) + '"' + (ancha ? " open" : "") + '><summary><h3>' + esc(f.q) + '</h3><i class="ph ph-plus" aria-hidden="true"></i></summary><p>' + esc(f.a) + "</p></details>";
     }).join("");
-    // En la computadora las respuestas siempre están a la vista.
-    $("#faqList").addEventListener("click", function (e) { if (e.target.closest("summary") && matchMedia("(min-width: 861px)").matches) e.preventDefault(); });
+
   }
 
   function renderAvisos() {
@@ -235,19 +242,35 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
     // En el celular el detalle sube como una hoja desde abajo, sin alargar la página.
     var velo = document.createElement("div");
     velo.className = "tp-velo"; velo.hidden = true; document.body.appendChild(velo);
+    var origen = null;
     var abrirHoja = function () {
       if (!angosta.matches) return;
+      origen = lista.querySelector('[data-sel="' + state.sel + '"]');   // la lista se repintó: el botón tocado ya no existe
       velo.hidden = false; det.scrollTop = 0;
-      requestAnimationFrame(function () { det.classList.add("tp--abierto"); velo.classList.add("on"); });
+      det.setAttribute("role", "dialog"); det.setAttribute("aria-modal", "true"); det.setAttribute("aria-label", "Detalle del trámite");
+      requestAnimationFrame(function () {
+        det.classList.add("tp--abierto"); velo.classList.add("on");
+        var x = det.querySelector("[data-cerrar]"); if (x) x.focus({ preventScroll: true });
+      });
       document.documentElement.classList.add("hoja-abierta");
     };
     var cerrarHoja = function () {
+      if (!det.classList.contains("tp--abierto")) return;
+      det.removeAttribute("role"); det.removeAttribute("aria-modal"); det.removeAttribute("aria-label");
+      if (origen && origen.focus && document.contains(origen)) origen.focus({ preventScroll: true });
       det.classList.remove("tp--abierto"); velo.classList.remove("on");
       document.documentElement.classList.remove("hoja-abierta");
       setTimeout(function () { if (!det.classList.contains("tp--abierto")) velo.hidden = true; }, 350);
     };
     velo.addEventListener("click", cerrarHoja);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && det.classList.contains("tp--abierto")) cerrarHoja(); });
+    document.addEventListener("keydown", function (e) {
+      if (!det.classList.contains("tp--abierto")) return;
+      if (e.key === "Escape") return cerrarHoja();
+      if (e.key !== "Tab") return;
+      var f = det.querySelectorAll("button, a[href], input, select, textarea"), primero = f[0], ultimo = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+    });
     angosta.addEventListener("change", function () { if (!angosta.matches) cerrarHoja(); });
 
     lista.addEventListener("click", function (e) {
@@ -316,8 +339,11 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
       var last = track.lastElementChild, pad = parseFloat(getComputedStyle(track).paddingLeft);
       return Math.max(0, last.offsetLeft + last.offsetWidth + pad - innerWidth);
     };
+    // En el celular la barra del navegador cambia el alto al hacer scroll: se mide solo cuando cambia el ancho.
+    var medida = { ancho: 0, alto: 0 };
     var size = function () {
-      if (hs) hs.style.height = wide.matches ? (travel() + innerHeight * 1.15) + "px" : "";
+      if (innerWidth !== medida.ancho || Math.abs(innerHeight - medida.alto) > 150) medida = { ancho: innerWidth, alto: innerHeight };
+      if (hs) hs.style.height = wide.matches ? (travel() + medida.alto * 1.15) + "px" : "";
       frame();
     };
     var ticking = false;
@@ -378,7 +404,7 @@ import { norm, money, desdeHoja, urlPestana, calcularTarifa, precioTexto, montoE
 
   cargar().then(function (r) {
     state.data = r.data; state.tarifas = r.tarifas; state.notaria = r.notaria;
-    renderAvisos(); renderCategorias(); renderChips(); renderLista(); renderFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
+    renderAvisos(); renderCategorias(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
   }).catch(function (e) {
     document.body.insertAdjacentHTML("afterbegin", '<p style="padding:16px;text-align:center">No se pudieron cargar los datos. Abre el sitio desde un servidor web (no file://). ' + esc(e.message) + "</p>");
     document.querySelectorAll(".reveal").forEach(function (x) { x.classList.add("in"); });

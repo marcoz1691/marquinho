@@ -117,7 +117,10 @@ export function desdeHoja(tabs, base) {
     var t = { id: norm(o.get("codigo") || o.get("tramite")).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), cat: o.get("categoria"),
       nombre: o.get("tramite"), desc: o.get("descripcion"), req: lineas(o.get("requisitos")), pasos: lineas(o.get("pasos")), tarifa: tarifa };
     if (o.get("nota")) t.nota = o.get("nota");
-    if (/^s/.test(norm(o.get("revision")))) t.revision = true;
+    // Sin la columna de revisión en la hoja, se conserva la marca local: nunca confirmar solo un trámite largo por omisión.
+    var conColumna = Object.keys(o).some(function (k) { return k.indexOf("revision") === 0; });
+    var local = (base.data.tramites || []).find(function (x) { return x.id === t.id; }) || {};
+    if (conColumna ? /^s/.test(norm(o.get("revision"))) : local.revision) t.revision = true;
     return t;
   }).filter(function (t) { return t.nombre && t.cat; });
 
