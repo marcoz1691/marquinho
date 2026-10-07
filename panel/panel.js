@@ -180,17 +180,17 @@ async function abrir(id, silencioso) {
         ${c.derivada ? '<button class="btn btn--line" id="devolver">Devolver al asistente</button>' : '<span class="tag">Atiende el asistente</span>'}</div>
       <div id="mensajes">${mensajes(d)}</div>
       ${d.puedeResponder ? `<form class="resp" id="resp"><textarea id="texto" placeholder="Escribe tu respuesta…" required></textarea><button class="btn">Enviar</button></form>`
-        : d.canal === "web" ? '<p class="aviso" style="margin:12px 18px">Conversación del chat de la página web: no se puede responder desde aquí. Si dejó su celular (ver citas), contáctalo por WhatsApp o teléfono.</p>'
-        : '<p class="aviso" style="margin:12px 18px">Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp no permite escribirle desde aquí. Llámalo por teléfono.</p>'}
+        : d.canal === "web" ? '<p class="aviso aviso-web">Conversación del chat de la página web: no se puede responder desde aquí. Si dejó su celular (ver citas), contáctalo por WhatsApp o teléfono.</p>'
+        : '<p class="aviso aviso-web">Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp no permite escribirle desde aquí. Llámalo por teléfono.</p>'}
     </div>
     <aside class="lado">
-      <div><h3>Citas</h3>${d.citas.map((x) => `<div class="ficha"><b>${esc(x.tramite)}</b><span>${esc(x.fecha)} · ${esc(x.hora)} · ${esc(x.nombre)}</span>${x.contacto ? `<small>Celular: <a href="https://wa.me/${esc(x.contacto)}" target="_blank" rel="noopener">+${esc(x.contacto)}</a></small>` : ""}
-        <span class="tag" style="justify-self:start">${esc(x.estado)}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
+      <div><h3>Citas</h3>${d.citas.map((x) => `<div class="ficha"><b>${esc(x.tramite)}</b><span>${esc(x.fecha)} · ${esc(x.hora)}${x.codigo ? ` · Ticket ${esc(x.codigo)}` : ""} · ${esc(x.nombre)}</span>${x.contacto ? `<small>Celular: <a href="https://wa.me/${esc(x.contacto)}" target="_blank" rel="noopener">+${esc(x.contacto)}</a></small>` : ""}
+        <span class="tag tag--inicio">${esc(x.estado)}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
         <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button>
           <button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Rechazar</button>` : ""}
           ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Marcar atendida</button>` : ""}</div></div>`).join("") || '<p class="aviso">Sin solicitudes de cita.</p>'}</div>
       <div><h3>Documentos</h3>${d.documentos.map((x) => `<div class="ficha"><b>${esc(x.descripcion)}</b><small>${esc(x.nombre)} ${x.tramite ? "· " + esc(x.tramite) : ""}</small>
-        <span class="tag" style="justify-self:start">${esc(x.estado || "recibido")}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
+        <span class="tag tag--inicio">${esc(x.estado || "recibido")}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
         <div class="acc"><button class="btn btn--line" data-ver="${esc(x.id)}">Ver</button>
           <button class="btn" data-doc="${esc(x.id)}" data-estado="aprobado">Aprobar</button>
           <button class="btn btn--line" data-doc="${esc(x.id)}" data-estado="observado">Observar</button>
@@ -223,7 +223,7 @@ async function cargarAgenda(opciones = {}) {
     .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
   const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
   $("#agLista").innerHTML = a.citas.map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
-      <span class="ag-hora">${esc(x.hora)}</span>
+      <span class="ag-hora">${esc(x.hora)}${x.codigo ? `<small>Ticket ${esc(x.codigo)}</small>` : ""}</span>
       <div><b>${esc(x.nombre)} ${ESTADO[x.estado] || ""}</b><small>${esc(x.tramite)}${x.telefono && !String(x.telefono).startsWith("web:") ? ` · <a href="https://wa.me/${esc(x.telefono)}" target="_blank" rel="noopener">+${esc(x.telefono)}</a>` : ""}${x.nota ? " · " + esc(x.nota) : ""}</small></div>
       ${x.estado === "rechazada" ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}
       <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Rechazar</button>` : ""}
@@ -231,6 +231,25 @@ async function cargarAgenda(opciones = {}) {
         <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div>
     </div>`).join("") || '<p class="vacio">No hay citas para este día.</p>';
 }
+// La búsqueda cruza días; sus resultados quedan junto a la agenda del día elegido.
+let busquedaTicket = 0;
+$("#agBuscar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const codigo = $("#agTicket").value.trim();
+  if (!/^[0-9]{4}$/.test(codigo)) { $("#agEstado").textContent = "Escribe un ticket de 4 dígitos."; return; }
+  const turno = ++busquedaTicket;
+  $("#agEstado").textContent = "Buscando…"; $("#agResultados").innerHTML = "";
+  try {
+    const r = await api("GET", { accion: "buscarTicket", codigo });
+    if (turno !== busquedaTicket) return;
+    const citas = Array.isArray(r) ? r : r.citas || [];
+    $("#agEstado").textContent = citas.length ? "Citas encontradas: " + citas.length : "No hay citas activas con ese ticket.";
+    $("#agResultados").innerHTML = citas.map((x) => `<div class="ficha"><b>${esc(x.fecha)} · ${esc(x.hora)} · Ticket ${esc(x.codigo)}</b><span>${esc(x.nombre)} · ${esc(x.tramite)} · ${esc(x.estado)}</span><small>${esc(x.telefono)}</small><div class="acc"><button type="button" class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div></div>`).join("");
+  } catch (err) { if (turno === busquedaTicket) $("#agEstado").textContent = err.message; }
+});
+$("#agLimpiar").addEventListener("click", () => {
+  busquedaTicket++; $("#agTicket").value = ""; $("#agEstado").textContent = ""; $("#agResultados").innerHTML = "";
+});
 $("#agFecha").addEventListener("change", () => cargarAgenda());
 $("#agendaV").addEventListener("change", async (e) => {
   const s = e.target.closest("[data-asignar]"); if (!s) return;

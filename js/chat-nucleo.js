@@ -50,13 +50,13 @@ export function borrarChat(sesion) { guardarChats(chats().filter((x) => x.sesion
   try { localStorage.removeItem("n41-chat-historial"); } catch (e) {}
 })();
 
-// Envía un mensaje. Devuelve { respuestas: [...] } o { error: "..." }.
+// Envía un mensaje. Devuelve { respuestas: [...], tarjetas: [...] } o { error: "..." }.
 export async function enviarMensaje(sesion, texto) {
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sesion, texto }) });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) return { error: data.error || "No pude responder ahora. Inténtalo de nuevo en unos minutos." };
-    return { respuestas: data.respuestas || [] };
+    return { respuestas: data.respuestas || [], tarjetas: data.tarjetas || [] };
   } catch (e) {
     return { error: "Sin conexión. Revisa tu internet e inténtalo de nuevo." };
   }

@@ -17,3 +17,12 @@ describe("página del panel", () => {
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>\s*\S/);   // sin scripts en línea (los bloquea la CSP)
   });
 });
+
+it("la agenda permite buscar tickets de cuatro dígitos y ver el chat de los resultados", () => {
+  const html = readFileSync(new URL("../panel/index.html", import.meta.url), "utf8");
+  const js = readFileSync(new URL("../panel/panel.js", import.meta.url), "utf8");
+  expect(html).toContain('id="agTicket"');
+  expect(html).toContain('pattern="[0-9]{4}"');
+  expect(js).toContain('accion: "buscarTicket"');
+  expect(js).toContain('esc(x.codigo)');
+});
