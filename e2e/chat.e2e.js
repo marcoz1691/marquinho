@@ -1,6 +1,6 @@
 import { test, expect, notaria, simularApi, respuestaRetenida } from "./fixtures.js";
 
-const BIENVENIDA = "Hola, soy Sofía. Respondo de forma automática por la Notaría 41";
+const BIENVENIDA = "Hola, soy Sofía, de la Notaría 41. Cuéntame qué necesitas hacer";
 // Los cinco trámites más pedidos según el notario, como casos reales.
 const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas o materializar un documento"];
 const chat = (page) => page.locator("#chat");
