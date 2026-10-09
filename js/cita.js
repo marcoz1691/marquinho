@@ -216,10 +216,11 @@ function validar() {
 }
 $("datos").addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (enviando || !validar()) return;
+  if (enviando) return;
+  $("error-envio").hidden = true;   // un aviso de un intento anterior no debe quedar junto a los errores nuevos
+  if (!validar()) return;
   enviando = true;
   $("confirmar").disabled = true;
-  $("error-envio").hidden = true;
   $("confirmar").textContent = "Guardando tu cita…";
   try {
     const { r, b } = await consultar({
