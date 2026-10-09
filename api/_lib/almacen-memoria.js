@@ -3,8 +3,8 @@ import { textoVisible } from "./mensajes.js";
 
 export function crearAlmacenMemoria() {
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
-  const archivos = [], docs = [], citas = [], pendientes = [];
-  const turnos = new Map(), usos = new Map();
+  let archivos = [], docs = [], citas = [], pendientes = [];
+  const turnos = new Map(), usos = new Map(), auditoria = [], conMfa = new Set();
   let seq = 0;
   const nuevoId = () => String(++seq);
   const copia = (x) => structuredClone(x);
@@ -18,7 +18,7 @@ export function crearAlmacenMemoria() {
     },
     async conversacion(telefono, nombre) {
       let c = convs.get(telefono);
-      if (!c) { c = { id: nuevoId(), telefono, nombre: nombre || "", consentimiento: false, derivada: false }; convs.set(telefono, c); }
+      if (!c) { c = { id: nuevoId(), telefono, nombre: nombre || "", consentimiento: false, derivada: false, creada: Date.now() }; convs.set(telefono, c); }
       else if (nombre && !c.nombre) c.nombre = nombre;
       return copia(c);
     },
@@ -81,11 +81,12 @@ export function crearAlmacenMemoria() {
       return copia(archivos.find((a) => a.conversacionId === conversacionId && a.id === mediaId) || null);
     },
     async guardarDocumento(d) { const doc = { id: nuevoId(), creado: Date.now(), estado: "recibido", nota: "", ...d }; docs.push(doc); return { id: doc.id }; },
-    async documento(id) { return copia(docs.find((d) => d.id === id) || null); },
+    async documento(id) { return copia(docs.find((d) => d.id === id && !d.borradoEn) || null); },
     async revisarDocumento(id, { estado, nota = "" }) { Object.assign(docs.find((d) => d.id === id), { estado, nota }); },
-    async documentos(conversacionId) { return docs.filter((d) => d.conversacionId === conversacionId).map(copia); },
-    async borrarDocumento(id) { const i = docs.findIndex((d) => d.id === id); if (i > -1) docs.splice(i, 1); },
-    async urlDocumento(id) { return docs.some((d) => d.id === id) ? `memoria://documentos/${id}` : null; },
+    async documentos(conversacionId) { return docs.filter((d) => d.conversacionId === conversacionId && !d.borradoEn).map(copia); },
+    // Borrado recuperable: deja de verse; purgar() elimina el archivo después.
+    async borrarDocumento(id, { por = "", ahora = Date.now() } = {}) { const d = docs.find((x) => x.id === id); if (d && !d.borradoEn) Object.assign(d, { borradoEn: ahora, borradoPor: por }); },
+    async urlDocumento(id) { return docs.some((d) => d.id === id && !d.borradoEn) ? `memoria://documentos/${id}` : null; },
 
     async crearSolicitudCita(c) { const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c }; citas.push(x); return { id: x.id }; },
     async solicitudesCita(conversacionId) { return citas.filter((c) => c.conversacionId === conversacionId).map(copia); },
@@ -105,6 +106,27 @@ export function crearAlmacenMemoria() {
       const k = clave + "|" + Math.floor(ahora / ventanaMs);
       usos.set(k, (usos.get(k) || 0) + 1);
       return usos.get(k);
+    },
+    // Registro de quién hizo qué en el panel (solo se agrega, nunca se edita).
+    async auditar(e) { auditoria.push({ creado: Date.now(), ...copia(e) }); },
+    async auditoria() { return auditoria.map(copia); },
+    // true solo la primera vez que esa cuenta entra con verificación en dos pasos.
+    async marcarMfa(email) { if (conMfa.has(email)) return false; conMfa.add(email); return true; },
+
+    // Retención: borra las conversaciones sin actividad desde `inactivasAntesDe` (salvo las que tienen una cita por venir)
+    // y los documentos borrados desde el panel antes de `borradosAntesDe`.
+    async purgar({ inactivasAntesDe, borradosAntesDe, hoy }) {
+      const conCita = new Set(citas.filter((x) => x.fecha >= hoy && (x.estado === "pendiente" || x.estado === "confirmada")).map((x) => x.conversacionId));
+      const actividad = (c) => Math.max(c.creada || 0, c.clienteEn || 0, ...[...sesiones.values()].filter((x) => x.conversacionId === c.id).map((x) => x.ultima));
+      const viejas = new Set([...convs.values()].filter((c) => actividad(c) < inactivasAntesDe && !conCita.has(c.id)).map((c) => c.id));
+      const antes = docs.length;
+      docs = docs.filter((d) => !viejas.has(d.conversacionId) && !(d.borradoEn && d.borradoEn < borradosAntesDe));
+      for (const [tel, c] of convs) if (viejas.has(c.id)) convs.delete(tel);
+      for (const [id, x] of sesiones) if (viejas.has(x.conversacionId)) sesiones.delete(id);
+      citas = citas.filter((x) => !viejas.has(x.conversacionId));
+      archivos = archivos.filter((x) => !viejas.has(x.conversacionId));
+      pendientes = pendientes.filter((x) => !viejas.has(x.conversacionId));
+      return { conversaciones: viejas.size, documentos: antes - docs.length };
     }
   };
 }

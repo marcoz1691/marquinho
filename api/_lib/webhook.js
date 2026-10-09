@@ -9,7 +9,7 @@ export function crearManejador({ asistente, whatsapp, secreto, tokenVerificacion
       await whatsapp.marcarLeido(m.id).catch(() => {});
       for (const texto of await asistente.atender(m)) await whatsapp.enviarTexto(m.de, texto);
     } catch (e) {
-      console.error("Error atendiendo", m.id, e);
+      console.error("Error atendiendo", m.id, e?.message || e);
       await whatsapp.enviarTexto(m.de, DISCULPA).catch(() => {});
     }
   }

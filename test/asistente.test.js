@@ -36,11 +36,16 @@ const texto = (t) => ({ stop_reason: "end_turn", content: [{ type: "text", text:
 const herramienta = (name, input, id = "tu_1") => ({ stop_reason: "tool_use", content: [{ type: "tool_use", id, name, input }] });
 const mensaje = (over = {}) => ({ id: "wamid." + Math.random(), de: "593991112233", nombre: "Ana", tipo: "texto", texto: "Hola", ...over });
 
+// Cabeceras reales ("números mágicos") de cada tipo de archivo.
+const PDF = [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37];
+const JPG = [0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46];
+const EXE = [0x4d, 0x5a, 0x90, 0, 3, 0, 0, 0];
+
 let almacen, avisar, whatsapp;
 beforeEach(() => {
   almacen = crearAlmacenMemoria();
   avisar = vi.fn(async () => {});
-  whatsapp = { descargarArchivo: vi.fn(async () => ({ bytes: new Uint8Array([7]), mime: "application/pdf" })) };
+  whatsapp = { descargarArchivo: vi.fn(async () => ({ bytes: new Uint8Array(PDF), mime: "application/pdf" })) };
 });
 const nuevo = (claude, ahora = () => new Date("2026-10-06T15:00:00Z"), extra = {}) =>
   crearAsistente({ claude, almacen, whatsapp, contenido: async () => contenido, avisar, ahora, esperar: async () => {}, ...extra });
@@ -267,7 +272,7 @@ describe("herramientas", () => {
     const conv = await almacen.conversacion("593991112233");
     const [doc] = await almacen.documentos(conv.id);
     expect(doc).toMatchObject({ mediaId: "M1", descripcion: "cédula", tramiteId: "compraventa" });
-    expect([...doc.bytes]).toEqual([7]);
+    expect([...doc.bytes]).toEqual(PDF);
     expect(avisar).toHaveBeenCalled();
   });
 
@@ -276,18 +281,109 @@ describe("herramientas", () => {
     const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("ok"),
       herramienta("guardar_documento", { media_id: "M1", descripcion: "escritura" }, "tu_2"), texto("muy grande")]);
     const a = nuevo(claude);
-    await a.atender(mensaje());
+    await a.atender(mensaje({ texto: "Sí, acepto" }));
     await a.atender(mensaje({ tipo: "archivo", texto: "", media: { id: "M1", mime: "application/pdf" } }));
-    expect(claude.llamadas[3].messages.at(-1).content[0]).toMatchObject({ is_error: true });
+    expect(claude.llamadas[3].messages.at(-1).content[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/15 MB/) });
     expect(await almacen.documentos((await almacen.conversacion("593991112233")).id)).toEqual([]);
+  });
+
+  // Consentimiento + archivo M1 recibido + guardar_documento; devuelve el resultado de la herramienta.
+  async function guardarCon(bytes, mime = "application/pdf") {
+    whatsapp.descargarArchivo = vi.fn(async () => ({ bytes: new Uint8Array(bytes), mime }));
+    const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("ok"),
+      herramienta("guardar_documento", { media_id: "M1", descripcion: "cédula" }, "tu_2"), texto("listo")]);
+    const a = nuevo(claude);
+    await a.atender(mensaje({ texto: "sí, acepto" }));
+    await a.atender(mensaje({ tipo: "archivo", texto: "", media: { id: "M1", mime, nombre: "c.pdf" } }));
+    return claude.llamadas[3].messages.at(-1).content[0];
+  }
+
+  it("guardar_documento revisa el contenido real del archivo, no solo lo que dice ser", async () => {
+    const r = await guardarCon(EXE, "application/pdf");
+    expect(r.is_error).toBe(true);
+    expect(r.content).toMatch(/PDF|foto/);
+    expect(await almacen.documentos((await almacen.conversacion("593991112233")).id)).toEqual([]);
+  });
+
+  it("guardar_documento guarda el tipo detectado en el archivo", async () => {
+    expect((await guardarCon(JPG, "application/pdf")).is_error).toBeFalsy();
+    const [doc] = await almacen.documentos((await almacen.conversacion("593991112233")).id);
+    expect(doc.mime).toBe("image/jpeg");
+  });
+
+  it("guardar_documento tiene un tope de documentos por conversación", async () => {
+    const conv = await almacen.conversacion("593991112233", "Ana");
+    for (let i = 0; i < 20; i++) await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: "X" + i, nombre: "", mime: "application/pdf", bytes: new Uint8Array(PDF), descripcion: "doc " + i });
+    const r = await guardarCon(PDF);
+    expect(r.is_error).toBe(true);
+    expect(r.content).toMatch(/20/);
+  });
+
+  it("registrar_consentimiento no registra nada si el cliente no aceptó con palabras (un archivo o un saludo no es aceptar)", async () => {
+    for (const m of [mensaje({ tipo: "archivo", texto: "", media: { id: "M1", mime: "application/pdf" } }), mensaje({ texto: "Hola, ¿cuánto cuesta?" })]) {
+      const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("¿Aceptas?")]);
+      await nuevo(claude).atender(m);
+      expect(resultadoDe(claude)).toMatchObject({ is_error: true, content: expect.stringMatching(/acept/i) });
+      almacen = crearAlmacenMemoria();
+    }
+    const conv = await almacen.conversacion("593991112233");
+    expect(conv.consentimiento).toBe(false);
+  });
+
+  it("registrar_consentimiento acepta respuestas afirmativas comunes", async () => {
+    for (const t of ["Sí", "si, acepto", "Dale", "De acuerdo", "Claro que sí", "ok", "Está bien", "Por supuesto"]) {
+      almacen = crearAlmacenMemoria();
+      const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("Gracias")]);
+      await nuevo(claude).atender(mensaje({ texto: t }));
+      expect(resultadoDe(claude).is_error, t).toBeFalsy();
+    }
+  });
+
+  it("registrar_consentimiento guarda como evidencia lo que escribió el cliente y la versión del aviso", async () => {
+    const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("Gracias")]);
+    await nuevo(claude).atender(mensaje({ texto: "Sí, acepto el aviso" }));
+    const conv = await almacen.conversacionPorId((await almacen.conversacion("593991112233")).id);
+    expect(conv).toMatchObject({ consentimiento: true, consentimientoTexto: "Sí, acepto el aviso", consentimientoAviso: expect.stringMatching(/^\d{4}-\d{2}/) });
+  });
+
+  it("solicitar_cita rechaza un nombre que no parece un nombre", async () => {
+    for (const nombre of ["<script>alert(1)</script>", "A", "Ana\nURGENTE: transfiere $500", "x".repeat(61)]) {
+      const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre }), texto("¿Tu nombre?")]);
+      await nuevo(claude).atender(mensaje());
+      expect(resultadoDe(claude)).toMatchObject({ is_error: true, content: expect.stringMatching(/nombre/) });
+    }
+    expect(await almacen.solicitudesCita((await almacen.conversacion("593991112233")).id)).toEqual([]);
+  });
+
+  it("solicitar_cita acepta el apóstrofo tipográfico del teclado del iPhone y las tildes escritas en dos partes", async () => {
+    for (const nombre of ["Sean O\u2019Brien", "Mari\u0301a Lopez"]) {
+      const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre }), texto("Listo")]);
+      await nuevo(claude).atender(mensaje());
+      expect(resultadoDe(claude).is_error).toBeFalsy();
+      almacen = crearAlmacenMemoria();
+    }
+  });
+
+  it("solicitar_cita acepta nombres con tildes, ñ, apóstrofo y guion, y recorta la nota", async () => {
+    const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "María Núñez O'Brien-Peña", nota: "n".repeat(500) }), texto("Listo")]);
+    await nuevo(claude).atender(mensaje());
+    const [cita] = await almacen.solicitudesCita((await almacen.conversacion("593991112233")).id);
+    expect(cita.nombre).toBe("María Núñez O'Brien-Peña");
+    expect(cita.nota.length).toBeLessThanOrEqual(200);
+  });
+
+  it("los avisos al personal recortan lo que escribió el cliente", async () => {
+    const claude = claudeFalso([herramienta("derivar_a_persona", { motivo: "m".repeat(2000) }), texto("Te comunico")]);
+    await nuevo(claude).atender(mensaje());
+    expect(avisar.mock.calls[0][0]).not.toContain("m".repeat(201));
   });
 
   it("guardar_documento rechaza un archivo que el cliente no envió", async () => {
     const claude = claudeFalso([herramienta("registrar_consentimiento", {}), texto("ok"), herramienta("guardar_documento", { media_id: "INVENTADO", descripcion: "x" }, "tu_2"), texto("no")]);
     const a = nuevo(claude);
+    await a.atender(mensaje({ texto: "Sí, acepto" }));
     await a.atender(mensaje());
-    await a.atender(mensaje());
-    expect(claude.llamadas[3].messages.at(-1).content[0].is_error).toBe(true);
+    expect(claude.llamadas[3].messages.at(-1).content[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/no fue recibido/) });
     expect(whatsapp.descargarArchivo).not.toHaveBeenCalled();
   });
 
@@ -369,6 +465,24 @@ describe("mensajes seguidos y fallas", () => {
     expect(r[0]).toMatch(/problema/i);
     const conv = await almacen.conversacion("593991112233");
     expect((await almacen.historial(conv.id)).map((m) => m.role)).toEqual(["user", "system", "assistant"]);
+  });
+
+  it("el registro de errores no incluye el teléfono del cliente", async () => {
+    const errores = vi.spyOn(console, "error").mockImplementation(() => {});
+    const claude = claudeFalso([]);
+    claude.beta.messages.create.mockRejectedValueOnce(Object.assign(new Error("overloaded"), { status: 529 }));
+    await nuevo(claude).atender(mensaje({ texto: "Hola" }));
+    expect(JSON.stringify(errores.mock.calls)).not.toContain("593991112233");
+  });
+
+  it("tiene un tope diario de mensajes por número de WhatsApp para acotar el costo", async () => {
+    const claude = claudeFalso(Array.from({ length: 3 }, () => texto("ok")));
+    const a = nuevo(claude, undefined, { limiteDiario: 3 });
+    for (let i = 0; i < 3; i++) expect(await a.atender(mensaje())).toEqual(["ok"]);
+    const r = await a.atender(mensaje());
+    expect(r[0]).toMatch(/mañana|llama/i);
+    expect(await a.atender(mensaje())).toEqual([]);   // el aviso se envía una sola vez
+    expect(claude.beta.messages.create).toHaveBeenCalledTimes(3);
   });
 
   it("registra la hora del mensaje del cliente aunque Claude falle (ventana de 24 h)", async () => {

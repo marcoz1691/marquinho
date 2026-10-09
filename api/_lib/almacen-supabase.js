@@ -8,7 +8,8 @@ const BUCKET = "documentos";
 export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
   const db = cliente || createClient(url, clave, { auth: { persistSession: false } });
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
-  const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada };
+  const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada,
+    consentimientoTexto: r.consentimiento_texto || "", consentimientoAviso: r.consentimiento_aviso || "" };
   const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "" };
   const doc = (r) => ({ id: r.id, conversacionId: r.conversacion_id, mediaId: r.media_id, nombre: r.nombre, mime: r.mime, descripcion: r.descripcion, tramiteId: r.tramite_id,
     estado: r.estado, nota: r.nota, creado: Date.parse(r.creado) });
@@ -38,6 +39,8 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       if ("derivada" in cambios) fila.derivada = cambios.derivada;
       if ("consentimiento" in cambios) fila.consentimiento = cambios.consentimiento;
       if ("consentimientoEn" in cambios) fila.consentimiento_en = cambios.consentimientoEn;
+      if ("consentimientoTexto" in cambios) fila.consentimiento_texto = cambios.consentimientoTexto;
+      if ("consentimientoAviso" in cambios) fila.consentimiento_aviso = cambios.consentimientoAviso;
       if ("nombre" in cambios) fila.nombre = cambios.nombre;
       ok(await db.from("conversaciones").update(fila).eq("id", id));
     },
@@ -105,17 +108,15 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
         ruta, descripcion: d.descripcion || "", tramite_id: d.tramiteId || null }).select("id").single());
       return { id: r.id };
     },
-    async documento(id) { const r = ok(await db.from("documentos").select("*").eq("id", id).maybeSingle()); return r ? doc(r) : null; },
+    async documento(id) { const r = ok(await db.from("documentos").select("*").eq("id", id).is("borrado_en", null).maybeSingle()); return r ? doc(r) : null; },
     async revisarDocumento(id, { estado, nota = "" }) { ok(await db.from("documentos").update({ estado, nota }).eq("id", id)); },
-    async documentos(conversacionId) { return ok(await db.from("documentos").select("*").eq("conversacion_id", conversacionId).order("creado")).map(doc); },
-    async borrarDocumento(id) {
-      const r = ok(await db.from("documentos").select("ruta").eq("id", id).maybeSingle());
-      if (!r) return;
-      ok(await db.storage.from(BUCKET).remove([r.ruta]));
-      ok(await db.from("documentos").delete().eq("id", id));
+    async documentos(conversacionId) { return ok(await db.from("documentos").select("*").eq("conversacion_id", conversacionId).is("borrado_en", null).order("creado")).map(doc); },
+    // Borrado recuperable: deja de verse; purgar() elimina el archivo después.
+    async borrarDocumento(id, { por = "" } = {}) {
+      ok(await db.from("documentos").update({ borrado_en: new Date().toISOString(), borrado_por: por }).eq("id", id).is("borrado_en", null));
     },
     async urlDocumento(id) {
-      const r = ok(await db.from("documentos").select("ruta").eq("id", id).maybeSingle());
+      const r = ok(await db.from("documentos").select("ruta").eq("id", id).is("borrado_en", null).maybeSingle());
       return r ? ok(await db.storage.from(BUCKET).createSignedUrl(r.ruta, 120)).signedUrl : null;
     },
 
@@ -148,9 +149,67 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       return ok(await db.rpc("incrementar_uso", { p_clave: clave, p_ventana: Math.floor(ahora / ventanaMs) }));
     },
 
+    async marcarMfa(email) {
+      return ok(await db.from("personal").update({ mfa_en: new Date().toISOString() }).eq("email", email).is("mfa_en", null).select("email")).length > 0;
+    },
+    async auditar(e) { ok(await db.from("auditoria").insert({ email: e.email || "", accion: e.accion, objetivo: e.objetivo || "", ok: e.ok !== false })); },
+    async auditoria() {
+      return ok(await db.from("auditoria").select("*").order("id", { ascending: false }).limit(500))
+        .map((r) => ({ creado: Date.parse(r.creado), email: r.email, accion: r.accion, objetivo: r.objetivo, ok: r.ok }));
+    },
+
+    // Retención: borra las conversaciones sin actividad desde `inactivasAntesDe` (salvo las que tienen una cita por venir)
+    // y los documentos borrados desde el panel antes de `borradosAntesDe`.
+    // Va en lotes pequeños (las listas de ids viajan en la URL). Primero se borran las filas y después los archivos: si el
+    // almacenamiento falla queda un archivo huérfano (se avisa en el registro), nunca una fila con un enlace roto, y la purga
+    // del día siguiente no repite el mismo error.
+    async purgar({ inactivasAntesDe, borradosAntesDe, hoy }) {
+      const LOTE = 50, LOTES = 4, corte = new Date(inactivasAntesDe).toISOString();
+      let conversaciones = 0, documentos = 0;
+      const quitarArchivos = async (rutas) => {
+        if (!rutas.length) return;
+        const { error } = await db.storage.from(BUCKET).remove(rutas);
+        if (error) console.warn(`Purga: ${rutas.length} archivo(s) no se pudieron eliminar del almacenamiento: ${error.message}`);
+      };
+      for (let n = 0; n < LOTES; n++) {
+        const candidatas = ok(await db.from("conversaciones").select("id").lt("ultima_actividad_ms", inactivasAntesDe).lt("cliente_en_ms", inactivasAntesDe)
+          .lt("creada", corte).order("ultima_actividad_ms", { ascending: true }).limit(LOTE)).map((r) => r.id);
+        if (!candidatas.length) break;
+        const conCita = new Set(ok(await db.from("solicitudes_cita").select("conversacion_id").in("conversacion_id", candidatas)
+          .gte("fecha", hoy).in("estado", ["pendiente", "confirmada"])).map((r) => r.conversacion_id));
+        const viejas = candidatas.filter((id) => !conCita.has(id));
+        if (!viejas.length) break;
+        const rutas = ok(await db.from("documentos").select("ruta").in("conversacion_id", viejas)).map((d) => d.ruta);
+        // Se repiten las condiciones: si el cliente escribió mientras tanto, esa conversación no se borra.
+        const borradas = ok(await db.from("conversaciones").delete().in("id", viejas).lt("ultima_actividad_ms", inactivasAntesDe)
+          .lt("cliente_en_ms", inactivasAntesDe).lt("creada", corte).select("id")).length;   // en cascada: sesiones, mensajes, citas, archivos y documentos
+        await quitarArchivos(rutas);
+        conversaciones += borradas; documentos += rutas.length;
+        if (candidatas.length < LOTE) break;
+      }
+      for (let n = 0; n < LOTES; n++) {
+        const lote = ok(await db.from("documentos").select("id, ruta").not("borrado_en", "is", null).lt("borrado_en", new Date(borradosAntesDe).toISOString()).limit(LOTE));
+        if (!lote.length) break;
+        ok(await db.from("documentos").delete().in("id", lote.map((d) => d.id)));
+        await quitarArchivos(lote.map((d) => d.ruta));
+        documentos += lote.length;
+        if (lote.length < LOTE) break;
+      }
+      ok(await db.from("procesados").delete().lt("creado", new Date(Date.now() - 30 * 864e5).toISOString()));
+      ok(await db.from("uso").delete().lt("creado", new Date(Date.now() - 7 * 864e5).toISOString()));   // contadores: guardan celulares y huellas de IP
+      return { conversaciones, documentos };
+    },
+
     // Para el panel: comprueba que el usuario autenticado pertenece al personal.
     // Los correos de la tabla "personal" se guardan en minúsculas.
     async esPersonal(email) { return !!ok(await db.from("personal").select("email").eq("email", String(email || "").toLowerCase()).maybeSingle()); },
-    async usuarioDeToken(token) { const { data, error } = await db.auth.getUser(token); return error ? null : data.user; }
+    // Valida el token con Supabase Auth y agrega su nivel de verificación (aal1 = solo contraseña, aal2 = con código de la app).
+    async usuarioDeToken(token) {
+      const { data, error } = await db.auth.getUser(token);
+      if (error || !data?.user) return null;
+      let aal = "aal1";
+      try { aal = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).aal || "aal1"; } catch {}
+      return { ...data.user, aal };
+    }
   };
 }

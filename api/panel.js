@@ -3,8 +3,9 @@ import { crearManejadorPanel } from "./_lib/panel-http.js";
 import { obtenerServicios } from "./_lib/servicios.js";
 
 const manejador = () => {
-  const { panel, almacen } = obtenerServicios();
-  return crearManejadorPanel({ panel, auth: almacen });
+  const { panel, almacen, env, avisar } = obtenerServicios();
+  // La verificación en dos pasos es obligatoria salvo que se desactive a propósito (PANEL_MFA=desactivada).
+  return crearManejadorPanel({ panel, auth: almacen, exigirMfa: env.PANEL_MFA !== "desactivada", avisar });
 };
 
 export const GET = (request) => manejador().GET(request);

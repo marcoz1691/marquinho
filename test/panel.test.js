@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { crearPanel } from "../api/_lib/panel.js";
 import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
+import { Aviso } from "../api/_lib/errores.js";
 
 const contenido = async () => ({
   data: { categorias: [], tramites: [{ id: "compraventa", cat: "x", nombre: "Compraventa de inmuebles", desc: "", req: [], pasos: [], tarifa: { tipo: "consultar" } }], faq: [], avisos: [] },
@@ -101,10 +102,35 @@ describe("panel del personal", () => {
     await expect(panel.decidirCita(id, "borrada")).rejects.toThrow();
   });
 
-  it("borrar un documento lo elimina del almacén", async () => {
+  it("borrar un documento lo saca del panel y deja registrado quién lo borró", async () => {
     const { id } = await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: "M1", nombre: "c.pdf", mime: "application/pdf", bytes: new Uint8Array([1]), descripcion: "cédula" });
-    await panel.borrarDocumento(id);
+    const espia = vi.spyOn(almacen, "borrarDocumento");
+    await panel.borrarDocumento(id, "carla@notaria41.ec");
+    expect(espia).toHaveBeenCalledWith(id, { por: "carla@notaria41.ec" });
     expect(await almacen.documentos(conv.id)).toEqual([]);
+    expect(await almacen.urlDocumento(id)).toBeNull();
+  });
+
+  it("si la plantilla no se puede enviar (por ejemplo, por el tope diario), la cita igual queda decidida y avisa que no notificó", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    whatsapp.enviarPlantilla.mockRejectedValueOnce(new Error("Se alcanzó el tope diario"));
+    t = new Date("2026-10-09T15:00:00Z");   // más de 24 h después del último mensaje: solo plantilla
+    const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-12", hora: "10:00", nombre: "Ana" });
+    expect(await panel.decidirCita(id, "confirmada")).toEqual({ avisado: false });
+    expect((await almacen.cita(id)).estado).toBe("confirmada");
+  });
+
+  it("los errores de reglas del panel son avisos para el personal", async () => {
+    await expect(panel.decidirCita("no-existe", "confirmada")).rejects.toBeInstanceOf(Aviso);
+    await expect(panel.responder(conv.id, "")).rejects.toBeInstanceOf(Aviso);
+  });
+
+  it("limita el largo de lo que escribe el personal", async () => {
+    await expect(panel.responder(conv.id, "a".repeat(2001))).rejects.toThrow(/largo/);
+    const { id } = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana", estado: "confirmada" });
+    await expect(panel.asignarCita(id, "x".repeat(61))).rejects.toThrow(/nombre/);
+    await panel.decidirCita(id, "rechazada", "m".repeat(500));
+    expect(whatsapp.enviarTexto.mock.calls[0][1]).not.toContain("m".repeat(201));
   });
 
   it("detalle muestra la conversación legible sin bloques internos", async () => {

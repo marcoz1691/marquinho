@@ -1,13 +1,18 @@
+# Lo que no se publica en Vercel (pruebas, documentación interna, contenido editable y secretos).
 .claude
 test
 e2e
 playwright.config.js
+vitest.config.js
 docs
 supabase
 scripts
-cms/*.md
+cms
 GLOSSARY.md
+README.md
+assessment.txt
+*.xlsx
+~$*
 video
 .env
-.env.local
-vitest.config.js
+.env.*
