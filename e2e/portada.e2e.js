@@ -287,3 +287,40 @@ test.describe("Páginas secundarias", () => {
     }
   });
 });
+
+
+test.describe("Flujo de WhatsApp y agenda", () => {
+  test("muestra el inicio, los seis pasos y la alternativa sin chat", async ({ page }) => {
+    await abrirPortada(page);
+    const seccion = page.locator("#whatsapp");
+    const boton = seccion.getByRole("link", { name: "Escribir por WhatsApp", exact: true });
+    await expect(boton).toHaveAttribute("href", "https://wa.me/593996530276?text=" + encodeURIComponent("Hola, quiero hacer un trámite"));
+    await expect(seccion.locator("#waNumero")).toHaveText("+593 99 653 0276");
+    await expect(seccion.locator("#waHorario")).toHaveText(notaria.horario.texto);
+    await expect(seccion.locator(".wa-pasos > li")).toHaveCount(6);
+    for (const paso of await seccion.locator(".wa-pasos > li").all()) await expect(paso).toBeVisible();
+    await expect(seccion.getByRole("link", { name: "Agenda tu cita aquí", exact: true })).toHaveAttribute("href", "cita.html");
+    await expect(seccion.getByRole("link", { name: "aviso de privacidad", exact: true })).toHaveAttribute("href", "privacidad.html");
+    await expect(seccion.locator(".wa-ejemplo")).toContainText("4821");
+    await expect(seccion.locator("#waEjemploRequisitos")).toContainText("Costo referencial:");
+  });
+
+  test("enlaza la agenda desde el menú, la portada y un trámite", async ({ page }) => {
+    await abrirPortada(page, "/#t-divorcio");
+    await expect(page.locator("#menu").getByRole("link", { name: "Agenda tu cita", exact: true })).toHaveAttribute("href", "cita.html");
+    await expect(page.locator(".hero").getByRole("link", { name: "Agenda tu cita", exact: true })).toHaveAttribute("href", "cita.html");
+    await expect(page.locator("#detalleTramite").getByRole("link", { name: "Agendar cita", exact: true })).toHaveAttribute("href", "cita.html?tramite=divorcio");
+  });
+
+  test("@movil el menú incluye la agenda y el flujo no desborda a 390 ni a 1366 px", async ({ page }) => {
+    await abrirPortada(page);
+    await page.locator("#burger").click();
+    await expect(page.locator("#menu").getByRole("link", { name: "Agenda tu cita", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    for (const width of [390, 1366]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.locator("#whatsapp").scrollIntoViewIfNeeded();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+});
