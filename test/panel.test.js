@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { crearPanel } from "../api/_lib/panel.js";
+import { crearPanel, canalDe } from "../api/_lib/panel.js";
 import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
 import { Aviso } from "../api/_lib/errores.js";
 
@@ -253,3 +253,31 @@ it("rechaza extremos inválidos sin guardar nada y permite los límites válidos
 it("el año contiene exactamente cuatro dígitos, sin saltos de línea", async () => {
   await expect(panel.guardarSBU({ sbu: 500, anio: "2027\n" }, "admin")).rejects.toBeInstanceOf(Aviso);
 });
+
+it('identifica formulario por la conversación aunque tenga contacto y no permite responder', async () => {
+ const c=await almacen.conversacion('form:593991234567','Ana');
+ await almacen.marcarClienteEscribio(c.id,t.getTime());
+ const nueva=await almacen.crearSolicitudCita({conversacionId:c.id,contacto:'593991234567',fecha:'2026-10-08',hora:'09:00',nombre:'Ana'});
+ expect(await panel.detalle(c.id)).toMatchObject({canal:'formulario',puedeResponder:false,citas:[expect.objectContaining({codigo:nueva.codigo})]});
+ expect((await panel.agenda('2026-10-08')).citas[0].canal).toBe('formulario');
+ expect((await panel.buscarTicket(nueva.codigo))[0].canal).toBe('formulario');
+ await expect(panel.responder(c.id,'Hola')).rejects.toThrow(/WhatsApp o teléfono/);
+});
+it('guarda cupos y bloqueos sin duplicar y los quita',async()=>{
+ expect(await panel.citasConfig()).toMatchObject({porHora:2,porHoraOficial:2});
+ expect(await panel.guardarCupo({porHora:3},'admin')).toMatchObject({ok:true,porHora:3});
+ await expect(panel.guardarCupo({porHora:1.5},'admin')).rejects.toThrow();
+ const b={fecha:'2026-10-08',hora:'09:00',motivo:'Reunión'};
+ await panel.agregarBloqueo(b,'admin');await panel.agregarBloqueo(b,'admin');
+ expect((await panel.citasConfig()).bloqueos).toEqual([b]);
+ await expect(panel.agregarBloqueo({...b,hora:'09:30'},'admin')).rejects.toThrow();
+ await expect(panel.agregarBloqueo({...b,fecha:'2026-10-05'},'admin')).rejects.toThrow();
+ expect(await panel.quitarBloqueo(b,'admin')).toMatchObject({ok:true,bloqueos:[]});
+});
+it('incluye feriados futuros fijos y no permite quitarlos',async()=>{
+ const p=crearPanel({almacen,whatsapp,ahora:()=>t,contenido:async()=>{const C=await contenido();C.notaria.citas={porHora:2,feriados:['2026-10-05','2026-10-09']};return C;}});
+ expect((await p.citasConfig()).bloqueos).toEqual([{fecha:'2026-10-09',hora:null,motivo:'Feriado',fijo:true}]);
+ await expect(p.quitarBloqueo({fecha:'2026-10-09',hora:null},'admin')).rejects.toThrow(/feriado/);
+});
+
+it.each([['web:abc','web'],['form:593991234567','formulario'],['593991234567','whatsapp']])('canalDe %s', (telefono, canal)=>expect(canalDe(telefono)).toBe(canal));

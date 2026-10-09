@@ -1,3 +1,4 @@
+import { reglasCitas, horasLibres, celular } from "./citas.js";
 // Asistente de WhatsApp de la notaría: conversa con Claude, ejecuta sus herramientas y guarda la conversación.
 // Interfaz: crearAsistente(dependencias).atender(mensaje) -> textos a enviar al cliente.
 import { construirResumen } from "./resumen.js";
@@ -154,13 +155,6 @@ ${faq}`;
 }
 
 const esWeb = (conv) => String(conv.telefono).startsWith("web:");
-// Celular ecuatoriano a formato internacional: "0991112233" -> "593991112233".
-function celular(v) {
-  let d = String(v || "").replace(/\D/g, "");
-  if (/^0\d{9}$/.test(d)) d = "593" + d.slice(1);
-  return /^\d{11,13}$/.test(d) ? d : null;
-}
-
 function contexto(conv, t, C) {
   const N = C.notaria;
   const fechaTxt = new Intl.DateTimeFormat("es-EC", { timeZone: ZONA, dateStyle: "full", timeStyle: "short" }).format(t);
@@ -221,8 +215,8 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const dia = new Date(i.fecha + "T12:00:00Z").getUTCDay(), hora = i.hora.padStart(5, "0"), H = C.notaria.horario, m = minutos(hora);
         if (i.fecha < hoy || (i.fecha === hoy && m <= enQuito(ctx.t).min)) return error("Esa fecha u hora ya pasó.");
         if (!H.dias.includes(dia) || m < minutos(H.abre) || m >= minutos(H.cierra)) return error(`Fuera del horario de atención (${H.texto}).`);
-        const reglas = { porHora: 2, feriados: [], ...C.notaria.citas };
-        if (reglas.feriados.includes(i.fecha)) return error(`El ${i.fecha} es feriado y la notaría no atiende: ofrece otro día.`);
+        const ajustes = await almacen.ajustes(), reglas = reglasCitas(C, ajustes);
+        if (reglas.bloqueos.some(b => b.fijo && b.fecha === i.fecha)) return error(`El ${i.fecha} es feriado y la notaría no atiende: ofrece otro día.`);
         const contacto = esWeb(conv) ? celular(i.telefono) : null;
         if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo: los avisos de la cita llegarán por WhatsApp.");
         const t = i.tramite_id ? tramite(i.tramite_id) : null;
@@ -235,16 +229,8 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
           return error(`El cliente ya tiene una cita ${a.estado}${ta ? " para " + ta.nombre : ""} el ${a.fecha} a las ${a.hora}. Pregúntale si quiere cambiarla por esta; si dice que sí, vuelve a usar solicitar_cita con reprogramar: true.`);
         }
         // Cupo por hora: cuentan las citas pendientes y confirmadas que empiezan en esa misma hora.
-        const ocupadas = (await almacen.agenda(i.fecha)).filter((x) => (x.estado === "pendiente" || x.estado === "confirmada") && !activas.some((a) => a.id === x.id));
-        const llena = (h) => ocupadas.filter((x) => Math.floor(minutos(x.hora) / 60) === h).length >= reglas.porHora;
-        if (llena(Math.floor(m / 60))) {
-          const libres = [];
-          for (let h = Math.floor(minutos(H.abre) / 60); h * 60 < minutos(H.cierra); h++) {
-            const inicio = Math.max(h * 60, minutos(H.abre));
-            if (!(i.fecha === hoy && inicio <= enQuito(ctx.t).min) && !llena(h)) libres.push(String(h).padStart(2, "0") + ":" + String(inicio % 60).padStart(2, "0"));
-          }
-          return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
-        }
+        const libres = await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: ctx.t, excluirIds: activas.map(a => a.id) });
+        if (!libres.includes(hora)) return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
         // En la web el celular no está verificado: la cita queda pendiente para que nadie llene la agenda ni reciba mensajes que no pidió.
         const confirmada = !!t && !t.revision && !esWeb(conv), esHoy = i.fecha === hoy, aviso = esWeb(conv) ? "por WhatsApp" : "por este chat";
         // El recordatorio sale a las 17:00 del día anterior.

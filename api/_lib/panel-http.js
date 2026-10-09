@@ -47,7 +47,12 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     if (!(await auth.esAdmin(email))) throw Object.assign(new Aviso("Solo un administrador puede cambiar los precios."), { status: 403 });
     return fn();
   }
+  async function cuposAdmin(email, fn) {
+    if (!(await auth.esAdmin(email))) throw Object.assign(new Aviso("Solo un administrador puede cambiar los cupos."), {status:403});
+    return {...await fn(), esAdmin:true};
+  }
   const lecturas = {
+    citasConfig: { fn: async (q,email) => ({...await panel.citasConfig(), esAdmin:await auth.esAdmin(email)}) },
     precios: { auditar: true, fn: async (q, email) => ({ ...await panel.precios(), esAdmin: await auth.esAdmin(email) }) },
     conversaciones: { fn: () => panel.conversaciones() },
     buscarTicket: { fn: (q) => panel.buscarTicket(q.get("codigo")), auditar: true },
@@ -61,6 +66,9 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     } }
   };
   const acciones = {
+    guardarCupo: (b,email) => cuposAdmin(email, () => panel.guardarCupo(b,email)),
+    agregarBloqueo: (b,email) => cuposAdmin(email, () => panel.agregarBloqueo(b,email)),
+    quitarBloqueo: (b,email) => cuposAdmin(email, () => panel.quitarBloqueo(b,email)),
     guardarPrecio: (b, email) => comoAdmin(email, () => panel.guardarPrecio(b, email)),
     restaurarPrecio: (b, email) => comoAdmin(email, () => panel.restaurarPrecio(b.tramiteId)),
     guardarSBU: (b, email) => comoAdmin(email, () => panel.guardarSBU(b, email)),
@@ -83,7 +91,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
       const a = await autorizar(request); if (a.no) return a.no;
       let b; try { b = await request.json(); } catch { return json({ error: "JSON inválido" }, 400); }
       const accion = b?.accion, fn = typeof accion === "string" && Object.hasOwn(acciones, accion) && acciones[accion];
-      return fn ? ejecutar(accion, b.tramiteId || b.id || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email), true) : json({ error: "Acción desconocida" }, 400);
+      return fn ? ejecutar(accion, b.tramiteId || b.id || b.fecha || (accion === "guardarCupo" ? "citas.porHora" : "") || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email), true) : json({ error: "Acción desconocida" }, 400);
     }
   };
 }
