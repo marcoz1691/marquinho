@@ -91,7 +91,7 @@
       ]
     },
     {
-      "source": "/assets/fonts/(.*)",
+      "source": "/assets/fonts/(.*)\\.woff2",
       "headers": [
         {
           "key": "Cache-Control",

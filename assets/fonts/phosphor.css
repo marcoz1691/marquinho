@@ -1,5 +1,5 @@
 @font-face{font-family:"Phosphor";src:url("Phosphor.woff2") format("woff2");font-weight:normal;font-style:normal;font-display:swap}
-.ph { font-family: "Phosphor" !important; speak: never; font-style: normal; font-weight: normal; font-variant: normal; text-transform: none; line-height: 1; letter-spacing: 0;     font-feature-settings: "liga";  font-variant-ligatures: discretionary-ligatures;   }
+.ph { font-family: "Phosphor" !important; speak: never; font-style: normal; font-weight: normal; font-variant: normal; text-transform: none; line-height: 1; letter-spacing: 0; font-feature-settings: "liga"; font-variant-ligatures: discretionary-ligatures; }
 .ph.ph-airplane-tilt:before{content:"\e5d6"}
 .ph.ph-arrow-counter-clockwise:before{content:"\e038"}
 .ph.ph-arrow-left:before{content:"\e058"}
@@ -35,7 +35,7 @@
 .ph.ph-whatsapp-logo:before{content:"\e5d0"}
 .ph.ph-x:before{content:"\e4f6"}
 @font-face{font-family:"Phosphor-Fill";src:url("Phosphor-Fill.woff2") format("woff2");font-weight:normal;font-style:normal;font-display:swap}
-.ph-fill { font-family: "Phosphor-Fill" !important; speak: never; font-style: normal; font-weight: normal; font-variant: normal; text-transform: none; line-height: 1; letter-spacing: 0;     font-feature-settings: "liga";  font-variant-ligatures: discretionary-ligatures;   }
+.ph-fill { font-family: "Phosphor-Fill" !important; speak: never; font-style: normal; font-weight: normal; font-variant: normal; text-transform: none; line-height: 1; letter-spacing: 0; font-feature-settings: "liga"; font-variant-ligatures: discretionary-ligatures; }
 .ph-fill.ph-airplane-tilt:before{content:"\e5d6"}
 .ph-fill.ph-arrow-counter-clockwise:before{content:"\e038"}
 .ph-fill.ph-arrow-left:before{content:"\e058"}
