@@ -308,7 +308,9 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 
 /* Responsive */
 @media (max-width:860px){
-  .nav__burger{display:grid}
+  .nav__burger{display:grid;margin-left:auto}   /* el menú sale del flujo: el botón va al borde derecho */
+  /* Safari en iOS 26 extiende el color de una cabecera fija hacia su barra superior solo si es opaca: translúcida, el contenido se ve pasar por encima. */
+  .nav{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
   .nav__links{position:fixed;inset:60px 0 auto 0;flex-direction:column;gap:0;background:var(--bg);padding:8px 20px 20px;border-bottom:1px solid var(--line);transform:translateY(-8px);opacity:0;visibility:hidden;pointer-events:none;transition:.25s;font-size:19px;margin:0}
   .nav__links.open{opacity:1;visibility:visible;transform:none;pointer-events:auto}
   .nav__links a{padding:14px 0;border-bottom:1px solid var(--line)}
@@ -488,3 +490,12 @@ h2,.sub{text-align:left}
 .cita-subida .cita-consentimiento{display:flex;align-items:flex-start;gap:8px}.cita-consentimiento input{flex:none;margin-top:4px}
 .cita-subida progress{width:100%;accent-color:var(--accent)}
 .chat__msg--tarjeta{max-width:100%;padding:0;width:100%}.ac-msg--tarjeta{min-width:0;width:100%}
+
+/* En pantallas táctiles no hay hover: los servicios hacen su animación (línea, flecha) al aparecer con el scroll. */
+@media (hover:none) and (prefers-reduced-motion:no-preference){
+  .svc__row .svc__arr{opacity:0;transform:translateX(-8px);transition:opacity .4s,transform .4s;transition-delay:calc(.6s + var(--i,0) * 90ms)}
+  .svc__row.in .svc__arr{opacity:1;transform:none}
+  .svc__row::after{transition-delay:calc(.4s + var(--i,0) * 90ms)}
+  .svc__row.in::after{transform:scaleX(1)}
+  .svc__row:active .svc__name{color:var(--accent)}
+}
