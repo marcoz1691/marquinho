@@ -41,11 +41,16 @@
       <div class="cita-layout">
         <div>
           <section id="paso-1" hidden aria-labelledby="titulo-1">
-            <h2 id="titulo-1" tabindex="-1">1. Elige tu trámite</h2>
-            <label for="buscar">Buscar trámite</label><input id="buscar" type="search" placeholder="Por ejemplo, poder" /><label for="tramite">Trámite</label
-            ><select id="tramite">
-              <option value="">Aún no sé / otro</option></select
-            ><button id="a-fecha" type="button">Elegir día y hora</button>
+            <h2 id="titulo-1" tabindex="-1">1. ¿Qué trámite vas a hacer?</h2>
+            <p class="ayuda">Márcalo en la lista. Si no sabes cómo se llama, elige «Aún no sé» y te ayudamos en la notaría.</p>
+            <label for="buscar">Buscar en la lista</label>
+            <input id="buscar" type="search" placeholder="Por ejemplo: poder, divorcio" autocomplete="off" />
+            <fieldset id="lista-tramites" aria-describedby="error-tramite">
+              <legend class="sr-only">Trámites</legend>
+            </fieldset>
+            <p id="sin-resultados" class="ayuda" hidden></p>
+            <p id="error-tramite" class="error" role="alert"></p>
+            <button id="a-fecha" type="button">Continuar: elegir día y hora</button>
           </section>
           <section id="paso-2" hidden aria-labelledby="titulo-2">
             <h2 id="titulo-2" tabindex="-1">2. Elige día y hora</h2>
@@ -82,6 +87,7 @@
               >
               <p id="error-aceptaAviso" class="error"></p>
               <div class="trampa" aria-hidden="true"><label for="sitio">Sitio</label><input id="sitio" name="sitio" tabindex="-1" autocomplete="off" /></div>
+              <div id="error-envio" class="error error--envio" role="alert" hidden></div>
               <button id="confirmar" type="submit">Confirmar mi cita</button>
             </form>
           </section>
@@ -102,8 +108,8 @@
             <dt>Hora</dt>
             <dd id="resumen-hora">Por elegir</dd>
           </dl>
-          <button type="button" data-cambiar="1">Cambiar trámite</button><button type="button" data-cambiar="2">Cambiar día</button
-          ><button type="button" data-cambiar="2">Cambiar hora</button>
+          <button type="button" data-cambiar="1">Cambiar trámite</button
+          ><button type="button" data-cambiar="2" id="cambiar-fecha">Cambiar día u hora</button>
         </aside>
       </div>
       <noscript>Activa JavaScript para ver las horas libres o llama al 02 600 1141 para agendar.</noscript>

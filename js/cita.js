@@ -2,7 +2,9 @@ import { esc } from "./chat-nucleo.js";
 import { tarjetaCita } from "./cita-tarjeta.js";
 const $ = (id) => document.getElementById(id);
 let disponibilidad = { dias: [], tramites: [] },
-  tramite = new URLSearchParams(location.search).get("tramite") || "",
+  // null: todavía no elige; "": «Aún no sé / otro»; id: el trámite marcado.
+  tramite = new URLSearchParams(location.search).get("tramite") || null,
+  contactoHtml = "",
   dia = "",
   hora = "",
   paso = 1,
@@ -33,14 +35,16 @@ fetch("data/notaria.json")
     return r.json();
   })
   .then((N) => {
-    $("alternativas").innerHTML = contacto(N);
-    $("contacto-confirmacion").innerHTML = contacto(N);
+    contactoHtml = contacto(N);
+    $("alternativas").innerHTML = contactoHtml;
+    $("contacto-confirmacion").innerHTML = contactoHtml;
   })
   .catch(() => {
     $("alternativas").textContent = "Puedes contactar a la notaría desde el inicio.";
   });
 function actualizarResumen() {
-  $("resumen-tramite").textContent = disponibilidad.tramites.find((t) => t.id === tramite)?.nombre || "Aún no sé / otro";
+  $("resumen-tramite").textContent = disponibilidad.tramites.find((t) => t.id === tramite)?.nombre || (tramite === "" ? "Aún no sé / otro" : "Por elegir");
+  $("cambiar-fecha").hidden = !dia;
   $("resumen-dia").textContent = dia ? fechaTexto(dia) : "Por elegir";
   $("resumen-hora").textContent = hora || "Por elegir";
 }
@@ -51,19 +55,47 @@ function ir(n, foco = true) {
     if (i === n - 1) li.setAttribute("aria-current", "step");
     else li.removeAttribute("aria-current");
   });
-  $("resumen").hidden = n === 4;
+  // El resumen acompaña desde el paso 2: en el 1 todavía no hay nada que resumir.
+  $("resumen").hidden = n === 1 || n === 4;
   if (foco) $("titulo-" + n).focus();
   actualizarResumen();
 }
+const normal = (t) => t.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+// La lista se arma una sola vez; el buscador solo muestra u oculta opciones, así lo marcado nunca se pierde.
 function pintarTramites() {
-  const q = $("buscar").value.toLocaleLowerCase("es");
-  $("tramite").innerHTML =
-    '<option value="">Aún no sé / otro</option>' +
-    disponibilidad.tramites
-      .filter((t) => t.id === tramite || t.nombre.toLocaleLowerCase("es").includes(q))
-      .map((t) => `<option value="${esc(t.id)}">${esc(t.nombre)}</option>`)
-      .join("");
-  $("tramite").value = tramite;
+  const opcion = (id, nombre, extra = "") =>
+    `<label class="opcion${extra}" data-nombre="${esc(normal(nombre))}"><input type="radio" name="tramite" value="${esc(id)}" ${tramite === id ? "checked" : ""}><span>${esc(nombre)}</span></label>`;
+  const nombres = Object.fromEntries((disponibilidad.categorias || []).map((c) => [c.id, c.nombre]));
+  const grupos = [...new Set(disponibilidad.tramites.map((t) => t.cat))];
+  $("lista-tramites").insertAdjacentHTML(
+    "beforeend",
+    `<label class="opcion opcion--nose"><input type="radio" name="tramite" value="" ${tramite === "" ? "checked" : ""}><span>Aún no sé cuál es / otro<small>Te orientamos en la notaría.</small></span></label>` +
+      grupos
+        .map((cat) => {
+          const lista = disponibilidad.tramites.filter((t) => t.cat === cat);
+          return `<details class="grupo" data-cat="${esc(cat)}" ${lista.some((t) => t.id === tramite) ? "open" : ""}><summary>${esc(nombres[cat] || cat)} <span class="grupo__n">${lista.length}</span></summary>${lista.map((t) => opcion(t.id, t.nombre)).join("")}</details>`;
+        })
+        .join("")
+  );
+}
+function filtrarTramites() {
+  const q = normal($("buscar").value.trim());
+  let visibles = 0;
+  document.querySelectorAll("#lista-tramites .grupo").forEach((g) => {
+    let n = 0;
+    g.querySelectorAll(".opcion").forEach((o) => {
+      const ve = !q || o.dataset.nombre.includes(q);
+      o.hidden = !ve;
+      if (ve) n++;
+    });
+    g.hidden = !n;
+    // Al buscar se abren los grupos con coincidencias; sin búsqueda, al menos el del trámite marcado, para que se vea lo elegido.
+    if (q) g.open = n > 0;
+    else if (g.querySelector("input:checked")) g.open = true;
+    visibles += n;
+  });
+  $("sin-resultados").hidden = !q || visibles > 0;
+  $("sin-resultados").textContent = `No encontramos «${$("buscar").value.trim()}». Prueba con otra palabra o marca «Aún no sé cuál es / otro».`;
 }
 function pintarHoras() {
   const horas = disponibilidad.dias.find((d) => d.fecha === dia)?.horas || [];
@@ -97,7 +129,7 @@ async function cargar() {
     const { r, b } = await consultar();
     if (!r.ok) throw new Error(b.error);
     disponibilidad = b;
-    if (!b.tramites.some((t) => t.id === tramite)) tramite = "";
+    if (tramite && !b.tramites.some((t) => t.id === tramite)) tramite = null;
     mes = hoy.slice(0, 7);
     $("horario").textContent = b.horario;
     pintarTramites();
@@ -111,12 +143,20 @@ async function cargar() {
     aviso(e.message || "No pudimos cargar las horas libres. Escríbenos o llámanos para agendar.", true);
   }
 }
-$("buscar").addEventListener("input", pintarTramites);
-$("tramite").addEventListener("change", () => {
-  tramite = $("tramite").value;
+$("buscar").addEventListener("input", filtrarTramites);
+$("lista-tramites").addEventListener("change", (e) => {
+  tramite = e.target.value;
+  $("error-tramite").textContent = "";
   actualizarResumen();
 });
-$("a-fecha").addEventListener("click", () => ir(2));
+$("a-fecha").addEventListener("click", () => {
+  if (tramite === null) {
+    $("error-tramite").textContent = "Marca tu trámite en la lista o elige «Aún no sé cuál es / otro».";
+    $("lista-tramites").querySelector("input").focus();
+    return;
+  }
+  ir(2);
+});
 $("a-datos").addEventListener("click", () => ir(3));
 document.querySelectorAll("[data-cambiar]").forEach((b) => b.addEventListener("click", () => ir(Number(b.dataset.cambiar))));
 for (const [id, delta] of [
@@ -179,7 +219,8 @@ $("datos").addEventListener("submit", async (e) => {
   if (enviando || !validar()) return;
   enviando = true;
   $("confirmar").disabled = true;
-  aviso("Guardando tu cita…");
+  $("error-envio").hidden = true;
+  $("confirmar").textContent = "Guardando tu cita…";
   try {
     const { r, b } = await consultar({
       method: "POST",
@@ -211,10 +252,14 @@ $("datos").addEventListener("submit", async (e) => {
     ir(4);
     aviso("");
   } catch (e) {
-    aviso(e.message || "No pudimos conectar. Inténtalo de nuevo o contáctanos.", true);
+    // El aviso va junto al botón: la persona está abajo, en el formulario, y no vería un mensaje arriba de la página.
+    $("error-envio").innerHTML = `<p>${esc(e.message || "No pudimos conectar. Inténtalo de nuevo o contáctanos.")}</p>${contactoHtml}`;
+    $("error-envio").hidden = false;
+    $("error-envio").scrollIntoView({ block: "center" });
   } finally {
     enviando = false;
     $("confirmar").disabled = false;
+    $("confirmar").textContent = "Confirmar mi cita";
   }
 });
 cargar();
