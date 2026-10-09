@@ -61,3 +61,38 @@ describe("crearContenido con los archivos reales de data/", () => {
     expect(r.tarifas.sbu).toBe(482);
   });
 });
+
+it("aplica precios y ajustes sin mutar la fuente y renueva al vencer", async () => {
+  let tiempo = 0, valor = 10;
+  const almacen = { precios: async () => [{ tramiteId: "t", tipo: "fija", valor }], ajustes: async () => ({ sbu: 500, anio: "2027" }) };
+  const c = crearContenido({ almacen, leerLocal: async () => local, ahora: () => tiempo });
+  expect((await c()).data.tramites[0].tarifa.valor).toBe(10);
+  expect(local.tramites.tramites[0].tarifa.tipo).toBe("consultar");
+  valor = 20; tiempo = 300001;
+  expect((await c()).data.tramites[0].tarifa.valor).toBe(20);
+  expect((await c()).tarifas.sbu).toBe(500);
+});
+
+it("conserva las ediciones previas si el almacén falla sin registrar datos personales", async () => {
+  let tiempo = 0, falla = false;
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  const c = crearContenido({ leerLocal: async () => local, ahora: () => tiempo, almacen: {
+    precios: async () => { if (falla) throw Error("correo privado"); return [{ tramiteId: "t", tipo: "fija", valor: 50 }]; }, ajustes: async () => ({})
+  } });
+  await c(); tiempo = 300001; falla = true;
+  expect((await c()).data.tramites[0].tarifa.valor).toBe(50);
+  expect(warn.mock.calls.flat().join(" ")).not.toContain("correo privado");
+  warn.mockRestore();
+});
+
+it("restaurar en el panel muestra el valor oficial incluso con el caché efectivo vigente", async () => {
+  const { crearPanel } = await import("../api/_lib/panel.js");
+  const { crearAlmacenMemoria } = await import("../api/_lib/almacen-memoria.js");
+  const almacen = crearAlmacenMemoria();
+  await almacen.guardarPrecio({ tramiteId: "t", tipo: "fija", valor: 30 });
+  const contenido = crearContenido({ almacen, leerLocal: async () => local });
+  await contenido();
+  const panel = crearPanel({ almacen, contenido });
+  await panel.restaurarPrecio("t");
+  expect((await panel.precios()).tramites[0]).toMatchObject({ editada: false, tarifa: { tipo: "consultar" } });
+});

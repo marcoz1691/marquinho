@@ -18,6 +18,15 @@ describe("página del panel", () => {
   });
 });
 
+it("ofrece la pestaña de precios y usa el cálculo compartido sin scripts en línea", () => {
+  const html = readFileSync(new URL("../panel/index.html", import.meta.url), "utf8");
+  const js = readFileSync(new URL("../panel/panel.js", import.meta.url), "utf8");
+  expect(html).toContain('data-tab="preciosV"');
+  expect(js).toContain('from "../js/nucleo.js"');
+  expect(js).toContain("calcularTarifa(");
+  expect(js).toContain("precioTexto(");
+});
+
 it("la agenda permite buscar tickets de cuatro dígitos y ver el chat de los resultados", () => {
   const html = readFileSync(new URL("../panel/index.html", import.meta.url), "utf8");
   const js = readFileSync(new URL("../panel/panel.js", import.meta.url), "utf8");

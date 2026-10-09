@@ -12,6 +12,22 @@ const tel = () => "5939" + Math.floor(Math.random() * 1e8).toString().padStart(8
 const DIA = 864e5;
 
 describe.each(adaptadores)("almacén %s", (_, crear) => {
+  it("guarda precios, restaura y conserva solo los ajustes guardados", async () => {
+    const a = crear(), tramiteId = "prueba-" + Math.random();
+    expect(await a.esAdmin("nadie@example.invalid")).toBe(false);
+    await a.guardarPrecio({ tramiteId, tipo: "pct", valor: 0.12, unidad: "", tabla: "", actualizadoPor: "admin" });
+    expect((await a.precios()).find((p) => p.tramiteId === tramiteId)).toMatchObject({ tipo: "pct", valor: 0.12, actualizadoPor: "admin" });
+    await a.guardarPrecio({ tramiteId, tipo: "fija", valor: 20 });
+    expect((await a.precios()).filter((p) => p.tramiteId === tramiteId)).toHaveLength(1);
+    await a.restaurarPrecio(tramiteId);
+    expect((await a.precios()).some((p) => p.tramiteId === tramiteId)).toBe(false);
+    await a.guardarAjuste("sbu", 500, "admin");
+    await a.guardarAjuste("anio", "2027", "admin");
+    expect(await a.ajustes()).toMatchObject({ sbu: 500, anio: "2027" });
+    await a.restaurarAjuste("sbu"); await a.restaurarAjuste("anio");
+    expect((await a.ajustes()).sbu).toBeUndefined();
+  });
+
   it("crea tickets de cuatro dígitos, los conserva y busca solo citas activas desde la fecha", async () => {
     const a = crear(), c = await a.conversacion(tel());
     const nueva = await a.crearSolicitudCita({ conversacionId: c.id, fecha: "2099-01-05", hora: "10:00", nombre: "Ana", contacto: "593991112233" });

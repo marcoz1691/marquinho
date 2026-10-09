@@ -10,7 +10,7 @@
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
 
 <section class="acceso" id="acceso" hidden>
   <!-- Entrar -->
@@ -115,6 +115,15 @@
   <form class="ag-top" id="agBuscar"><label class="ag-ticket" for="agTicket">Buscar ticket<input id="agTicket" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Buscar</button><button class="btn btn--line" type="button" id="agLimpiar">Limpiar búsqueda</button><p id="agEstado" aria-live="polite"></p></form>
   <div class="ag-lista ag-resultados" id="agResultados"></div>
   <div class="ag-lista" id="agLista"></div>
+</section>
+
+<section id="preciosV" hidden>
+  <h2>Precios</h2>
+  <p>Los valores finales incluyen IVA. Los documentos habilitantes se cobran aparte. Los cambios se ven en la web en 1 minuto y en Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.</p>
+  <div id="preciosAjustes" class="precios-top"></div>
+  <label for="preciosBuscar">Buscar trámite</label><input id="preciosBuscar" type="search">
+  <p id="preciosMensaje" role="status" aria-live="polite"></p>
+  <div id="preciosLista"></div>
 </section>
 
 <!-- Librería de Supabase alojada aquí con versión fija (no desde un CDN): nadie puede cambiar el código que maneja las sesiones. -->

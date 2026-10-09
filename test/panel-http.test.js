@@ -145,6 +145,34 @@ describe("API del panel", () => {
   });
 });
 
+it("audita la lectura y rechaza cambios de precios sin rol admin", async () => {
+  const { m, panel, almacen } = preparar();
+  panel.precios = vi.fn(async () => ({ tramites: [] }));
+  panel.guardarPrecio = vi.fn();
+  expect((await m.GET(req("GET", "?accion=precios"))).status).toBe(200);
+  for (const accion of ["guardarPrecio", "restaurarPrecio", "guardarSBU", "restaurarSBU"]) {
+    const r = await m.POST(req("POST", "", { body: { accion, tramiteId: "t" } }));
+    expect(r.status).toBe(403);
+    expect((await r.json()).error).toBe("Solo un administrador puede cambiar los precios.");
+  }
+  expect(panel.guardarPrecio).not.toHaveBeenCalled();
+  expect((await almacen.auditoria()).filter((x) => x.accion !== "mfa_activado").map((x) => [x.accion, x.ok])).toEqual([["precios", true], ["guardarPrecio", false], ["restaurarPrecio", false], ["guardarSBU", false], ["restaurarSBU", false]]);
+});
+
+it("permite cambios al administrador y los audita", async () => {
+  const { m, panel, almacen } = preparar();
+  almacen.esAdmin = async () => true;
+  panel.guardarPrecio = vi.fn(async () => {});
+  panel.restaurarPrecio = vi.fn(async () => {});
+  panel.guardarSBU = vi.fn(async () => {});
+  panel.restaurarSBU = vi.fn(async () => {});
+  for (const accion of ["guardarPrecio", "restaurarPrecio", "guardarSBU", "restaurarSBU"]) {
+    expect((await m.POST(req("POST", "", { body: { accion, tramiteId: "t", sbu: 500 } }))).status).toBe(200);
+  }
+  expect(panel.guardarPrecio).toHaveBeenCalledWith(expect.objectContaining({ tramiteId: "t" }), "carla@notaria41.ec");
+  expect((await almacen.auditoria()).every((x) => x.ok)).toBe(true);
+});
+
 it("audita buscarTicket con el código como objetivo", async () => {
   const { m, panel, almacen } = preparar();
   const r = await m.GET(req("GET", "?accion=buscarTicket&codigo=4821"));

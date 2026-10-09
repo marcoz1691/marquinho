@@ -46,3 +46,15 @@ Abre el enlace de la hoja «Notaría 41 – Contenido web» con tu cuenta de Gma
 - No cambies los nombres de las pestañas ni los títulos de la primera fila.
 - Si algo queda mal escrito, la página sigue mostrando los últimos datos correctos. Corrige la hoja y espera unos minutos.
 - Los cambios tardan hasta 5 minutos en verse. Si no los ves, recarga la página.
+
+## Cambiar un precio desde el panel
+
+Entra al panel y abre **Precios**. Busca el trámite y, con una cuenta administradora, elige el tipo, valor y unidad. Para porcentajes escribe el porcentaje (por ejemplo, 12 para el 12 % del SBU). El precio final con IVA se actualiza mientras escribes. Pulsa **Guardar** y confirma el cambio «Antes → Después». Usa **Volver al valor oficial** para quitar una edición. Arriba puedes cambiar el SBU y el año. El personal puede consultar los precios, pero solo los administradores pueden cambiarlos. La web lo muestra en un minuto y Sofía en hasta cinco; una conversación que ya estaba abierta con Sofía puede seguir citando el valor anterior.
+
+Reglas que el panel aplica por ti, para evitar errores de dedo:
+- Los trámites que se cobran por unidad (copias certificadas, materializaciones, salida del país) deben conservar la palabra «por» en la unidad (por hoja, por firma…); si no, la cantidad dejaría de multiplicar.
+- Las copias certificadas y las materializaciones siempre llevan un precio por hoja: no se pueden dejar en «Consultar» o «Según cuantía».
+- El porcentaje del SBU va de 0,1 % a 500 % y un valor fijo de $0,01 a $1000.
+- Si cambias el SBU o el año aquí, los cambios de la hoja de Google dejan de verse hasta que pulses **Volver al SBU de la hoja**.
+
+**Quién es administrador.** Hoy lo es la cuenta del desarrollador. Para que otra persona del personal pueda cambiar precios, hay que marcarla como administradora en la tabla «personal» de Supabase (columna «rol» = admin).

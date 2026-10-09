@@ -86,3 +86,13 @@ form.resp textarea{resize:none;height:46px}
 .aviso-web{margin:12px 18px}
 
 .tag--inicio{justify-self:start}
+#preciosV{height:calc(100vh - 54px);overflow:auto;padding:20px}
+.precios-top,.precio-campos{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.precios-top label,.precio-campos label{display:grid;gap:4px;max-width:220px}
+.precio-fila{padding:18px;margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.precio-fila h3{margin:0 0 8px}.precio-fila output{display:block;font-weight:600;margin:8px 0}
+.precio-fila small{display:block;color:var(--muted);overflow-wrap:anywhere}
+#preciosV select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);max-width:100%}
+#preciosV :focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+@media(max-width:600px){header{flex-wrap:wrap}header .tabs{order:3;width:100%}#preciosV{padding:12px}.precio-campos label{max-width:none;width:100%}.tabs button{padding:6px 8px}}
+.aviso-sbu{flex-basis:100%;margin:8px 0 0;padding:10px 12px;border-radius:10px;background:var(--alt);font-size:14px}.aviso-sbu .btn{margin-top:8px}

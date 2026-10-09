@@ -1,6 +1,7 @@
 // Acciones del panel del personal sobre conversaciones, citas y documentos.
 import { textoVisible, PREFIJO_PERSONAL } from "./mensajes.js";
 import { Aviso } from "./errores.js";
+import { esHabilitante } from "../../js/nucleo.js";
 
 const VENTANA_MS = 24 * 60 * 60 * 1000;
 const ESTADOS_CITA = ["confirmada", "rechazada", "atendida"];
@@ -42,7 +43,45 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     return c;
   }
 
+  async function tramitePrecio(id) {
+    const C = await contenido({ oficial: true });
+    if (!C.data.tramites.some((t) => t.id === id)) throw new Aviso("Trámite no encontrado.");
+    return C;
+  }
+
   return {
+    async precios() {
+      const C = await contenido({ oficial: true }), filas = await almacen.precios(), ajustes = await almacen.ajustes();
+      return { tarifas: { ...C.tarifas, ...ajustes }, sbuEditado: ajustes.sbu !== undefined || ajustes.anio !== undefined, sbuOficial: C.tarifas.sbu, anioOficial: C.tarifas.anio, tramites: C.data.tramites.map((t) => {
+        const p = filas.find((p) => p.tramiteId === t.id);
+        return { ...t, tarifa: p ? { tipo: p.tipo, valor: p.valor, unidad: p.unidad, tabla: p.tabla } : t.tarifa,
+          editada: !!p, actualizadoPor: p?.actualizadoPor || "", actualizadoEn: p?.actualizadoEn || "" };
+      }) };
+    },
+    async guardarPrecio(p, por) {
+      const C = await tramitePrecio(p.tramiteId);
+      if (!["pct", "fija", "cuantia", "consultar"].includes(p.tipo)) throw new Aviso("Tipo de precio inválido.");
+      const oficial = C.data.tramites.find((t) => t.id === p.tramiteId);
+      // Copias y materializaciones se suman al total de la calculadora y de Sofía: sin precio por hoja su costo desaparecería.
+      if (esHabilitante(p.tramiteId) && !["pct", "fija"].includes(p.tipo)) throw new Aviso("Las copias certificadas y las materializaciones son documentos habilitantes: deben tener un precio por hoja (valor fijo o porcentaje del SBU).");
+      if (p.tipo === "pct" && !(typeof p.valor === "number" && p.valor >= 0.001 && p.valor <= 5)) throw new Aviso("El porcentaje del SBU debe estar entre 0,1 % y 500 %.");
+      if (p.tipo === "fija" && !(typeof p.valor === "number" && p.valor >= 0.01 && p.valor <= 1000)) throw new Aviso("El valor fijo debe estar entre $0,01 y $1000.");
+      // Si el trámite se cobra por unidad (por hoja, por firma…), la unidad debe seguir diciéndolo: de lo contrario la cantidad deja de multiplicar.
+      if (["pct", "fija"].includes(p.tipo) && /por/.test(oficial?.tarifa?.unidad || "") && !/por/.test(p.unidad || "")) throw new Aviso("Este trámite se cobra por unidad: la unidad debe empezar con «por» (por hoja, por firma…).");
+      if (p.tipo === "cuantia" && !Object.hasOwn(C.tarifas.tablas || {}, p.tabla)) throw new Aviso("Tabla de cuantía inválida.");
+      if (typeof (p.unidad ?? "") !== "string" || !/^[\p{L}\p{N} .,/-]{0,30}$/u.test(p.unidad || "")) throw new Aviso("La unidad puede tener hasta 30 letras, números o signos simples (por ejemplo «por hoja»).");
+      await almacen.guardarPrecio({ tramiteId: p.tramiteId, tipo: p.tipo, valor: ["pct", "fija"].includes(p.tipo) ? p.valor : null,
+        unidad: (p.unidad || "").trim(), tabla: p.tipo === "cuantia" ? p.tabla : "", actualizadoPor: por });
+    },
+    async restaurarPrecio(id) { await tramitePrecio(id); await almacen.restaurarPrecio(id); },
+    // Vuelve al SBU y al año de la hoja de Google (si no, un valor guardado aquí taparía para siempre los cambios de la hoja).
+    async restaurarSBU() { await almacen.restaurarAjuste("sbu"); await almacen.restaurarAjuste("anio"); },
+    async guardarSBU({ sbu, anio }, por) {
+      if (typeof sbu !== "number" || !Number.isFinite(sbu) || sbu < 100 || sbu > 5000) throw new Aviso("El SBU debe estar entre 100 y 5000.");
+      if (!/^\d{4}$/.test(String(anio))) throw new Aviso("El año debe tener 4 dígitos.");
+      await almacen.guardarAjuste("sbu", sbu, por);
+      await almacen.guardarAjuste("anio", String(anio), por);
+    },
     async conversaciones() {
       const filas = (await almacen.resumenConversaciones()).map(({ ultimoTexto, ...c }) => ({ ...c, ultimo: ultimoTexto, canal: canalDe(c.telefono) }));
       return filas.sort((a, b) => (b.derivada - a.derivada) || (b.ultimaActividad - a.ultimaActividad));

@@ -17,7 +17,7 @@ export function obtenerServicios(env = process.env) {
   const almacen = env.SUPABASE_URL ? crearAlmacenSupabase({ url: env.SUPABASE_URL, clave: env.SUPABASE_SERVICE_ROLE_KEY }) : crearAlmacenMemoria();
   const whatsapp = limitarPlantillas(crearWhatsApp({ token: env.WHATSAPP_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID, version: env.WHATSAPP_API_VERSION || "v23.0" }),
     almacen, { exentos: [env.AVISOS_WHATSAPP].filter(Boolean) });
-  const contenido = crearContenido();
+  const contenido = crearContenido({ almacen });
   const avisar = async (texto) => {
     if (!env.AVISOS_WHATSAPP) return;
     try { await whatsapp.enviarPlantilla(env.AVISOS_WHATSAPP, env.AVISOS_PLANTILLA || "aviso_personal", [texto.slice(0, 1000)]); }

@@ -1,4 +1,5 @@
 // Contenido para el servidor: la misma hoja de Google que lee la web, con caché y respaldo en los JSON de data/.
+import { aplicarPrecios } from "../../js/precios.js";
 import { readFile } from "node:fs/promises";
 import { desdeHoja, urlPestana } from "../../js/nucleo.js";
 
@@ -11,12 +12,12 @@ async function leerJSONLocales() {
   return { tramites, tarifas, notaria, config };
 }
 
-// Devuelve una función async que entrega { data, tarifas, notaria }.
-export function crearContenido({ leerLocal = leerJSONLocales, fetch = globalThis.fetch, ahora = Date.now } = {}) {
-  let cache = null, vence = 0, ultimaHoja = null;
+// Devuelve { data, tarifas, notaria }; el panel pide oficial para superponer las ediciones más recientes.
+export function crearContenido({ leerLocal = leerJSONLocales, fetch = globalThis.fetch, ahora = Date.now, almacen } = {}) {
+  let cache = null, cacheOficial = null, vence = 0, ultimaHoja = null, ultimosPrecios = [], ultimosAjustes = {};
 
-  return async function contenido() {
-    if (cache && ahora() < vence) return cache;
+  return async function contenido({ oficial = false } = {}) {
+    if (cache && ahora() < vence) return oficial ? structuredClone(cacheOficial) : cache;
     const L = await leerLocal();
     const base = { data: L.tramites, tarifas: L.tarifas, notaria: L.notaria };
     const G = L.config?.googleSheet || {}, gids = G.pestanas || {};
@@ -36,8 +37,17 @@ export function crearContenido({ leerLocal = leerJSONLocales, fetch = globalThis
         resultado = ultimaHoja || base;
       }
     }
+    cacheOficial = structuredClone(resultado);
+    resultado = structuredClone(resultado);
+    if (almacen) {
+      try {
+        const [precios, ajustes] = await Promise.all([almacen.precios(), almacen.ajustes()]);
+        ultimosPrecios = precios; ultimosAjustes = ajustes;
+      } catch { console.warn("Precios del panel no disponibles; se conserva la última lectura válida."); }
+      aplicarPrecios(resultado, { precios: Object.fromEntries(ultimosPrecios.map((p) => [p.tramiteId, p])), ...ultimosAjustes });
+    }
     cache = resultado;
     vence = ahora() + CACHE_MS;
-    return cache;
+    return oficial ? structuredClone(cacheOficial) : cache;
   };
 }

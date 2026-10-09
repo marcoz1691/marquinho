@@ -167,6 +167,20 @@ create index if not exists conversaciones_creada on conversaciones(creada);
 -- Primera vez que cada persona del personal entra con la verificación en dos pasos (para avisar al administrador).
 alter table personal add column if not exists mfa_en timestamptz;
 
+-- 2026-10-07: precios y ajustes editables por administradores.
+create table if not exists precios (
+  tramite_id text primary key,
+  tipo text not null check (tipo in ('pct','fija','cuantia','consultar')),
+  valor numeric,
+  unidad text not null default '',
+  tabla text not null default '',
+  actualizado_por text not null default '',
+  actualizado_en timestamptz not null default now()
+);
+create table if not exists ajustes (clave text primary key, valor text not null, actualizado_por text not null default '', actualizado_en timestamptz not null default now());
+alter table personal add column if not exists rol text not null default 'personal' check (rol in ('admin','personal'));
+alter table precios enable row level security;
+alter table ajustes enable row level security;
 -- Los contadores de uso guardan celulares y huellas de IP: se purgan a los 7 días.
 alter table uso add column if not exists creado timestamptz not null default now();
 create index if not exists uso_creado on uso(creado);
@@ -174,3 +188,7 @@ create index if not exists uso_creado on uso(creado);
 -- 2026-10-07: ticket de cuatro dígitos, único por día; las citas anteriores conservan null.
 alter table solicitudes_cita add column if not exists codigo text check (codigo ~ '^[1-9][0-9]{3}$');
 create unique index if not exists solicitudes_cita_fecha_codigo on solicitudes_cita(fecha, codigo);
+
+-- Un precio de tipo porcentaje o fijo siempre lleva un valor positivo (la validación del panel no es la única defensa).
+alter table precios drop constraint if exists precios_valor_valido;
+alter table precios add constraint precios_valor_valido check (tipo not in ('pct','fija') or (valor is not null and valor > 0));

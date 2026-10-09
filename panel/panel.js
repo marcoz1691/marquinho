@@ -1,3 +1,5 @@
+import { precioTexto, calcularTarifa, money } from "../js/nucleo.js";
+
 // Panel del personal. La librería de Supabase llega desde vendor/ (ver index.html).
 const { createClient } = window.supabase;
 
@@ -37,7 +39,7 @@ async function api(metodo, params) {
 // Solo una pantalla visible a la vez.
 function vista(id) {
   clearInterval(timer);
-  $("#app").hidden = true; $("#agendaV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
+  $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
   document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
   document.querySelectorAll(".msg").forEach((m) => { m.textContent = ""; m.className = "msg"; });
   const foco = $("#" + id + " input"); if (foco) setTimeout(() => foco.focus(), 30);
@@ -91,7 +93,7 @@ const INACTIVIDAD_MS = 30 * 60 * 1000;
 let ultimoUso = Date.now();
 ["pointerdown", "keydown", "scroll"].forEach((ev) => document.addEventListener(ev, () => { ultimoUso = Date.now(); }, { passive: true, capture: true }));
 setInterval(async () => {
-  if ($("#app").hidden && $("#agendaV").hidden) return;
+  if ($("#app").hidden && $("#agendaV").hidden && $("#preciosV").hidden) return;
   if (Date.now() - ultimoUso < INACTIVIDAD_MS) return;
   await sb.auth.signOut();
   vista("vEntrar");
@@ -114,7 +116,7 @@ async function mostrarApp() {
   $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
   pestana(pestanaActual);
   clearInterval(timer);
-  const refrescar = () => pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
+  const refrescar = () => pestanaActual === "preciosV" ? Promise.resolve() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
   timer = setInterval(() => refrescar().catch((e) => console.warn("No se pudo actualizar:", e.message)), 15000);
 }
 
@@ -204,6 +206,8 @@ async function abrir(id, silencioso) {
 const hoyQuito = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(new Date());
 function pestana(id) {
   pestanaActual = id;
+  $("#preciosV").hidden = id !== "preciosV";
+  if (id === "preciosV") cargarPreciosPanel();
   $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV";
   document.querySelectorAll("#tabs [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === id));
   if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); }
@@ -306,6 +310,103 @@ $("#detalle").addEventListener("click", async (e) => {
     else return;
     await abrir(actual);
   } catch (err) { alert(err.message); }
+});
+
+/* ---------- Precios y SBU ---------- */
+let preciosPanel = null;
+const ETIQUETA_VALOR = { pct: "Porcentaje del SBU (%)", fija: "Valor en dólares (USD)" };
+// "2026-10-07T15:00:00Z" → "7 oct 2026, 10:00" (hora de Quito).
+function fechaLegible(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = Object.fromEntries(new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.day} ${p.month.replace(".", "")} ${p.year}, ${p.hour}:${p.minute}`;
+}
+const TIPOS_PRECIO = { pct: "Porcentaje del SBU", fija: "Valor fijo (USD)", cuantia: "Según cuantía", consultar: "Consultar" };
+function finalPrecio(t, tarifas) {
+  const r = calcularTarifa(t, tarifas);
+  return r.total === null ? precioTexto(t, tarifas) : money(r.total) + " con IVA" + (t.tarifa.unidad ? " " + t.tarifa.unidad : "");
+}
+async function cargarPreciosPanel() {
+  try {
+    preciosPanel = await api("GET", { accion: "precios" });
+    const T = preciosPanel.tarifas;
+    $("#preciosAjustes").innerHTML = preciosPanel.esAdmin
+      ? `<label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}`
+      : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>`;
+    pintarPrecios();
+  } catch (e) { $("#preciosMensaje").textContent = e.message; }
+}
+function tarifasEnPantalla() {
+  return { ...preciosPanel.tarifas, sbu: $("#precioSbu") ? Number($("#precioSbu").value) : preciosPanel.tarifas.sbu };
+}
+function pintarPrecios() {
+  if (!preciosPanel) return;
+  const buscar = $("#preciosBuscar").value.toLocaleLowerCase();
+  $("#preciosLista").innerHTML = preciosPanel.tramites.filter((t) => t.nombre.toLocaleLowerCase().includes(buscar)).map((t) => {
+    const f = t.tarifa;
+    const campos = preciosPanel.esAdmin ? `<div class="precio-campos">
+      <label>Tipo<select data-campo="tipo">${Object.entries(TIPOS_PRECIO).map(([k, v]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+      <label><span data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
+      <label>Unidad (opcional, por ejemplo «por firma»)<input data-campo="unidad" maxlength="30" value="${esc(f.unidad)}"></label>
+      <label>Tabla<select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
+      <button class="btn" data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div>` : `<p>${esc(TIPOS_PRECIO[f.tipo])}</p>`;
+    return `<article class="precio-fila" data-tramite="${esc(t.id)}"><h3>${esc(t.nombre)}</h3><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><small>${t.editada ? `Editado por ${esc(t.actualizadoPor)} · ${esc(fechaLegible(t.actualizadoEn))}` : "Valor oficial"}</small>${campos}</article>`;
+  }).join("") || "<p>No hay trámites con ese nombre.</p>";
+  document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
+}
+function precioDeFila(fila) {
+  const campo = (k) => fila.querySelector(`[data-campo="${k}"]`).value;
+  const tipo = campo("tipo");
+  return { tramiteId: fila.dataset.tramite, tipo, valor: tipo === "pct" ? Number(campo("valor")) / 100 : Number(campo("valor")), unidad: campo("unidad"), tabla: campo("tabla") };
+}
+function actualizarPrecio(fila) {
+  if (!preciosPanel.esAdmin) return;
+  const p = precioDeFila(fila);
+  fila.querySelector('[data-campo="valor"]').disabled = !["pct", "fija"].includes(p.tipo);
+  fila.querySelector('[data-campo="tabla"]').disabled = p.tipo !== "cuantia";
+  // Solo se muestra lo que aplica al tipo elegido, y el valor dice si son % del SBU o dólares.
+  fila.querySelector('[data-campo="tabla"]').closest("label").hidden = p.tipo !== "cuantia";
+  fila.querySelector("[data-etiqueta-valor]").textContent = ETIQUETA_VALOR[p.tipo] || "Valor";
+  fila.querySelector("output").textContent = finalPrecio({ tarifa: p }, tarifasEnPantalla());
+}
+$("#preciosBuscar").addEventListener("input", pintarPrecios);
+$("#preciosV").addEventListener("input", (e) => {
+  const fila = e.target.closest(".precio-fila");
+  if (fila) actualizarPrecio(fila);
+  if (e.target.id === "precioSbu") document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
+});
+$("#preciosV").addEventListener("change", (e) => { const fila = e.target.closest(".precio-fila"); if (fila) actualizarPrecio(fila); });
+$("#preciosV").addEventListener("click", async (e) => {
+  const b = e.target.closest("button");
+  if (!b || !preciosPanel?.esAdmin) return;
+  try {
+    let pedido;
+    if (b.id === "guardarSbu") {
+      const sbu = Number($("#precioSbu").value), anio = $("#precioAnio").value;
+      if (!confirm(`Antes → Después\nSBU: ${preciosPanel.tarifas.sbu} → ${sbu}\nAño: ${preciosPanel.tarifas.anio} → ${anio}`)) return;
+      pedido = { accion: "guardarSBU", sbu, anio };
+    } else if (b.id === "restaurarSbu") {
+      if (!confirm("¿Volver al SBU y al año de la hoja de Google?")) return;
+      pedido = { accion: "restaurarSBU" };
+    } else {
+      const fila = b.closest(".precio-fila"), p = precioDeFila(fila);
+      if (b.dataset.precio === "restaurar") {
+        if (!confirm("¿Volver al valor oficial de este trámite?")) return;
+        pedido = { accion: "restaurarPrecio", tramiteId: p.tramiteId };
+      } else {
+        const anterior = preciosPanel.tramites.find((t) => t.id === p.tramiteId);
+        if (!confirm(`Antes → Después\n${anterior.nombre}\n${finalPrecio(anterior, preciosPanel.tarifas)} → ${finalPrecio({ tarifa: p }, preciosPanel.tarifas)}`)) return;
+        pedido = { accion: "guardarPrecio", ...p };
+      }
+    }
+    b.disabled = true;
+    await api("POST", pedido);
+    $("#preciosMensaje").textContent = "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
+    await cargarPreciosPanel();
+  } catch (err) { $("#preciosMensaje").textContent = err.message; }
+  finally { b.disabled = false; }
 });
 
 const { data: { session } } = await sb.auth.getSession();

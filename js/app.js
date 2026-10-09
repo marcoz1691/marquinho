@@ -1,3 +1,4 @@
+import { cargarPrecios } from "./precios.js";
 import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES, esHabilitante } from "./nucleo.js";
 
 (function () {
@@ -445,7 +446,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     scenes();
   }
 
-  cargar().then(function (r) {
+  cargar().then(cargarPrecios).then(function (r) {
     state.data = r.data; state.tarifas = r.tarifas; state.notaria = r.notaria;
     renderAvisos(); renderCategorias(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
   }).catch(function (e) {
