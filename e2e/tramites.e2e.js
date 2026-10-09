@@ -138,7 +138,7 @@ test.describe("Detalle del trámite", () => {
     expect(href).toMatch(new RegExp("^https://wa\\.me/" + notaria.whatsapp + "\\?text="));
     expect(decodeURIComponent(href.split("text=")[1])).toBe("Hola, quiero información sobre el trámite: " + tramite("divorcio").nombre);
     await expect(consultar).toHaveAttribute("target", "_blank");
-    await expect(detalle(page).getByRole("link", { name: "Agendar cita" })).toHaveAttribute("href", /wa\.me/);
+    await expect(detalle(page).getByRole("link", { name: "Agendar cita" })).toHaveAttribute("href", "cita.html?tramite=divorcio");
     await expect(detalle(page).getByRole("link", { name: "Enviar documentos" })).toHaveAttribute("href", /revisi%C3%B3n%20previa/);
   });
 

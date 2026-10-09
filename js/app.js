@@ -81,8 +81,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var acciones = [];
     if (tieneWa()) acciones.push('<a class="act act--wa" target="_blank" rel="noopener" href="' + esc(wa("Hola, quiero información sobre el trámite: " + t.nombre)) + '"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>Consultar por WhatsApp</a>');
     else if (telefono()) acciones.push('<a class="act act--wa" href="' + esc(telefono()) + '"><i class="ph ph-phone" aria-hidden="true"></i>Llamar a la notaría</a>');
-    if (state.notaria.agenda) acciones.push('<a class="act" target="_blank" rel="noopener" href="' + esc(state.notaria.agenda) + '"><i class="ph ph-calendar-check" aria-hidden="true"></i>Agendar cita</a>');
-    else if (tieneWa()) acciones.push('<a class="act" target="_blank" rel="noopener" href="' + esc(wa("Hola, quiero agendar una cita para: " + t.nombre)) + '"><i class="ph ph-calendar-check" aria-hidden="true"></i>Agendar cita</a>');
+    acciones.push('<a class="act" href="cita.html?tramite=' + esc(encodeURIComponent(t.id)) + '"><i class="ph ph-calendar-check" aria-hidden="true"></i>Agendar cita</a>');
     if (tieneWa()) acciones.push('<a class="act" target="_blank" rel="noopener" href="' + esc(wa("Hola, quiero enviar mis documentos para revisión previa del trámite: " + t.nombre)) + '"><i class="ph ph-file-arrow-up" aria-hidden="true"></i>Enviar documentos</a>');
     else if (state.notaria.correo) acciones.push('<a class="act" href="mailto:' + esc(state.notaria.correo) + "?subject=" + encodeURIComponent("Revisión previa: " + t.nombre) + '"><i class="ph ph-envelope-simple" aria-hidden="true"></i>Enviar documentos por correo</a>');
     if (t.tarifa.tipo !== "consultar") acciones.push('<button class="act" type="button" data-calc="' + esc(t.id) + '"><i class="ph ph-calculator" aria-hidden="true"></i>Calcular costo</button>');
@@ -235,6 +234,16 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   function renderContacto() {
     var N = state.notaria, rows = "";
+    var ejemplo = state.data.tramites.find(function (t) { return t.id === "poder-natural"; });
+    if (ejemplo) $("#waEjemploRequisitos").innerHTML = '<b>Sofía</b>Para un poder de persona natural necesitas: ' + esc(ejemplo.req.join("; ")) + '. Costo referencial: ' + esc(precio(ejemplo)) + '. Confirma el total según tu caso. Envía fotos para la revisión previa.';
+    $("#waHorario").textContent = N.horario.texto;
+    $("#waInicio").hidden = !tieneWa();
+    $("#waNumero").hidden = !tieneWa();
+    if (tieneWa()) {
+      $("#waInicio").href = wa("Hola, quiero hacer un trámite");
+      var numeroWa = N.whatsapp.replace(/\D/g, "");
+      $("#waNumero").textContent = "+" + numeroWa.replace(/^(593)(\d{2})(\d{3})(\d{4})$/, "$1 $2 $3 $4");
+    }
     var tels = (N.telefonos || []).filter(Boolean);
     var corto = N.notarioCorto || N.notario || N.nombre;
     $("#brandName").textContent = corto;
@@ -377,19 +386,6 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       words.innerHTML = words.textContent.trim().split(/\s+/).map(function (w) { return "<span>" + esc(w) + "</span> "; }).join("");
       spans = [].slice.call(words.children);
     }
-    var hs = $("[data-h]"), track = $("#track"), wide = { matches: true };   // el recorrido horizontal también corre en el celular
-    // Recorrido horizontal: hasta que la última tarjeta quede alineada con el margen derecho.
-    var travel = function () {
-      var last = track.lastElementChild, pad = parseFloat(getComputedStyle(track).paddingLeft);
-      return Math.max(0, last.offsetLeft + last.offsetWidth + pad - innerWidth);
-    };
-    // En el celular la barra del navegador cambia el alto al hacer scroll: se mide solo cuando cambia el ancho.
-    var medida = { ancho: 0, alto: 0 };
-    var size = function () {
-      if (innerWidth !== medida.ancho || Math.abs(innerHeight - medida.alto) > 150) medida = { ancho: innerWidth, alto: innerHeight };
-      if (hs) hs.style.height = wide.matches ? (travel() + medida.alto * 1.15) + "px" : "";
-      frame();
-    };
     var ticking = false;
     function frame() {
       ticking = false;
@@ -401,14 +397,12 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
           var lit = Math.round((p * 1.25 - .1) * spans.length);
           spans.forEach(function (s, i) { s.classList.toggle("on", i < lit); });
         }
-        if (el === hs && wide.matches) {
-          track.style.transform = "translate3d(" + (-p * travel()).toFixed(1) + "px,0,0)";
-        }
+
       });
     }
     window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
-    window.addEventListener("resize", size);
-    size();
+    window.addEventListener("resize", frame);
+    frame();
   }
 
   function observe() {
@@ -432,7 +426,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
           enlaces.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + x.target.id); });
         });
       }, { rootMargin: "-45% 0px -50% 0px" });
-      enlaces.forEach(function (a) { var sec = $(a.getAttribute("href")); if (sec) io.observe(sec); });
+      enlaces.forEach(function (a) { var href = a.getAttribute("href"); if (!href.startsWith("#")) return; var sec = $(href); if (sec) io.observe(sec); });
     }
     burger.addEventListener("click", function () { var o = menu.classList.toggle("open"); burger.setAttribute("aria-expanded", o); });
     menu.addEventListener("click", function (e) { if (e.target.tagName === "A") { menu.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); } });
