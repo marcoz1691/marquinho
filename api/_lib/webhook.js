@@ -1,16 +1,26 @@
 // Manejador del webhook de WhatsApp: verificación (GET) y mensajes entrantes (POST).
 import { verificarFirma, extraerMensajes } from "./whatsapp.js";
 
+import { textoResumen } from "./resumen.js";
+
 const DISCULPA = "Disculpa, tuve un problema para responderte. Inténtalo de nuevo en unos minutos o llama a la notaría.";
 
 export function crearManejador({ asistente, whatsapp, secreto, tokenVerificacion, enSegundoPlano }) {
   async function procesar(m) {
+    const eventos = [];
     try {
       await whatsapp.marcarLeido(m.id).catch(() => {});
-      for (const texto of await asistente.atender(m)) await whatsapp.enviarTexto(m.de, texto);
+      for (const texto of await asistente.atender(m, { eventos })) await whatsapp.enviarTexto(m.de, texto);
     } catch (e) {
       console.error("Error atendiendo", m.id, e?.message || e);
       await whatsapp.enviarTexto(m.de, DISCULPA).catch(() => {});
+    }
+    // El resumen va aparte: si una respuesta falló, la cita ya está creada y el cliente igual debe recibir su ticket;
+    // y si falla el propio resumen no se manda la disculpa genérica (sería falso: sí hay cita).
+    for (const e of eventos) {
+      if (e.tipo !== "cita") continue;
+      try { await whatsapp.enviarTexto(m.de, textoResumen({ ...e.resumen, subirDocumentos: false })); }
+      catch (err) { console.error("Resumen de la cita no enviado", m.id, err?.message || err); }
     }
   }
 

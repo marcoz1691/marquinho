@@ -170,3 +170,7 @@ alter table personal add column if not exists mfa_en timestamptz;
 -- Los contadores de uso guardan celulares y huellas de IP: se purgan a los 7 días.
 alter table uso add column if not exists creado timestamptz not null default now();
 create index if not exists uso_creado on uso(creado);
+
+-- 2026-10-07: ticket de cuatro dígitos, único por día; las citas anteriores conservan null.
+alter table solicitudes_cita add column if not exists codigo text check (codigo ~ '^[1-9][0-9]{3}$');
+create unique index if not exists solicitudes_cita_fecha_codigo on solicitudes_cita(fecha, codigo);

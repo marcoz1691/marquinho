@@ -82,6 +82,13 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, tramite: nombreDe(x.tramiteId) })) };
     },
 
+    async buscarTicket(codigo) {
+      if (!/^[1-9]\d{3}$/.test(codigo || "")) throw new Aviso("Escribe un ticket válido de 4 dígitos.");
+      const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
+      const C = await contenido();
+      return (await almacen.citasPorCodigo(codigo, hoy)).map((x) => ({ ...x, tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" }));
+    },
+
     async asignarCita(citaId, persona) {
       if (!(await almacen.cita(citaId))) throw new Aviso("Cita no encontrada");
       if (String(persona || "").length > 60) throw new Aviso("El nombre de la persona asignada es demasiado largo.");

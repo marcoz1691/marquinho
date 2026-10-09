@@ -1,5 +1,6 @@
 // Página del asistente a pantalla completa (diseño tipo LibreChat).
 import { esc, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chats, chatActual, elegirChat, crearChat, agregarMensaje, borrarChat, enviarMensaje, formato } from "./chat-nucleo.js";
+import { tarjetaCita } from "./cita-tarjeta.js";
 
 const $ = (s) => document.querySelector(s);
 const hilo = $("#hilo"), mensajes = $("#mensajes"), form = $("#form"), campo = $("#texto"), boton = $("#enviar");
@@ -32,7 +33,8 @@ function pintarHistorial() {
 function nodo(m) {
   const art = document.createElement("article");
   art.className = "ac-msg ac-msg--" + m.autor;
-  if (m.autor === "cliente") art.innerHTML = '<div class="ac-burbuja">' + esc(m.texto).replace(/\n/g, "<br>") + "</div>";
+  if (m.autor === "tarjeta") art.appendChild(tarjetaCita(m.resumen, chat.sesion));
+  else if (m.autor === "cliente") art.innerHTML = '<div class="ac-burbuja">' + esc(m.texto).replace(/\n/g, "<br>") + "</div>";
   else if (m.autor === "aviso") art.innerHTML = '<div class="ac-aviso"><i class="ph ph-info" aria-hidden="true"></i>' + esc(m.texto) + "</div>";
   else art.innerHTML = '<img class="ac-avatar" src="assets/logo/logo-notaria41-verde.svg" alt="" width="30" height="30"><div class="ac-cuerpo"><b class="ac-nombre">' + esc(nombre) + '</b><div class="ac-texto">' +
     formato(m.texto) + '</div><div class="ac-acciones"><button type="button" class="ac-copiar" aria-label="Copiar respuesta"><i class="ph ph-copy" aria-hidden="true"></i></button></div></div>';
@@ -73,7 +75,10 @@ async function enviar(texto) {
   const r = await enviarMensaje(sesion, texto);
   pensando.remove();
   if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);
-  else r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
+  else {
+    r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
+    r.tarjetas.forEach((resumen) => agregar({ autor: "tarjeta", resumen }, sesion));
+  }
   enviando = false; boton.disabled = !campo.value.trim(); campo.focus();
 }
 

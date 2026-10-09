@@ -1,5 +1,6 @@
 // Burbuja de chat del asistente en la página principal. La página completa está en asistente.html.
 import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, enviarMensaje, formato } from "./chat-nucleo.js";
+import { tarjetaCita } from "./cita-tarjeta.js";
 
 const $ = (s) => document.querySelector(s);
 // Los cinco trámites más pedidos según el notario, como casos reales.
@@ -11,7 +12,8 @@ nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); });
 function burbuja(m) {
   const div = document.createElement("div");
   div.className = "chat__msg chat__msg--" + m.autor;
-  div.innerHTML = m.autor === "cliente" ? esc(m.texto).replace(/\n/g, "<br>") : formato(m.texto);
+  if (m.autor === "tarjeta") div.appendChild(tarjetaCita(m.resumen, chat.sesion));
+  else div.innerHTML = m.autor === "cliente" ? esc(m.texto).replace(/\n/g, "<br>") : formato(m.texto);
   lista.appendChild(div);
 }
 function pintar() {
@@ -45,7 +47,10 @@ async function enviar(texto) {
   const r = await enviarMensaje(sesion, texto);
   escribiendo.remove();
   if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);
-  else r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
+  else {
+    r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
+    r.tarjetas.forEach((resumen) => agregar({ autor: "tarjeta", resumen }, sesion));
+  }
   enviando = false; form.classList.remove("chat__form--ocupado"); campo.focus();
 }
 
