@@ -117,6 +117,10 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async cita(id) { return copia(citas.find((c) => c.id === id) || null); },
     async actualizarCita(id, cambios) { Object.assign(citas.find((c) => c.id === id), cambios); },
     async marcarRecordada(id) { citas.find((c) => c.id === id).recordada = true; },
+    async citasEntre(desde, hasta) {
+      const fechas = [...new Set(citas.filter(c => c.fecha >= desde && c.fecha <= hasta).map(c => c.fecha))].sort();
+      return (await Promise.all(fechas.map(f => this.agenda(f)))).flat();
+    },
     async agenda(fecha) {
       return citas.filter((c) => c.fecha === fecha).sort((a, b) => a.hora.localeCompare(b.hora))
         .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));

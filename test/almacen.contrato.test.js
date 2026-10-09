@@ -34,6 +34,8 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     expect(nueva.codigo).toMatch(/^[1-9]\d{3}$/);
     expect(await a.cita(nueva.id)).toMatchObject({ codigo: nueva.codigo });
     expect(await a.solicitudesCita(c.id)).toEqual([expect.objectContaining({ codigo: nueva.codigo })]);
+    expect(await a.citasEntre("2099-01-05", "2099-01-05")).toContainEqual(expect.objectContaining({ id: nueva.id, telefono: "593991112233" }));
+    expect(await a.citasEntre("2099-01-06", "2099-01-07")).not.toContainEqual(expect.objectContaining({ id: nueva.id }));
     expect(await a.agenda("2099-01-05")).toContainEqual(expect.objectContaining({ codigo: nueva.codigo }));
     expect(await a.citasPorCodigo(nueva.codigo, "2099-01-05")).toContainEqual(expect.objectContaining({ id: nueva.id, telefono: "593991112233" }));
     expect(await a.citasPorCodigo(nueva.codigo, "2099-01-06")).not.toContainEqual(expect.objectContaining({ id: nueva.id }));

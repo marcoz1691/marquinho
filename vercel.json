@@ -1,5 +1,6 @@
 {
   "functions": {
+    "api/cita.js": { "maxDuration": 30, "includeFiles": "data/**" },
     "api/precios.js": { "maxDuration": 10, "includeFiles": "data/**" },
     "api/documentos.js": {
       "maxDuration": 30,

@@ -187,3 +187,19 @@ it("audita también una búsqueda de ticket fallida", async () => {
   expect((await m.GET(req("GET", "?accion=buscarTicket&codigo=x"))).status).toBe(400);
   expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ accion: "buscarTicket", objetivo: "x", ok: false }));
 });
+
+it.each(['guardarCupo','agregarBloqueo','quitarBloqueo'])('cupos: %s exige administrador y audita el rechazo',async accion=>{
+ const {m,almacen}=preparar();const r=await m.POST(req('POST','',{body:{accion,porHora:3,fecha:'2026-10-08',hora:null}}));
+ expect(r.status).toBe(403);expect((await r.json()).error).toBe('Solo un administrador puede cambiar los cupos.');
+ expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({accion,ok:false}));
+});
+it('lee configuración y ejecuta cupos como administrador con auditoría',async()=>{
+ const {m,panel,almacen}=preparar();almacen.esAdmin=async()=>true;
+ panel.citasConfig=async()=>({porHora:2,porHoraOficial:2,bloqueos:[]});
+ expect(await (await m.GET(req('GET','?accion=citasConfig'))).json()).toMatchObject({porHora:2,esAdmin:true});
+ for(const accion of ['guardarCupo','agregarBloqueo','quitarBloqueo']){
+ panel[accion]=vi.fn(async()=>({ok:true,porHora:3,bloqueos:[]}));
+ expect(await (await m.POST(req('POST','',{body:{accion,porHora:3}}))).json()).toMatchObject({ok:true,esAdmin:true});
+ expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({accion,ok:true}));
+ }
+});

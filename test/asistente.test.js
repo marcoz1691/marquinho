@@ -655,3 +655,16 @@ it("un mensaje duplicado no repite el evento de cita", async () => {
   expect(await asistente.atender(m, { eventos: repetidos })).toEqual([]);
   expect(repetidos).toEqual([]);
 });
+
+it.each(['cupo','bloqueo'])('Sofía respeta %s editable', async tipo=>{
+ if(tipo==='cupo'){
+ await almacen.guardarAjuste('citas.porHora','1');
+ const c=await almacen.conversacion('593991234567');
+ await almacen.crearSolicitudCita({conversacionId:c.id,fecha:'2026-10-08',hora:'09:00',nombre:'Luis'});
+ }else await almacen.guardarAjuste('citas.bloqueos','[{"fecha":"2026-10-08","hora":"09:00","motivo":"Reunión"}]');
+ const claude=claudeFalso([herramienta('solicitar_cita',{nombre:'Ana Pérez',tramite_id:'poder',fecha:'2026-10-08',hora:'09:30'}),texto('Elige otra hora')]);
+ await nuevo(claude).atender(mensaje());
+ const resultados=claude.llamadas[1].messages.at(-1).content;
+ expect(resultados[0]).toMatchObject({is_error:true,content:expect.stringContaining('No hay cupo')});
+ expect(await almacen.solicitudesCita((await almacen.conversacion('593991112233')).id)).toEqual([]);
+});

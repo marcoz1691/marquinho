@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>Agenda tu cita | Notaría 41 de Quito</title><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/fonts/archivo.css"><link rel="stylesheet" href="assets/fonts/phosphor.css"><link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/cita.css"><script type="module" src="js/cita.js"></script></head><body>
+<header class="nav scrolled">
+  <div class="nav__in">
+    <a class="nav__brand" href="./"><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt=""><img class="brand--dark" src="assets/logo/logo-notaria41-blanco.svg" alt=""><span>Notaría 41 de Quito</span></a>
+    <a class="link legal__volver" href="./"><i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio</a>
+  </div>
+</header>
+
+<main class="agenda-cita"><h1>Agenda tu cita</h1><p>Elige tu trámite y una hora libre. Tu visita se prepara aquí y el trámite se firma en la notaría.</p>
+<ol class="progreso" aria-label="Progreso"><li aria-current="step">1. Trámite</li><li>2. Día y hora</li><li>3. Tus datos</li><li>Confirmación</li></ol>
+<p id="estado" role="status">Buscando horas libres…</p><div id="alternativas" hidden></div>
+<div class="cita-layout"><div>
+<section id="paso-1" hidden aria-labelledby="titulo-1"><h2 id="titulo-1" tabindex="-1">1. Elige tu trámite</h2><label for="buscar">Buscar trámite</label><input id="buscar" type="search" placeholder="Por ejemplo, poder"><label for="tramite">Trámite</label><select id="tramite"><option value="">Aún no sé / otro</option></select><button id="a-fecha" type="button">Elegir día y hora</button></section>
+<section id="paso-2" hidden aria-labelledby="titulo-2"><h2 id="titulo-2" tabindex="-1">2. Elige día y hora</h2><p id="horario"></p><div class="mes-nav"><button id="anterior" type="button" aria-label="Mes anterior">←</button><h3 id="mes"></h3><button id="siguiente" type="button" aria-label="Mes siguiente">→</button></div><div class="semana" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div id="calendario" aria-label="Días disponibles"></div><fieldset id="horas"><legend>Horas libres</legend><div id="lista-horas"></div></fieldset><button id="a-datos" type="button" disabled>Continuar con mis datos</button></section>
+<section id="paso-3" hidden aria-labelledby="titulo-3"><h2 id="titulo-3" tabindex="-1">3. Tus datos</h2><form id="datos" novalidate>
+<label for="nombre">Nombre completo</label><input id="nombre" name="nombre" autocomplete="name" maxlength="80" aria-describedby="error-nombre" required><p id="error-nombre" class="error"></p>
+<label for="celular">Celular de Ecuador</label><input id="celular" name="celular" type="tel" autocomplete="tel" placeholder="0991234567" aria-describedby="error-celular" required><p id="error-celular" class="error"></p>
+<label for="nota">Nota (opcional)</label><textarea id="nota" name="nota" maxlength="200" rows="3" aria-describedby="error-nota"></textarea><p id="error-nota" class="error"></p>
+<label class="acepta" for="aceptaAviso"><input id="aceptaAviso" name="aceptaAviso" type="checkbox" aria-describedby="error-aceptaAviso"><span>Acepto el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a> para preparar mi visita y recibir avisos por WhatsApp.</span></label><p id="error-aceptaAviso" class="error"></p>
+<div class="trampa" aria-hidden="true"><label for="sitio">Sitio</label><input id="sitio" name="sitio" tabindex="-1" autocomplete="off"></div><button id="confirmar" type="submit">Confirmar mi cita</button></form></section>
+<section id="paso-4" hidden aria-labelledby="titulo-4"><h2 id="titulo-4" tabindex="-1">Tu visita está agendada</h2><div id="tarjeta"></div><p>Para cambiar tu cita, escríbenos por WhatsApp o llámanos con tu ticket.</p><div id="contacto-confirmacion"></div></section>
+</div><aside id="resumen" aria-label="Resumen de tu elección"><h2>Tu visita</h2><dl><dt>Trámite</dt><dd id="resumen-tramite">Aún no sé / otro</dd><dt>Día</dt><dd id="resumen-dia">Por elegir</dd><dt>Hora</dt><dd id="resumen-hora">Por elegir</dd></dl><button type="button" data-cambiar="1">Cambiar trámite</button><button type="button" data-cambiar="2">Cambiar día</button><button type="button" data-cambiar="2">Cambiar hora</button></aside></div>
+<noscript>Activa JavaScript para ver las horas libres o llama al 02 600 1141 para agendar.</noscript></main><footer class="foot"><div class="foot__in"><p>© 2026 Notaría 41 de Quito</p></div></footer></body></html>

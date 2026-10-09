@@ -1,3 +1,5 @@
+import { reglasCitas, fechaQuito, fechaValida } from "./citas.js";
+import { minutos } from "../../js/nucleo.js";
 // Acciones del panel del personal sobre conversaciones, citas y documentos.
 import { textoVisible, PREFIJO_PERSONAL } from "./mensajes.js";
 import { Aviso } from "./errores.js";
@@ -11,12 +13,12 @@ const TURNO_MS = 30 * 1000;
 const legible = (historial) => historial.map(textoVisible).filter(Boolean);
 // Texto libre del personal: sin caracteres de control y con un largo máximo.
 const limpio = (v, max) => String(v ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, max);
-const canalDe = (telefono) => (String(telefono).startsWith("web:") ? "web" : "whatsapp");
+export const canalDe = telefono => String(telefono).startsWith("web:") ? "web" : String(telefono).startsWith("form:") ? "formulario" : "whatsapp";
 
 export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)), plantillas = {} }) {
   async function dentroDeVentana(conversacionId) {
     const c = await almacen.conversacionPorId(conversacionId);
-    if (c && canalDe(c.telefono) === "web") return false;   // el chat web no tiene canal para escribirle al cliente
+    if (c && canalDe(c.telefono) !== "whatsapp") return false;   // el chat web y el formulario no tienen canal para responder
     return ahora().getTime() - (await almacen.ultimoMensajeCliente(conversacionId)) <= VENTANA_MS;
   }
   // El personal escribe en la conversación con el mismo turno que el asistente, para no mezclar mensajes a mitad de una respuesta.
@@ -50,6 +52,32 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
   }
 
   return {
+    async citasConfig() {
+      const r = reglasCitas(await contenido(), await almacen.ajustes());
+      return { porHora:r.porHora, porHoraOficial:r.porHoraOficial, bloqueos:r.bloqueos.filter(b=>b.fecha>=fechaQuito(ahora())) };
+    },
+    async guardarCupo({porHora}, por) {
+      if (!Number.isInteger(porHora) || porHora<1 || porHora>20) throw new Aviso("El cupo debe ser un entero de 1 a 20.");
+      await almacen.guardarAjuste("citas.porHora", String(porHora), por);
+      return {ok:true, ...await this.citasConfig()};
+    },
+    async agregarBloqueo({fecha,hora=null,motivo=""}, por) {
+      const C=await contenido(), H=C.notaria.horario;
+      if (!fechaValida(fecha) || fecha<fechaQuito(ahora())) throw new Aviso("Elige una fecha válida de hoy en adelante.");
+      if (hora!==null && (typeof hora!=="string" || !/^(?:[01]\d|2[0-3]):00$/.test(hora) || minutos(hora)<minutos(H.abre) || minutos(hora)>=minutos(H.cierra))) throw new Aviso("Elige una hora completa dentro del horario de atención.");
+      if (typeof motivo!=="string" || motivo.length>80) throw new Aviso("Escribe un motivo de hasta 80 caracteres.");
+      const r=reglasCitas(C,await almacen.ajustes()), bloques=r.bloqueos.filter(b=>!b.fijo);
+      if(!r.bloqueos.some(b=>b.fecha===fecha && b.hora===hora)) bloques.push({fecha,hora,motivo:limpio(motivo,80)});
+      await almacen.guardarAjuste("citas.bloqueos", JSON.stringify(bloques), por);
+      return {ok:true, ...await this.citasConfig()};
+    },
+    async quitarBloqueo({fecha,hora=null}, por) {
+      if(!fechaValida(fecha) || (hora!==null && !/^(?:[01]\d|2[0-3]):00$/.test(hora))) throw new Aviso("Elige un bloqueo válido.");
+      const r=reglasCitas(await contenido(),await almacen.ajustes());
+      if(r.bloqueos.some(b=>b.fijo && b.fecha===fecha && b.hora===hora)) throw new Aviso("No puedes quitar un feriado.");
+      await almacen.guardarAjuste("citas.bloqueos",JSON.stringify(r.bloqueos.filter(b=>!b.fijo && !(b.fecha===fecha && b.hora===hora))),por);
+      return {ok:true, ...await this.citasConfig()};
+    },
     async precios() {
       const C = await contenido({ oficial: true }), filas = await almacen.precios(), ajustes = await almacen.ajustes();
       return { tarifas: { ...C.tarifas, ...ajustes }, sbuEditado: ajustes.sbu !== undefined || ajustes.anio !== undefined, sbuOficial: C.tarifas.sbu, anioOficial: C.tarifas.anio, tramites: C.data.tramites.map((t) => {
@@ -96,7 +124,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
         canal: canalDe(c.telefono),
         puedeResponder: await dentroDeVentana(id),
         mensajes: legible(await almacen.historial(id)),
-        citas: (await almacen.solicitudesCita(id)).map((x) => ({ ...x, tramite: nombreDe(x.tramiteId) })),
+        citas: (await almacen.solicitudesCita(id)).map(x => ({ ...x, canal: canalDe(c.telefono), tramite: nombreDe(x.tramiteId) })),
         documentos: (await almacen.documentos(id)).map(({ bytes, ...d }) => ({ ...d, tramite: d.tramiteId ? nombreDe(d.tramiteId) : "" }))
       };
     },
@@ -105,7 +133,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const c = await conversacion(id);
       if (!String(texto || "").trim()) throw new Aviso("El mensaje está vacío");
       if (String(texto).length > 2000) throw new Aviso("El mensaje es muy largo (máximo 2000 caracteres).");
-      if (canalDe(c.telefono) === "web") throw new Aviso("Esta conversación es del chat de la página web: no se puede responder desde aquí. Si el cliente dejó su celular, contáctalo por WhatsApp o teléfono.");
+      if (canalDe(c.telefono) !== "whatsapp") throw new Aviso("Esta conversación es del chat de la página web o del formulario: no se puede responder desde aquí. Si el cliente dejó su celular, contáctalo por WhatsApp o teléfono.");
       if (!(await dentroDeVentana(id))) throw new Aviso("Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp solo permite escribirle con una plantilla aprobada. Llámalo por teléfono.");
       await enviarComoPersonal(c, texto.trim());
     },
@@ -118,14 +146,14 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new Aviso("Fecha inválida");
       const C = await contenido();
       const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
-      return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, tramite: nombreDe(x.tramiteId) })) };
+      return { fecha, personal: await almacen.listaPersonal(), citas: await Promise.all((await almacen.agenda(fecha)).map(async (x) => ({ ...x, canal: canalDe((await conversacion(x.conversacionId)).telefono), tramite: nombreDe(x.tramiteId) }))) };
     },
 
     async buscarTicket(codigo) {
       if (!/^[1-9]\d{3}$/.test(codigo || "")) throw new Aviso("Escribe un ticket válido de 4 dígitos.");
       const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
       const C = await contenido();
-      return (await almacen.citasPorCodigo(codigo, hoy)).map((x) => ({ ...x, tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" }));
+      return Promise.all((await almacen.citasPorCodigo(codigo, hoy)).map(async (x) => ({ ...x, canal: canalDe((await conversacion(x.conversacionId)).telefono), tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" })));
     },
 
     async asignarCita(citaId, persona) {

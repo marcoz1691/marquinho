@@ -156,6 +156,10 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     },
 
     async marcarRecordada(id) { ok(await db.from("solicitudes_cita").update({ recordada: true }).eq("id", id)); },
+    async citasEntre(desde, hasta) {
+      const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").gte("fecha", desde).lte("fecha", hasta).order("fecha").order("hora").order("creada"));
+      return filas.map(r => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
+    },
     async agenda(fecha) {
       const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("fecha", fecha).order("hora").order("creada"));
       return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
