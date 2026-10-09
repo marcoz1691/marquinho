@@ -179,6 +179,11 @@ describe("herramientas", () => {
       expect(avisar).toHaveBeenCalled();
     });
 
+    it("acepta una hora que no es en punto ni y media si esa hora tiene cupo", async () => {
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "09:15" })).atender(mensaje());
+      expect(await citas()).toEqual([expect.objectContaining({ hora: "09:15", estado: "confirmada" })]);
+    });
+
     it("con la hora llena no agenda y ofrece las horas libres de ese día", async () => {
       const otra = await almacen.conversacion("593990000001", "Luis");
       await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Luis", estado: "confirmada" });
@@ -654,4 +659,17 @@ it("un mensaje duplicado no repite el evento de cita", async () => {
   const repetidos = [];
   expect(await asistente.atender(m, { eventos: repetidos })).toEqual([]);
   expect(repetidos).toEqual([]);
+});
+
+it.each(['cupo','bloqueo'])('Sofía respeta %s editable', async tipo=>{
+ if(tipo==='cupo'){
+ await almacen.guardarAjuste('citas.porHora','1');
+ const c=await almacen.conversacion('593991234567');
+ await almacen.crearSolicitudCita({conversacionId:c.id,fecha:'2026-10-08',hora:'09:00',nombre:'Luis'});
+ }else await almacen.guardarAjuste('citas.bloqueos','[{"fecha":"2026-10-08","hora":"09:00","motivo":"Reunión"}]');
+ const claude=claudeFalso([herramienta('solicitar_cita',{nombre:'Ana Pérez',tramite_id:'poder',fecha:'2026-10-08',hora:'09:30'}),texto('Elige otra hora')]);
+ await nuevo(claude).atender(mensaje());
+ const resultados=claude.llamadas[1].messages.at(-1).content;
+ expect(resultados[0]).toMatchObject({is_error:true,content:expect.stringContaining('No hay cupo')});
+ expect(await almacen.solicitudesCita((await almacen.conversacion('593991112233')).id)).toEqual([]);
 });

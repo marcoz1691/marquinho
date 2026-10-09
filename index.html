@@ -33,6 +33,7 @@
       <a href="#whatsapp">WhatsApp</a>
       <a href="#faq">Preguntas</a>
       <a href="#contacto">Contacto</a>
+      <a class="nav__agenda" href="cita.html">Agenda tu cita</a>
     </nav>
     <button class="icon-btn nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu" type="button"><i class="ph ph-list" aria-hidden="true"></i></button>
   </div>
@@ -53,7 +54,7 @@
           <p class="lema" id="heroLema">Fe pública al servicio de la comunidad.</p>
           <div class="cta">
             <a class="btn btn--primary" href="#tramites">Ver trámites</a>
-            <a class="link" href="#contacto">Contacto <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+            <a class="btn" href="cita.html">Agenda tu cita</a>
           </div>
         </div>
         <div class="hero__seal">
@@ -137,18 +138,42 @@
     </div>
   </section>
 
-  <section class="hscroll section--alt" id="whatsapp" data-scene data-h>
-    <div class="hscroll__pin">
-      <div class="hscroll__head">
-        <h2 class="reveal">Prepara todo por WhatsApp.</h2>
-        <p class="sub reveal">Resuelve tus dudas y deja tus documentos revisados antes de venir. La firma es en la notaría, en una sola visita.</p>
+  <section class="section section--alt" id="whatsapp" aria-labelledby="waTitulo">
+    <div class="wa-flujo">
+      <header class="wa-cabecera">
+        <p class="kicker">Con Sofía, nuestro asistente</p>
+        <h2 id="waTitulo">Prepara tu trámite por WhatsApp, de principio a fin.</h2>
+        <p class="sub">Empieza con un mensaje. Te acompañamos hasta tu visita; la firma siempre es presencial en la notaría.</p>
+        <a class="btn btn--primary wa-inicio" id="waInicio" href="https://wa.me/593996530276?text=Hola%2C%20quiero%20hacer%20un%20tr%C3%A1mite" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+        <p class="wa-contacto"><strong id="waNumero">+593 99 653 0276</strong><br>Atención humana: <span id="waHorario">Lunes a viernes, de 08:00 a 17:00</span> (hora de Quito).</p>
+        <p>La ayuda por WhatsApp es gratis; el trámite tiene su tarifa. Sofía responde al instante, las 24 horas.</p>
+      </header>
+      <div class="wa-contenido">
+        <ol class="wa-pasos" aria-label="Pasos para preparar tu trámite">
+          <li><h3>Escribe qué trámite necesitas</h3><p>Envía «Hola, quiero hacer un trámite» y cuéntanos qué necesitas. Sofía te orienta, aunque aún no sepas cómo se llama tu trámite.</p></li>
+          <li><h3>Recibe los requisitos y el costo</h3><p>Sofía te indica qué documentos necesitas y cuánto cuesta tu trámite, antes de que vengas.</p></li>
+          <li><h3>Envía fotos de tus documentos</h3><p>Envía fotos legibles por WhatsApp. Una persona de la notaría revisa tus documentos y te confirma si están completos o qué debes corregir.</p></li>
+          <li><h3>Elige el día y la hora</h3><p>Escoge entre los horarios disponibles. Recibes los datos de tu cita y un ticket de 4 dígitos: guárdalo para tu visita.</p></li>
+          <li><h3>Recibe tu recordatorio</h3><p>El día anterior a tu cita te llega un mensaje por WhatsApp para recordar el día, la hora y lo que debes llevar.</p></li>
+          <li><h3>Ven a la notaría y firma</h3><p>Trae tu cédula, los documentos originales de tu trámite y tu ticket. El personal verifica todo y te acompaña en la firma presencial.</p></li>
+        </ol>
+        <aside class="wa-ejemplo" aria-labelledby="waEjemploTitulo">
+          <h3 id="waEjemploTitulo">Así puede ser tu conversación</h3>
+          <p class="note">Ejemplo ilustrativo. Los requisitos y el costo dependen de tu trámite.</p>
+          <div class="wa-burbujas">
+            <p class="wa-burbuja wa-burbuja--tu"><b>Tú</b>Hola, quiero hacer un trámite.</p>
+            <p class="wa-burbuja"><b>Sofía</b>¡Hola! ¿Qué trámite necesitas?</p>
+            <p class="wa-burbuja wa-burbuja--tu"><b>Tú</b>Quiero dar un poder. ¿Qué debo llevar y cuánto cuesta?</p>
+            <p class="wa-burbuja" id="waEjemploRequisitos"><b>Sofía</b>Para un poder de persona natural necesitas la minuta firmada por un abogado, tu cédula y certificado de votación, y una copia de la cédula del apoderado. Te confirmo el costo según tu caso. Envía fotos para la revisión previa.</p>
+            <p class="wa-burbuja wa-burbuja--tu"><b>Tú</b>Ya recibí la confirmación de mis documentos. Elijo el lunes a las 09:00.</p>
+            <p class="wa-burbuja"><b>Sofía</b>Tu cita es el lunes a las 09:00. Tu ticket es 4821. Te enviaremos un recordatorio el día anterior. Trae tu cédula y tus documentos originales.</p>
+          </div>
+        </aside>
       </div>
-      <ol class="hscroll__track" id="track">
-        <li><i class="ph ph-chat-circle-text" aria-hidden="true"></i><h3>Pregunta.</h3><p>Escríbenos qué necesitas y te decimos los requisitos y el costo.</p></li>
-        <li class="tono-verde"><i class="ph ph-file-arrow-up" aria-hidden="true"></i><h3>Envía tus documentos.</h3><p>Los revisamos antes de tu visita para que no te falte nada.</p></li>
-        <li class="tono-miel"><i class="ph ph-calendar-check" aria-hidden="true"></i><h3>Agenda tu cita.</h3><p>Elige el día y la hora que te queden mejor.</p></li>
-        <li><i class="ph ph-signature" aria-hidden="true"></i><h3>Firma en la notaría.</h3><p>Llegas con todo listo y sales con tu trámite firmado.</p></li>
-      </ol>
+      <div class="wa-cierre">
+        <p>Tus datos se tratan según nuestro <a href="privacidad.html">aviso de privacidad</a>. Sofía te ayuda a preparar el trámite; la firma siempre se realiza presencialmente en la notaría.</p>
+        <p>¿Prefieres no chatear? <a class="btn" href="cita.html">Agenda tu cita aquí</a></p>
+      </div>
     </div>
   </section>
 

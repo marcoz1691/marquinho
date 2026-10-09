@@ -47,3 +47,84 @@ test("ticket en agenda y conversación; búsqueda de cuatro dígitos y Ver chat"
   await page.locator("#agResultados").getByRole("button", { name: "Ver chat" }).click();
   await expect(page.locator("#detalle .lado")).toContainText("10:00 · Ticket 4821");
 });
+
+async function agendaSimulada(page, admin = true, fallaConfig = false) {
+  const pedidos = [];
+  await page.route("**/vendor/supabase-js-*.js", r => r.fulfill({ contentType: "text/javascript", body: 'window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:"test"}}})}})};' }));
+  await page.route("**/api/panel-config", r => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
+  const config = { esAdmin: admin, porHora: 2, porHoraOficial: 2, bloqueos: [{ fecha: "2099-12-25", hora: null, motivo: "Feriado", fijo: true }, { fecha: "2099-12-24", hora: "09:00", motivo: "Reunión" }] };
+  const citas = ["pendiente", "confirmada", "atendida", "rechazada"].map((estado,i) => ({ id: `c${i}`, codigo: `482${i}`, fecha: "2026-10-12", hora: "09:00", nombre: `Cliente ${i}`, tramite: "", estado, telefono: "593999999991", canal: i === 0 ? "formulario" : i === 1 ? "web" : "whatsapp", conversacionId: `conv${i}` }));
+  await page.route("**/api/panel?**", r => {
+    const accion = new URL(r.request().url()).searchParams.get("accion");
+    if (accion === "citasConfig" && fallaConfig) return r.fulfill({ status: 404, json: { error: "No disponible" } });
+    return r.fulfill({ json: accion === "agenda" ? { fecha: "2026-10-12", citas, personal: [{ nombre: "Ana" }] } : accion === "citasConfig" ? config : accion === "detalle" ? { conversacion: { nombre: "Cliente 0" }, citas: [citas[0]], documentos: [], mensajes: [], puedeResponder: false } : [] });
+  });
+  await page.route("**/api/panel", r => { pedidos.push(r.request().postDataJSON()); return r.fulfill({ json: { ok: true, ...config } }); });
+  await page.goto("/panel/");
+  await page.getByRole("button", { name: "Agenda", exact: true }).click();
+  return pedidos;
+}
+
+test("agenda: columnas alineadas, canales, teléfono y filtros por estado", async ({ page }) => {
+  await agendaSimulada(page);
+  await expect(page.locator("#agLista .ag-cita")).toHaveCount(4);
+  await expect(page.locator("#agLista")).toContainText("Formulario");
+  await expect(page.locator("#agLista")).toContainText("Chat web");
+  await expect(page.locator("#agLista")).toContainText("WhatsApp");
+  await expect(page.locator("#agLista a").first()).toHaveText("099 999 9991");
+  await expect(page.locator("#agLista a").first()).toHaveAttribute("href", "https://wa.me/593999999991");
+  if (page.viewportSize().width > 1100) {
+    const posiciones = await page.locator("#agLista select").evaluateAll(xs => xs.map(x => x.getBoundingClientRect().x));
+    expect(Math.max(...posiciones) - Math.min(...posiciones)).toBeLessThan(1);
+  }
+  const pendientes = page.locator('[data-filtro-ag="pendiente"]');
+  await expect(pendientes).toHaveText("Pendientes 1");
+  await pendientes.click();
+  await expect(pendientes).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#agLista .ag-cita")).toHaveCount(1);
+  await page.locator("#agLista").getByRole("button", { name: "Ver detalle", exact: true }).click();
+  await expect(page.locator("#detalle .lado")).toContainText("Ticket 4820");
+});
+
+test("agenda: cupos y bloqueos solo para administradores", async ({ page }) => {
+  const pedidos = await agendaSimulada(page);
+  await expect(page.locator("#agConfig")).toBeVisible();
+  await page.getByText("Cupos y bloqueos", { exact: true }).click();
+  await expect(page.locator(".bloqueos button")).toHaveCount(1);
+  await page.getByLabel("Citas por hora", { exact: true }).fill("3");
+  await page.locator("#agCupo").getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect.poll(() => pedidos.length).toBe(1);
+  expect(pedidos[0]).toEqual({ accion: "guardarCupo", porHora: 3 });
+  // Al guardar, la sección se vuelve a dibujar: espera a que termine antes de llenar el bloqueo.
+  await expect(page.locator("#agConfigMensaje")).toHaveText("Guardado.");
+  await page.getByLabel("Fecha del bloqueo").fill("2099-12-20");
+  await page.getByLabel("Motivo", { exact: true }).fill("Mantenimiento");
+  await page.getByRole("button", { name: "Agregar bloqueo", exact: true }).click();
+  await expect.poll(() => pedidos.length).toBe(2);
+  expect(pedidos[1]).toEqual({ accion: "agregarBloqueo", fecha: "2099-12-20", hora: null, motivo: "Mantenimiento" });
+});
+
+for (const falla of [false, true]) test(`agenda: configuración oculta ${falla ? "si falla la API" : "para personal"} @movil`, async ({ page }) => {
+  await agendaSimulada(page, false, falla);
+  await expect(page.locator("#agLista .ag-cita")).toHaveCount(4);
+  await expect(page.locator("#agConfig")).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("agenda: muestra celulares de Ecuador en formato local y otros números completos", async ({ page }) => {
+  await page.route("**/vendor/supabase-js-*.js", (route) => route.fulfill({ contentType: "text/javascript", body: 'window.supabase = { createClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: "simulado", user: { email: "prueba@example.test" } } } }) } }) };' }));
+  await page.route("**/api/panel-config", (route) => route.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
+  const base = { fecha: "2026-10-08", estado: "confirmada", tramite: "Poder general", canal: "whatsapp" };
+  const citas = [
+    { ...base, id: "a", codigo: "1111", hora: "09:00", nombre: "Ana", telefono: "593999999991", conversacionId: "c1" },
+    { ...base, id: "b", codigo: "2222", hora: "10:00", nombre: "John", telefono: "14155552671", conversacionId: "c2" },
+    { ...base, id: "c", codigo: "3333", hora: "11:00", nombre: "Marta", telefono: "59322345678", conversacionId: "c3" }
+  ];
+  await page.route("**/api/panel?**", (route) => route.fulfill({ json: new URL(route.request().url()).searchParams.get("accion") === "agenda" ? { fecha: "2026-10-08", citas, personal: [] } : [] }));
+  await page.goto("/panel/");
+  await page.getByRole("button", { name: "Agenda", exact: true }).click();
+  const lista = page.locator("#agLista");
+  await expect(lista.getByRole("link", { name: "099 999 9991" })).toHaveAttribute("href", "https://wa.me/593999999991");
+  await expect(lista.getByRole("link", { name: "+14155552671" })).toHaveAttribute("href", "https://wa.me/14155552671");
+  await expect(lista.getByRole("link", { name: "+59322345678" })).toBeVisible();
+});
