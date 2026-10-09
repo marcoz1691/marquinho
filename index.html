@@ -15,11 +15,9 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/logo/icono-512.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
-<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/fonts/archivo.css">
+<link rel="stylesheet" href="assets/fonts/phosphor.css">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -171,7 +169,7 @@
   </section>
 </main>
 
-<button class="chat-lanzador" id="chatAbrir" type="button" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
+<button class="chat-lanzador" id="chatAbrir" type="button" aria-label="Abrir el chat de ayuda" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
 <section class="chat" id="chat" role="dialog" aria-label="Chat con la Notaría 41" hidden>
   <header class="chat__cab">
     <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="36" height="36">
