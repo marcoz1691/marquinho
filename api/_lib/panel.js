@@ -146,14 +146,14 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new Aviso("Fecha inválida");
       const C = await contenido();
       const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
-      return { fecha, personal: await almacen.listaPersonal(), citas: await Promise.all((await almacen.agenda(fecha)).map(async (x) => ({ ...x, canal: canalDe((await conversacion(x.conversacionId)).telefono), tramite: nombreDe(x.tramiteId) }))) };
+      return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: nombreDe(x.tramiteId) })) };
     },
 
     async buscarTicket(codigo) {
       if (!/^[1-9]\d{3}$/.test(codigo || "")) throw new Aviso("Escribe un ticket válido de 4 dígitos.");
       const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
       const C = await contenido();
-      return Promise.all((await almacen.citasPorCodigo(codigo, hoy)).map(async (x) => ({ ...x, canal: canalDe((await conversacion(x.conversacionId)).telefono), tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" })));
+      return (await almacen.citasPorCodigo(codigo, hoy)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" }));
     },
 
     async asignarCita(citaId, persona) {

@@ -1,7 +1,7 @@
-import { reglasCitas, horasLibres, celular } from "./citas.js";
 // Asistente de WhatsApp de la notaría: conversa con Claude, ejecuta sus herramientas y guarda la conversación.
 // Interfaz: crearAsistente(dependencias).atender(mensaje) -> textos a enviar al cliente.
 import { construirResumen } from "./resumen.js";
+import { reglasCitas, horasLibres, celular } from "./citas.js";
 import { tipoArchivo } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
@@ -229,8 +229,11 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
           return error(`El cliente ya tiene una cita ${a.estado}${ta ? " para " + ta.nombre : ""} el ${a.fecha} a las ${a.hora}. Pregúntale si quiere cambiarla por esta; si dice que sí, vuelve a usar solicitar_cita con reprogramar: true.`);
         }
         // Cupo por hora: cuentan las citas pendientes y confirmadas que empiezan en esa misma hora.
-        const libres = await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: ctx.t, excluirIds: activas.map(a => a.id) });
-        if (!libres.includes(hora)) return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
+        // Sofía acepta cualquier minuto (09:15): basta con que su hora del reloj tenga cupo y no esté bloqueada. Que no haya pasado ya se revisó arriba.
+        const excluirIds = activas.map((a) => a.id), inicioDia = new Date(i.fecha + "T00:00:00-05:00");
+        const conCupo = (await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: inicioDia, excluirIds })).some((h) => h.slice(0, 2) === hora.slice(0, 2));
+        const libres = conCupo ? [] : await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: ctx.t, excluirIds });
+        if (!conCupo) return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
         // En la web el celular no está verificado: la cita queda pendiente para que nadie llene la agenda ni reciba mensajes que no pidió.
         const confirmada = !!t && !t.revision && !esWeb(conv), esHoy = i.fecha === hoy, aviso = esWeb(conv) ? "por WhatsApp" : "por este chat";
         // El recordatorio sale a las 17:00 del día anterior.

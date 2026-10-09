@@ -179,6 +179,11 @@ describe("herramientas", () => {
       expect(avisar).toHaveBeenCalled();
     });
 
+    it("acepta una hora que no es en punto ni y media si esa hora tiene cupo", async () => {
+      await nuevo(pedir({ tramite_id: "poder", fecha: "2026-10-08", hora: "09:15" })).atender(mensaje());
+      expect(await citas()).toEqual([expect.objectContaining({ hora: "09:15", estado: "confirmada" })]);
+    });
+
     it("con la hora llena no agenda y ofrece las horas libres de ese día", async () => {
       const otra = await almacen.conversacion("593990000001", "Luis");
       await almacen.crearSolicitudCita({ conversacionId: otra.id, tramiteId: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Luis", estado: "confirmada" });

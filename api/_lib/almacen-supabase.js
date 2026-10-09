@@ -143,7 +143,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     async citasPorCodigo(codigo, desdeFecha) {
       const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("codigo", codigo).gte("fecha", desdeFecha)
         .in("estado", ["pendiente", "confirmada"]).order("fecha").order("hora"));
-      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
+      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono, telefonoConversacion: r.conversaciones?.telefono }));
     },
     async solicitudesCita(conversacionId) { return ok(await db.from("solicitudes_cita").select("*").eq("conversacion_id", conversacionId).order("creada")).map(cita); },
     async cita(id) { return cita(ok(await db.from("solicitudes_cita").select("*").eq("id", id).maybeSingle())); },
@@ -158,16 +158,16 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     async marcarRecordada(id) { ok(await db.from("solicitudes_cita").update({ recordada: true }).eq("id", id)); },
     async citasEntre(desde, hasta) {
       const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").gte("fecha", desde).lte("fecha", hasta).order("fecha").order("hora").order("creada"));
-      return filas.map(r => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
+      return filas.map(r => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono, telefonoConversacion: r.conversaciones?.telefono }));
     },
     async agenda(fecha) {
       const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("fecha", fecha).order("hora").order("creada"));
-      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
+      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono, telefonoConversacion: r.conversaciones?.telefono }));
     },
     async listaPersonal() { return ok(await db.from("personal").select("email, nombre").order("nombre")); },
     async citasDelDia(fecha) {
       const filas = ok(await db.from("solicitudes_cita").select("*, conversaciones(telefono)").eq("fecha", fecha).eq("estado", "confirmada").eq("recordada", false).order("hora"));
-      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono }));
+      return filas.map((r) => ({ ...cita(r), telefono: r.contacto || r.conversaciones?.telefono, telefonoConversacion: r.conversaciones?.telefono }));
     },
     async contarUso(clave, ventanaMs, ahora) {
       return ok(await db.rpc("incrementar_uso", { p_clave: clave, p_ventana: Math.floor(ahora / ventanaMs) }));

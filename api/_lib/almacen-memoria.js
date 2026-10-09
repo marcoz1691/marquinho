@@ -111,7 +111,7 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async citasPorCodigo(codigo, desdeFecha) {
       return citas.filter((c) => c.codigo === codigo && c.fecha >= desdeFecha && ["pendiente", "confirmada"].includes(c.estado))
         .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
-        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));
+        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono, telefonoConversacion: (porId(c.conversacionId) || {}).telefono }));
     },
     async solicitudesCita(conversacionId) { return citas.filter((c) => c.conversacionId === conversacionId).map(copia); },
     async cita(id) { return copia(citas.find((c) => c.id === id) || null); },
@@ -123,12 +123,12 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     },
     async agenda(fecha) {
       return citas.filter((c) => c.fecha === fecha).sort((a, b) => a.hora.localeCompare(b.hora))
-        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));
+        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono, telefonoConversacion: (porId(c.conversacionId) || {}).telefono }));
     },
     async listaPersonal() { return []; },
     async citasDelDia(fecha) {
       return citas.filter((c) => c.fecha === fecha && c.estado === "confirmada" && !c.recordada)
-        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono }));
+        .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono, telefonoConversacion: (porId(c.conversacionId) || {}).telefono }));
     },
     async contarUso(clave, ventanaMs, ahora) {
       const k = clave + "|" + Math.floor(ahora / ventanaMs);
