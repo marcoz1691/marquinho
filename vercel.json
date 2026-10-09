@@ -89,6 +89,24 @@
           "value": "no-store"
         }
       ]
+    },
+    {
+      "source": "/assets/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/logo/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000"
+        }
+      ]
     }
   ]
 }
