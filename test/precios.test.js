@@ -26,3 +26,9 @@ it("una caída del almacén devuelve 503 sin publicar ni cachear datos incomplet
   expect(r.headers.get("Cache-Control")).toBe("no-store");
   expect(JSON.stringify(await r.json())).not.toContain("dato privado");
 });
+
+it("no publica los cupos ni los bloqueos de la agenda (sus motivos son internos)", async () => {
+  const ajustes = async () => ({ sbu: 500, anio: "2027", "citas.porHora": "3", "citas.bloqueos": '[{"fecha":"2026-10-20","hora":null,"motivo":"Viaje del notario"}]' });
+  const r = await crearManejadorPrecios({ almacen: { precios: async () => [], ajustes } })();
+  expect(await r.json()).toEqual({ precios: {}, sbu: 500, anio: "2027" });
+});

@@ -221,9 +221,11 @@ function telefonoCita(x) {
   const original = String(x.contacto || x.telefono || "");
   if (original.startsWith("web:")) return "";
   const numero = original.replace(/^form:/, "").replace(/\D/g, "");
-  if (!/^593\d{9}$/.test(numero)) return "";
+  if (numero.length < 7) return "";
+  // Celulares de Ecuador en formato local (099 999 9991); cualquier otro número (extranjero o fijo) completo con «+».
   const local = "0" + numero.slice(3);
-  return `<a href="https://wa.me/${esc(numero)}" target="_blank" rel="noopener">${esc(local.slice(0,3) + " " + local.slice(3,6) + " " + local.slice(6))}</a>`;
+  const texto = /^593\d{9}$/.test(numero) ? local.slice(0,3) + " " + local.slice(3,6) + " " + local.slice(6) : "+" + numero;
+  return `<a href="https://wa.me/${esc(numero)}" target="_blank" rel="noopener">${esc(texto)}</a>`;
 }
 async function cargarAgenda(opciones = {}) {
   // El refresco automático no repinta mientras eligen a alguien o tienen el puntero sobre la lista.
