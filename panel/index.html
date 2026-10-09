@@ -112,16 +112,18 @@
     <input type="date" id="agFecha" aria-label="Fecha">
     <button class="btn btn--line" data-dia="1" aria-label="Día siguiente">›</button>
     <button class="btn btn--line" data-dia="0">Hoy</button></div>
-  <form class="ag-top" id="agBuscar"><label class="ag-ticket" for="agTicket">Buscar ticket<input id="agTicket" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Buscar</button><button class="btn btn--line" type="button" id="agLimpiar">Limpiar búsqueda</button><p id="agEstado" aria-live="polite"></p></form>
+  <form class="ag-top" id="agBuscar"><label for="agTicket">Buscar ticket</label><input id="agTicket" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required><button class="btn" type="submit">Buscar</button><button class="btn btn--line" type="button" id="agLimpiar">Limpiar búsqueda</button><p id="agEstado" aria-live="polite"></p></form>
   <div class="ag-lista ag-resultados" id="agResultados"></div>
+  <div id="agResumen" class="ag-resumen" aria-label="Resumen del día"></div>
   <div class="ag-lista" id="agLista"></div>
+  <details id="agConfig" class="ag-config" hidden><summary>Cupos y bloqueos</summary><div id="agConfigContenido"></div><p id="agConfigMensaje" role="status"></p></details>
 </section>
 
 <section id="preciosV" hidden>
   <h2>Precios</h2>
   <p>Los valores finales incluyen IVA. Los documentos habilitantes se cobran aparte. Los cambios se ven en la web en 1 minuto y en Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.</p>
   <div id="preciosAjustes" class="precios-top"></div>
-  <label for="preciosBuscar">Buscar trámite</label><input id="preciosBuscar" type="search">
+  <div class="precios-filtros"><label for="preciosBuscar">Buscar trámite<input id="preciosBuscar" type="search"></label><label class="solo-editados"><input id="preciosEditados" type="checkbox"> Solo editados</label></div>
   <p id="preciosMensaje" role="status" aria-live="polite"></p>
   <div id="preciosLista"></div>
 </section>

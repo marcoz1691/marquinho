@@ -210,10 +210,21 @@ function pestana(id) {
   if (id === "preciosV") cargarPreciosPanel();
   $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV";
   document.querySelectorAll("#tabs [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === id));
-  if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); }
+  if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); cargarCitasConfig(); }
 }
 $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) pestana(b.dataset.tab); });
 
+let agendaPanel = null, filtroAgenda = "total";
+const canalEtiqueta = (x) => ({ whatsapp: "WhatsApp", web: "Chat web", formulario: "Formulario" }[x.canal] || "");
+const botonDetalle = (x) => x.canal === "formulario" ? "Ver detalle" : "Ver chat";
+function telefonoCita(x) {
+  const original = String(x.contacto || x.telefono || "");
+  if (original.startsWith("web:")) return "";
+  const numero = original.replace(/^form:/, "").replace(/\D/g, "");
+  if (!/^593\d{9}$/.test(numero)) return "";
+  const local = "0" + numero.slice(3);
+  return `<a href="https://wa.me/${esc(numero)}" target="_blank" rel="noopener">${esc(local.slice(0,3) + " " + local.slice(3,6) + " " + local.slice(6))}</a>`;
+}
 async function cargarAgenda(opciones = {}) {
   // El refresco automático no repinta mientras eligen a alguien o tienen el puntero sobre la lista.
   if (opciones.auto && (document.activeElement?.tagName === "SELECT" || $("#agLista").matches(":hover"))) return;
@@ -222,19 +233,49 @@ async function cargarAgenda(opciones = {}) {
   const activas = a.citas.filter((x) => x.estado !== "rechazada").length;
   const texto = (a.fecha === hoyQuito() ? "Hoy, " : "") + titulo + ` · ${activas} cita${activas === 1 ? "" : "s"}`;
   $("#agTitulo").textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
+  agendaPanel = a;
+  pintarAgenda();
+}
+function pintarAgenda() {
+  const a = agendaPanel;
+  const estados = { total: "Total", pendiente: "Pendientes", confirmada: "Confirmadas", atendida: "Atendidas", rechazada: "Canceladas" };
+  $("#agResumen").innerHTML = Object.entries(estados).map(([k,v]) => `<button class="btn btn--line ${k === "pendiente" ? "ag-pendientes" : ""}" data-filtro-ag="${k}" aria-pressed="${filtroAgenda === k}">${v} <b>${k === "total" ? a.citas.length : a.citas.filter(x => k === "rechazada" ? ["rechazada", "cancelada"].includes(x.estado) : x.estado === k).length}</b></button>`).join("");
   const personas = a.personal.map((p) => p.nombre || p.email);
   const opcionesDe = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
     .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
   const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
-  $("#agLista").innerHTML = a.citas.map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
+  $("#agLista").innerHTML = a.citas.filter(x => filtroAgenda === "total" || (filtroAgenda === "rechazada" ? ["rechazada", "cancelada"].includes(x.estado) : x.estado === filtroAgenda)).map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
       <span class="ag-hora">${esc(x.hora)}${x.codigo ? `<small>Ticket ${esc(x.codigo)}</small>` : ""}</span>
-      <div><b>${esc(x.nombre)} ${ESTADO[x.estado] || ""}</b><small>${esc(x.tramite)}${x.telefono && !String(x.telefono).startsWith("web:") ? ` · <a href="https://wa.me/${esc(x.telefono)}" target="_blank" rel="noopener">+${esc(x.telefono)}</a>` : ""}${x.nota ? " · " + esc(x.nota) : ""}</small></div>
-      ${x.estado === "rechazada" ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}
+      <div class="ag-cliente"><b>${esc(x.nombre)}</b><div class="ag-etiquetas">${ESTADO[x.estado] || '<span class="tag">Cancelada</span>'}${canalEtiqueta(x) ? `<span class="tag tag--canal">${canalEtiqueta(x)}</span>` : ""}</div><small>${[esc(x.tramite), telefonoCita(x), esc(x.nota)].filter(Boolean).join(" · ")}</small></div>
+      ${["rechazada", "cancelada"].includes(x.estado) ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}
       <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Rechazar</button>` : ""}
         ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Atendida</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Cancelar</button>` : ""}
-        <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div>
-    </div>`).join("") || '<p class="vacio">No hay citas para este día.</p>';
+        <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">${botonDetalle(x)}</button></div>
+    </div>`).join("") || `<p class="vacio">${a.citas.length ? 'No hay citas con este estado.' : 'No hay citas para este día. Puedes revisar otra fecha con las flechas.'}</p>`;
 }
+async function cargarCitasConfig() {
+  try { pintarCitasConfig(await api("GET", { accion: "citasConfig" })); }
+  catch { $("#agConfig").hidden = true; }
+}
+function pintarCitasConfig(c) {
+  $("#agConfig").hidden = !c.esAdmin;
+  if (!c.esAdmin) return;
+  $("#agConfigContenido").innerHTML = `<form id="agCupo" class="config-fila"><label>Citas por hora<input name="porHora" type="number" min="1" max="20" required value="${esc(c.porHora)}"></label><button class="btn">Guardar</button><small>Valor oficial: ${esc(c.porHoraOficial)}</small></form>
+    <ul class="bloqueos">${c.bloqueos.map(b => `<li><span>${esc(b.fecha)} · ${esc(b.hora || "Día completo")} · ${esc(b.motivo)}${b.fijo ? " · Feriado fijo" : ""}</span>${b.fijo ? "" : `<button class="btn btn--line" data-quitar-fecha="${esc(b.fecha)}" data-quitar-hora="${esc(b.hora || "")}">Quitar</button>`}</li>`).join("") || "<li>No hay bloqueos próximos.</li>"}</ul>
+    <form id="agBloqueo" class="config-fila"><label>Fecha del bloqueo<input name="fecha" type="date" min="${hoyQuito()}" required></label><label>Hora (opcional)<select name="hora"><option value="">Día completo</option>${Array.from({length:24},(_,h) => `${String(h).padStart(2,"0")}:00`).map(h => `<option>${h}</option>`).join("")}</select></label><label>Motivo<input name="motivo" maxlength="80"></label><button class="btn">Agregar bloqueo</button></form>`;
+}
+async function guardarCitasConfig(pedido) {
+  try { pintarCitasConfig(await api("POST", pedido)); $("#agConfigMensaje").textContent = "Guardado."; }
+  catch (e) { $("#agConfigMensaje").textContent = e.message; }
+}
+$("#agConfig").addEventListener("submit", e => {
+  e.preventDefault(); const datos = Object.fromEntries(new FormData(e.target));
+  guardarCitasConfig(e.target.id === "agCupo" ? { accion: "guardarCupo", porHora: Number(datos.porHora) } : { accion: "agregarBloqueo", ...datos, hora: datos.hora || null });
+});
+$("#agConfig").addEventListener("click", e => {
+  const b = e.target.closest("[data-quitar-fecha]");
+  if (b) guardarCitasConfig({ accion: "quitarBloqueo", fecha: b.dataset.quitarFecha, hora: b.dataset.quitarHora || null });
+});
 // La búsqueda cruza días; sus resultados quedan junto a la agenda del día elegido.
 let busquedaTicket = 0;
 $("#agBuscar").addEventListener("submit", async (e) => {
@@ -248,7 +289,7 @@ $("#agBuscar").addEventListener("submit", async (e) => {
     if (turno !== busquedaTicket) return;
     const citas = Array.isArray(r) ? r : r.citas || [];
     $("#agEstado").textContent = citas.length ? "Citas encontradas: " + citas.length : "No hay citas activas con ese ticket.";
-    $("#agResultados").innerHTML = citas.map((x) => `<div class="ficha"><b>${esc(x.fecha)} · ${esc(x.hora)} · Ticket ${esc(x.codigo)}</b><span>${esc(x.nombre)} · ${esc(x.tramite)} · ${esc(x.estado)}</span><small>${x.telefono && !String(x.telefono).startsWith("web:") ? esc(x.telefono) : ""}</small><div class="acc"><button type="button" class="btn btn--line" data-chat="${esc(x.conversacionId)}">Ver chat</button></div></div>`).join("");
+    $("#agResultados").innerHTML = citas.map((x) => `<div class="ficha"><b>${esc(x.fecha)} · ${esc(x.hora)} · Ticket ${esc(x.codigo)}</b><span>${esc(x.nombre)} · ${esc(x.tramite)} · ${esc(x.estado)}</span><small>${telefonoCita(x)}${canalEtiqueta(x) ? ` · ${canalEtiqueta(x)}` : ""}</small><div class="acc"><button type="button" class="btn btn--line" data-chat="${esc(x.conversacionId)}">${botonDetalle(x)}</button></div></div>`).join("");
   } catch (err) { if (turno === busquedaTicket) $("#agEstado").textContent = err.message; }
 });
 $("#agLimpiar").addEventListener("click", () => {
@@ -262,6 +303,7 @@ $("#agendaV").addEventListener("change", async (e) => {
 $("#agendaV").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b) return;
   try {
+    if (b.dataset.filtroAg) { filtroAgenda = b.dataset.filtroAg; pintarAgenda(); return; }
     if (b.dataset.dia !== undefined) {
       const f = new Date(($("#agFecha").value || hoyQuito()) + "T12:00:00Z"); f.setUTCDate(f.getUTCDate() + Number(b.dataset.dia));
       $("#agFecha").value = b.dataset.dia === "0" ? hoyQuito() : f.toISOString().slice(0, 10);
@@ -314,6 +356,7 @@ $("#detalle").addEventListener("click", async (e) => {
 
 /* ---------- Precios y SBU ---------- */
 let preciosPanel = null;
+const borradoresPrecio = new Map();
 const ETIQUETA_VALOR = { pct: "Porcentaje del SBU (%)", fija: "Valor en dólares (USD)" };
 // "2026-10-07T15:00:00Z" → "7 oct 2026, 10:00" (hora de Quito).
 function fechaLegible(iso) {
@@ -333,7 +376,7 @@ async function cargarPreciosPanel() {
     preciosPanel = await api("GET", { accion: "precios" });
     const T = preciosPanel.tarifas;
     $("#preciosAjustes").innerHTML = preciosPanel.esAdmin
-      ? `<label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}`
+      ? `<h3>Salario básico (SBU) y año</h3><label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}`
       : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>`;
     pintarPrecios();
   } catch (e) { $("#preciosMensaje").textContent = e.message; }
@@ -344,16 +387,17 @@ function tarifasEnPantalla() {
 function pintarPrecios() {
   if (!preciosPanel) return;
   const buscar = $("#preciosBuscar").value.toLocaleLowerCase();
-  $("#preciosLista").innerHTML = preciosPanel.tramites.filter((t) => t.nombre.toLocaleLowerCase().includes(buscar)).map((t) => {
-    const f = t.tarifa;
+  let categoriaPrecio;
+  $("#preciosLista").innerHTML = `<div class="precios-cabecera"><span>Trámite</span><span>Tipo</span><span>Valor</span><span>Unidad</span><span>Total con IVA</span><span>Acciones</span></div>` + preciosPanel.tramites.toSorted((a,b) => String(a.cat || "").localeCompare(String(b.cat || ""))).filter((t) => t.nombre.toLocaleLowerCase().includes(buscar) && (!$("#preciosEditados").checked || t.editada)).map((t) => {
+    const f = borradoresPrecio.get(t.id) || t.tarifa;
     const campos = preciosPanel.esAdmin ? `<div class="precio-campos">
       <label>Tipo<select data-campo="tipo">${Object.entries(TIPOS_PRECIO).map(([k, v]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
-      <label><span data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
-      <label>Unidad (opcional, por ejemplo «por firma»)<input data-campo="unidad" maxlength="30" value="${esc(f.unidad)}"></label>
+      <div class="precio-valor"><label><span data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
       <label>Tabla<select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
-      <button class="btn" data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div>` : `<p>${esc(TIPOS_PRECIO[f.tipo])}</p>`;
-    return `<article class="precio-fila" data-tramite="${esc(t.id)}"><h3>${esc(t.nombre)}</h3><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><small>${t.editada ? `Editado por ${esc(t.actualizadoPor)} · ${esc(fechaLegible(t.actualizadoEn))}` : "Valor oficial"}</small>${campos}</article>`;
+      </div><label>Unidad<input data-campo="unidad" placeholder="Por firma (opcional)" maxlength="30" value="${esc(f.unidad)}"></label><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><div class="precio-acciones"><button class="btn" disabled data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div></div>` : `<div class="precio-consulta"><span>${esc(TIPOS_PRECIO[f.tipo])}</span><span>${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) + " %" : f.valor ?? "—")}</span><span>${esc(f.unidad || "—")}</span><output>${esc(finalPrecio(t, tarifasEnPantalla()))}</output><span>Solo lectura</span></div>`;
+    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila" data-tramite="${esc(t.id)}"><div class="precio-nombre"><h3>${esc(t.nombre)}</h3><small>${t.editada ? `Editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Valor oficial"}</small><span class="precio-pendiente" hidden>Cambios sin guardar</span></div>${campos}</article>`;
   }).join("") || "<p>No hay trámites con ese nombre.</p>";
+  if (!$("#preciosLista .precio-fila")) $("#preciosLista").insertAdjacentHTML("beforeend", "<p>No hay trámites con estos filtros.</p>");
   document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
 }
 function precioDeFila(fila) {
@@ -369,8 +413,15 @@ function actualizarPrecio(fila) {
   // Solo se muestra lo que aplica al tipo elegido, y el valor dice si son % del SBU o dólares.
   fila.querySelector('[data-campo="tabla"]').closest("label").hidden = p.tipo !== "cuantia";
   fila.querySelector("[data-etiqueta-valor]").textContent = ETIQUETA_VALOR[p.tipo] || "Valor";
+  const original = preciosPanel.tramites.find(t => t.id === fila.dataset.tramite).tarifa;
+  const cambiado = p.tipo !== original.tipo || p.unidad !== (original.unidad || "") || (["pct", "fija"].includes(p.tipo) && Math.abs(p.valor - Number(original.valor)) > 1e-10) || (p.tipo === "cuantia" && p.tabla !== original.tabla);
+  fila.classList.toggle("precio-fila--cambiada", cambiado);
+  fila.querySelector(".precio-pendiente").hidden = !cambiado;
+  fila.querySelector('[data-precio="guardar"]').disabled = !cambiado;
+  if (cambiado) borradoresPrecio.set(fila.dataset.tramite, p); else borradoresPrecio.delete(fila.dataset.tramite);
   fila.querySelector("output").textContent = finalPrecio({ tarifa: p }, tarifasEnPantalla());
 }
+$("#preciosEditados").addEventListener("change", pintarPrecios);
 $("#preciosBuscar").addEventListener("input", pintarPrecios);
 $("#preciosV").addEventListener("input", (e) => {
   const fila = e.target.closest(".precio-fila");
@@ -380,7 +431,7 @@ $("#preciosV").addEventListener("input", (e) => {
 $("#preciosV").addEventListener("change", (e) => { const fila = e.target.closest(".precio-fila"); if (fila) actualizarPrecio(fila); });
 $("#preciosV").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
-  if (!b || !preciosPanel?.esAdmin) return;
+  if (!b || !preciosPanel?.esAdmin || !(b.id || b.dataset.precio)) return;
   try {
     let pedido;
     if (b.id === "guardarSbu") {
@@ -403,10 +454,11 @@ $("#preciosV").addEventListener("click", async (e) => {
     }
     b.disabled = true;
     await api("POST", pedido);
+    if (pedido.tramiteId) borradoresPrecio.delete(pedido.tramiteId);
     $("#preciosMensaje").textContent = "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
     await cargarPreciosPanel();
   } catch (err) { $("#preciosMensaje").textContent = err.message; }
-  finally { b.disabled = false; }
+  finally { if (b.isConnected && b.closest(".precio-fila")) actualizarPrecio(b.closest(".precio-fila")); else b.disabled = false; }
 });
 
 const { data: { session } } = await sb.auth.getSession();

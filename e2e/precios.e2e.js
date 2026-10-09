@@ -36,7 +36,7 @@ test("precios: el personal consulta sin controles de edición @movil", async ({ 
   await expect(page.locator(".precio-fila output")).toContainText("66,52");
   await expect(page.locator("#preciosV button")).toHaveCount(0);
   await expect(page.locator("#preciosV select")).toHaveCount(0);
-  await expect(page.locator("#preciosV input")).toHaveCount(1);
+  await expect(page.locator("#preciosV input")).toHaveCount(2);
 });
 
 test("precios: cambia tipo, SBU y restaura el valor oficial", async ({ page }) => {
@@ -109,4 +109,18 @@ test("precios: sin SBU editado no aparece el botón de volver al de la hoja", as
 test("precios: avisa que una conversación ya abierta con Sofía puede seguir citando el valor anterior", async ({ page }) => {
   await preparar(page, true);
   await expect(page.locator("#preciosV")).toContainText("conversación ya abierta");
+});
+
+ test("precios: Guardar solo se habilita con cambios y conserva el borrador al buscar", async ({ page }) => {
+  await preparar(page, true);
+  const fila = page.locator(".precio-fila"), guardar = fila.getByRole("button", { name: "Guardar", exact: true });
+  await expect(guardar).toBeDisabled();
+  await fila.locator('[data-campo="valor"]').fill("10");
+  await expect(guardar).toBeEnabled();
+  await expect(fila).toContainText("Cambios sin guardar");
+  await page.getByLabel("Buscar trámite").fill("otro");
+  await page.getByLabel("Buscar trámite").fill("");
+  await expect(fila.locator('[data-campo="valor"]')).toHaveValue("10");
+  await fila.locator('[data-campo="valor"]').fill("12");
+  await expect(guardar).toBeDisabled();
 });
