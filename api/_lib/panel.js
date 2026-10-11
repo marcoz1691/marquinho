@@ -1,3 +1,5 @@
+import { FUNCIONES, leerFunciones } from "./funciones.js";
+import { registrar, canalDeTelefono, CLAVES, PRECIOS } from "./metricas.js";
 import { reglasCitas, fechaQuito, fechaValida } from "./citas.js";
 import { minutos } from "../../js/nucleo.js";
 // Acciones del panel del personal sobre conversaciones, citas y documentos.
@@ -13,7 +15,7 @@ const TURNO_MS = 30 * 1000;
 const legible = (historial) => historial.map(textoVisible).filter(Boolean);
 // Texto libre del personal: sin caracteres de control y con un largo máximo.
 const limpio = (v, max) => String(v ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, max);
-export const canalDe = telefono => String(telefono).startsWith("web:") ? "web" : String(telefono).startsWith("form:") ? "formulario" : "whatsapp";
+export const canalDe = canalDeTelefono;
 
 export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)), plantillas = {} }) {
   async function dentroDeVentana(conversacionId) {
@@ -52,6 +54,52 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
   }
 
   return {
+    async funciones() {
+      const detalles = await almacen.ajustesConDetalle();
+      const f = leerFunciones(Object.fromEntries(detalles.map(r => [r.clave, r.valor])));
+      return { funciones: FUNCIONES.map(x => {
+        const d = detalles.find(r => r.clave === "funcion." + x.id);
+        return { ...x, activa: f[x.id], actualizadoPor: d?.actualizadoPor || "", actualizadoEn: d?.actualizadoEn || "" };
+      }) };
+    },
+    async guardarFuncion({ id, activa }, por) {
+      if (!FUNCIONES.some(f => f.id === id) || typeof activa !== "boolean") throw new Aviso("Elige una función y un estado válidos.");
+      await almacen.guardarAjuste("funcion." + id, activa ? "1" : "0", por);
+      return { ok: true, ...await this.funciones() };
+    },
+    async metricas(desde, hasta) {
+      const hoy = fechaQuito(ahora());
+      hasta ??= hoy;
+      if (!fechaValida(hasta)) throw new Aviso("Elige una fecha válida.");
+      desde ??= fechaQuito(new Date(new Date(hasta + "T12:00:00Z").getTime() - 29 * 864e5));
+      if (!fechaValida(desde) || !fechaValida(hasta) || desde > hasta || (Date.parse(hasta) - Date.parse(desde)) / 864e5 > 365) throw new Aviso("Elige fechas válidas y un período de hasta 366 días.");
+      const ajustes = await almacen.ajustes(), filas = await almacen.metricas(desde, hasta);
+      const totales = Object.fromEntries(CLAVES.map(k => [k, 0])), dias = new Map();
+      for (const r of filas) {
+        totales[r.clave] = (totales[r.clave] || 0) + r.valor;
+        if (!dias.has(r.fecha)) dias.set(r.fecha, {});
+        const v = dias.get(r.fecha);
+        v[r.clave] = (v[r.clave] || 0) + r.valor;
+      }
+      const precios = Object.fromEntries(Object.entries(PRECIOS).map(([k, v]) => {
+        const guardado = ajustes["metricas.precio." + k], n = Number(guardado);
+        return [k, guardado != null && Number.isFinite(n) && n >= 0 && n <= 1000 ? n : v];
+      }));
+      const ia = (totales["ia.tokens_entrada"] * precios.entrada + totales["ia.tokens_salida"] * precios.salida + totales["ia.tokens_cache_lectura"] * precios.cacheLectura + totales["ia.tokens_cache_escritura"] * precios.cacheEscritura) / 1e6;
+      const whatsapp = (totales["recordatorio.enviado"] + totales["respuesta.automatica"]) * precios.plantillaWhatsapp;
+      const conversaciones = ["whatsapp", "web", "formulario"].reduce((s,c) => s + totales["conv.nueva." + c], 0);
+      return { desde, hasta, pilotoInicio: ajustes["piloto.inicio"] || null, totales, porDia: [...dias].sort(([a],[b]) => a.localeCompare(b)).map(([fecha,valores]) => ({ fecha, valores })), precios, costo: { ia, whatsapp, total: ia + whatsapp, porConversacion: conversaciones ? ia / conversaciones : 0 } };
+    },
+    async guardarPreciosMetricas(b, por) {
+      for (const k of Object.keys(PRECIOS)) if (typeof b[k] !== "number" || !Number.isFinite(b[k]) || b[k] < 0 || b[k] > 1000) throw new Aviso("Escribe precios entre 0 y 1000.");
+      for (const k of Object.keys(PRECIOS)) await almacen.guardarAjuste("metricas.precio." + k, b[k], por);
+      return this.metricas();
+    },
+    async guardarInicioPiloto({ fecha }, por) {
+      if (fecha !== null && !fechaValida(fecha)) throw new Aviso("Elige una fecha válida.");
+      await almacen.guardarAjuste("piloto.inicio", fecha || "", por);
+      return this.metricas();
+    },
     async citasConfig() {
       const r = reglasCitas(await contenido(), await almacen.ajustes());
       return { porHora:r.porHora, porHoraOficial:r.porHoraOficial, bloqueos:r.bloqueos.filter(b=>b.fecha>=fechaQuito(ahora())) };
@@ -170,6 +218,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (cita.estado === estado) throw new Aviso(`La cita ya está ${estado}.`);
       if (cita.estado === "rechazada" || cita.estado === "atendida") throw new Aviso("Esta cita ya se cerró; si el cliente quiere otra, que la pida de nuevo.");
       await almacen.actualizarCita(citaId, { estado, motivo });
+      if (["atendida", "rechazada"].includes(estado)) await registrar(almacen, estado === "atendida" ? "cita.atendida" : "cita.cancelada", 1, ahora());
       if (estado === "atendida") return { avisado: false };
       const c = await conversacion(cita.conversacionId), C = await contenido();
       const tramite = (C.data.tramites.find((t) => t.id === cita.tramiteId) || {}).nombre;

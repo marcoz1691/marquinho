@@ -203,3 +203,21 @@ it('lee configuración y ejecuta cupos como administrador con auditoría',async(
  expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({accion,ok:true}));
  }
 });
+it("protege funciones y métricas y audita el objetivo del interruptor", async () => {
+ const { m, almacen, panel } = preparar();
+ panel.guardarFuncion = vi.fn(async () => ({ ok: true, funciones: [] }));
+ expect((await m.POST(req("POST", "", { body: { accion: "guardarFuncion", id: "agenda", activa: false } }))).status).toBe(403);
+ expect((await m.GET(req("GET", "?accion=metricas"))).status).toBe(403);
+ almacen.esAdmin = async () => true;
+ const r = await m.POST(req("POST", "", { body: { accion: "guardarFuncion", id: "agenda", activa: false } }));
+ expect(await r.json()).toEqual({ ok: true, funciones: [], esAdmin: true });
+ expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ accion: "guardarFuncion", objetivo: "funcion.agenda", ok: true }));
+});
+it("devuelve 400 con fechas inválidas y audita la lectura de métricas", async () => {
+ const { crearPanel } = await import("../api/_lib/panel.js");
+ const { m, almacen, panel } = preparar(); almacen.esAdmin = async () => true;
+ panel.metricas = (...args) => crearPanel({ almacen }).metricas(...args);
+ const r = await m.GET(req("GET", "?accion=metricas&desde=2026-02-30&hasta=2026-10-11"));
+ expect(r.status).toBe(400);
+ expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ accion: "metricas", ok: false }));
+});

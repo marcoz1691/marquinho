@@ -501,3 +501,6 @@ h2,.sub{text-align:left}
   .svc__row.in::after{transform:scaleX(1)}
   .svc__row:active .svc__name{color:var(--accent)}
 }
+
+.servicio-aviso{width:min(100% - 32px,640px);margin:48px auto;padding:24px;overflow-wrap:anywhere}.servicio-aviso h1,.servicio-aviso h2{font-size:clamp(24px,5vw,40px)}
+[hidden]{display:none!important}

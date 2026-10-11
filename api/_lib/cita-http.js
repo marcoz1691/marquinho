@@ -1,3 +1,5 @@
+import { errorWeb } from "./funciones.js";
+import { registrar } from "./metricas.js";
 import { createHash } from "node:crypto";
 import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
 import { construirResumen } from "./resumen.js";
@@ -21,11 +23,13 @@ export function crearManejadorCita({
   const disponibilidad = (C, ajustes, t) => diasDisponibles({ almacen, C, ajustes, desde: fechaQuito(t), ahora: t });
   return {
     async GET(request) {
+      // Lectura estricta: sin ajustes no se conocen los cupos ni los bloqueos, así que no se agenda a ciegas.
+      const ajustes = await almacen.ajustes(), apagada = errorWeb(ajustes, "agenda");
+      if (apagada) return json(apagada, 503);
       const t = new Date(ahora());
       if ((await almacen.contarUso("cita:get:" + huella(request), HORA, t.getTime())) > limites.consultas)
         return json({ error: "Hiciste muchas consultas. Espera un momento o escríbenos por WhatsApp." }, 429);
-      const C = await contenido(),
-        ajustes = await almacen.ajustes();
+      const C = await contenido();
       return json({
         dias: await disponibilidad(C, ajustes, t),
         horario: C.notaria.horario.texto,
@@ -34,6 +38,9 @@ export function crearManejadorCita({
       });
     },
     async POST(request) {
+      // Lectura estricta: sin ajustes no se conocen los cupos ni los bloqueos, así que no se agenda a ciegas.
+      const ajustes = await almacen.ajustes(), apagada = errorWeb(ajustes, "agenda");
+      if (apagada) return json(apagada, 503);
       let b;
       try {
         b = await request.json();
@@ -84,7 +91,6 @@ export function crearManejadorCita({
           409
         );
       }
-      const ajustes = await almacen.ajustes();
       if (b.fecha < hoy || b.fecha > sumarDias(hoy, 29) || !(await horasLibres({ almacen, C, ajustes, fecha: b.fecha, ahora: t })).includes(b.hora))
         return json({ error: "Esa hora acaba de ocuparse. Elige otra.", dias: await disponibilidad(C, ajustes, t) }, 409);
       const [nIp, nDia] = await Promise.all([
@@ -94,6 +100,7 @@ export function crearManejadorCita({
       if (nIp > limites.porIp || nDia > limites.porDia)
         return json({ error: "Hoy recibimos muchas reservas. Escríbenos por WhatsApp o llámanos para agendar." }, 429);
       const conv = await almacen.conversacion("form:" + contacto, nombre);
+      if (!previa) await registrar(almacen, "conv.nueva.formulario", 1, t);
       await almacen.actualizarConversacion(conv.id, {
         nombre,
         consentimiento: true,
@@ -112,6 +119,7 @@ export function crearManejadorCita({
         estado: tramite?.revision ? "pendiente" : "confirmada"
       };
       const nueva = await almacen.crearSolicitudCita(cita);
+      await registrar(almacen, "cita.creada.formulario", 1, t);
       if (cita.estado === "pendiente")
         await avisar(`Nueva solicitud de cita (formulario): ${nombre} (${contacto}) — ${tramite.nombre} — ${cita.fecha} ${cita.hora}. Confírmala en el panel.`);
       else if (cita.fecha === hoy)

@@ -2,7 +2,7 @@
 import { textoVisible } from "./mensajes.js";
 
 export function crearAlmacenMemoria({ personal = [] } = {}) {
-  const precios = new Map(), ajustes = {};
+  const precios = new Map(), ajustes = {}, detalles = {}, metricas = new Map();
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
   let archivos = [], docs = [], citas = [], pendientes = [];
   const turnos = new Map(), usos = new Map(), auditoria = [], conMfa = new Set();
@@ -16,8 +16,11 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async guardarPrecio(p) { precios.set(p.tramiteId, { unidad: "", tabla: "", actualizadoPor: "", ...copia(p), actualizadoEn: new Date().toISOString() }); },
     async restaurarPrecio(id) { precios.delete(id); },
     async ajustes() { return copia(ajustes); },
-    async restaurarAjuste(clave) { delete ajustes[clave]; },
-    async guardarAjuste(clave, valor, por) { ajustes[clave] = clave === "sbu" ? Number(valor) : String(valor); },
+    async ajustesConDetalle() { return copia(Object.values(detalles)); },
+    async sumarMetrica(fecha, clave, valor) { const id = fecha + ":" + clave; metricas.set(id, { fecha, clave, valor: (metricas.get(id)?.valor || 0) + valor }); },
+    async metricas(desde, hasta) { return copia([...metricas.values()].filter(r => r.fecha >= desde && r.fecha <= hasta).sort((a,b) => a.fecha.localeCompare(b.fecha) || a.clave.localeCompare(b.clave))); },
+    async restaurarAjuste(clave) { delete ajustes[clave]; delete detalles[clave]; },
+    async guardarAjuste(clave, valor, por) { ajustes[clave] = clave === "sbu" ? Number(valor) : String(valor); detalles[clave] = { clave, valor: String(valor), actualizadoPor: por || "", actualizadoEn: new Date().toISOString() }; },
     async esAdmin(email) { return personal.some((p) => p.email.toLowerCase() === String(email).toLowerCase() && p.rol === "admin"); },
     async marcarProcesado(waId) {
       if (procesados.has(waId)) return false;

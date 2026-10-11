@@ -216,3 +216,12 @@ describe("Entrada serverless de documentos", () => {
     expect(config.functions["api/documentos.js"]).toEqual({ maxDuration: 30, includeFiles: "data/**" });
   });
 });
+it.each(["documentos", "sitio"])("bloquea recepción con %s apagada", async id => {
+ const { m, almacen } = await preparar();
+ await almacen.guardarAjuste("funcion." + id, "0", "admin");
+ const r = await m.POST(pedir()); expect(r.status).toBe(503); expect((await r.json()).apagada).toBe(true);
+});
+it("cuenta el documento recibido", async () => {
+ const { m, almacen } = await preparar(); await m.POST(pedir());
+ expect(await almacen.metricas("2026-10-07", "2026-10-07")).toContainEqual({ fecha: "2026-10-07", clave: "doc.recibido.web", valor: 1 });
+});

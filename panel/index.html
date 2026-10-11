@@ -10,7 +10,7 @@
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button><button data-tab="funcionesV">Funciones</button><button data-tab="metricasV" hidden>Métricas</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
 
 <section class="acceso" id="acceso" hidden>
   <!-- Entrar -->
@@ -128,6 +128,16 @@
   <div id="preciosLista"></div>
 </section>
 
+<section id="funcionesV" hidden><h2>Funciones</h2><p id="funcionesMensaje" role="status"></p><div id="funcionesLista"></div></section>
+<section id="metricasV" hidden><h2>Métricas</h2>
+<label for="metricasPeriodo">Período</label><select id="metricasPeriodo"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="piloto" disabled>Desde el inicio del piloto</option></select>
+<p id="metricasMensaje" role="status"></p><p id="metricasRango"></p>
+<form id="inicioPilotoForm"><label for="inicioPiloto">Inicio del piloto</label><input id="inicioPiloto" type="date"><button class="btn">Guardar inicio</button></form>
+<div id="metricasTarjetas" class="metricas-tarjetas"></div>
+<h3>Por semana (lunes a domingo)</h3><div class="metricas-tabla"><table><thead><tr><th>Semana</th><th>Conversaciones</th><th>Citas</th><th>Costo</th></tr></thead><tbody id="metricasSemanas"></tbody></table></div>
+<button id="metricasCsv" class="btn" disabled>Descargar CSV</button>
+<details><summary>Precios para el costo</summary><form id="metricasPrecios"></form></details>
+</section>
 <!-- Librería de Supabase alojada aquí con versión fija (no desde un CDN): nadie puede cambiar el código que maneja las sesiones. -->
 <script src="vendor/supabase-js-2.117.2.js"></script>
 <script type="module" src="panel.js"></script>

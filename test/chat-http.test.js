@@ -74,3 +74,12 @@ it("devuelve las tarjetas de cita con subida habilitada", async () => {
   });
   expect(await (await m.POST(pedir({ sesion: SESION, texto: "cita" }))).json()).toMatchObject({ tarjetas: [{ codigo: "4821", subirDocumentos: true }] });
 });
+it("apaga el chat y respeta el interruptor de documentos en tarjetas", async () => {
+  const { m, almacen, asistente } = preparar();
+  await almacen.guardarAjuste("funcion.chatWeb", "0", "admin");
+  const r = await m.POST(pedir({})); expect(r.status).toBe(503); expect((await r.json()).apagada).toBe(true);
+  await almacen.guardarAjuste("funcion.chatWeb", "1", "admin");
+  await almacen.guardarAjuste("funcion.documentos", "0", "admin");
+  asistente.atender.mockImplementation(async (m, { eventos }) => { eventos.push({ tipo: "cita", resumen: { codigo: "1234" } }); return ["ok"]; });
+  expect((await (await m.POST(pedir({ sesion: SESION, texto: "hola" }))).json()).tarjetas[0].subirDocumentos).toBe(false);
+});

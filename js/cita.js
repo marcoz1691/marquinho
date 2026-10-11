@@ -1,3 +1,4 @@
+import { cargarFunciones } from "./precios.js";
 import { esc } from "./chat-nucleo.js";
 import { tarjetaCita } from "./cita-tarjeta.js";
 const $ = (id) => document.getElementById(id);
@@ -124,9 +125,17 @@ function aviso(texto, alternativa = false) {
   $("estado").textContent = texto;
   $("alternativas").hidden = !alternativa;
 }
+function agendaApagada() {
+  document.querySelectorAll(".intro-cita, .progreso, .cita-layout").forEach(el => { el.hidden = true; });
+  aviso("La agenda en línea no está disponible por ahora", true);
+}
 async function cargar() {
   try {
+    const f = await cargarFunciones();
+    if (!f.sitio) { location.replace("mantenimiento.html"); return; }
+    if (!f.agenda) { agendaApagada(); return; }
     const { r, b } = await consultar();
+    if (b.apagada) { agendaApagada(); return; }
     if (!r.ok) throw new Error(b.error);
     disponibilidad = b;
     if (tramite && !b.tramites.some((t) => t.id === tramite)) tramite = null;
@@ -237,6 +246,7 @@ $("datos").addEventListener("submit", async (e) => {
         sitio: $("sitio").value
       })
     });
+    if (b.apagada) { agendaApagada(); return; }
     if (r.status === 409 && b.dias) {
       disponibilidad.dias = b.dias;
       hora = "";

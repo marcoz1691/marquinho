@@ -115,8 +115,9 @@ async function mostrarApp() {
   ultimoUso = Date.now();
   $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
   pestana(pestanaActual);
+  cargarMetricas(true);
   clearInterval(timer);
-  const refrescar = () => pestanaActual === "preciosV" ? Promise.resolve() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
+  const refrescar = () => ["preciosV", "funcionesV", "metricasV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
   timer = setInterval(() => refrescar().catch((e) => console.warn("No se pudo actualizar:", e.message)), 15000);
 }
 
@@ -206,6 +207,10 @@ async function abrir(id, silencioso) {
 const hoyQuito = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(new Date());
 function pestana(id) {
   pestanaActual = id;
+  $("#funcionesV").hidden = id !== "funcionesV";
+  $("#metricasV").hidden = id !== "metricasV";
+  if (id === "funcionesV") cargarFuncionesPanel();
+  if (id === "metricasV") cargarMetricas();
   $("#preciosV").hidden = id !== "preciosV";
   if (id === "preciosV") cargarPreciosPanel();
   $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV";
@@ -462,6 +467,93 @@ $("#preciosV").addEventListener("click", async (e) => {
   } catch (err) { $("#preciosMensaje").textContent = err.message; }
   finally { if (b.isConnected && b.closest(".precio-fila")) actualizarPrecio(b.closest(".precio-fila")); else b.disabled = false; }
 });
+
+/* ---------- Funciones y métricas del piloto ---------- */
+let funcionesPanel = null, metricasPanel = null;
+function pintarFunciones(d) {
+  funcionesPanel = d;
+  $("#funcionesLista").innerHTML = (d.funciones || []).map(f => `<article class="funcion-card${f.activa ? "" : " funcion-card--apagada"}"><h3>${esc(f.nombre)}</h3><p>${esc(f.descripcion)}</p>${d.esAdmin ? `<button class="interruptor" type="button" role="switch" aria-label="${esc(f.nombre)}" aria-checked="${!!f.activa}" data-funcion-id="${esc(f.id)}"><span class="interruptor__pista" aria-hidden="true"><span class="interruptor__perilla"></span></span><span class="interruptor__texto">${f.activa ? "Encendida" : "Apagada"}</span></button>` : `<strong class="funcion-estado">${f.activa ? "Encendida" : "Apagada"}</strong>`}${f.actualizadoEn ? `<p>Cambiado por ${esc(f.actualizadoPor)} el ${esc(fechaLegible(f.actualizadoEn))}</p>` : ""}</article>`).join("");
+}
+async function cargarFuncionesPanel() {
+  try { pintarFunciones(await api("GET", { accion: "funciones" })); }
+  catch (e) { $("#funcionesMensaje").textContent = e.message; }
+}
+$("#funcionesLista").addEventListener("click", async e => {
+  const b = e.target.closest("[data-funcion-id]");
+  if (!b || !funcionesPanel?.esAdmin) return;
+  const f = funcionesPanel.funciones.find(f => f.id === b.dataset.funcionId);
+  if (f.activa && !confirm((f.id === "sitio" ? "El público dejará de ver la página. " : "") + f.efectoAlApagar)) return;
+  b.disabled = true;
+  try {
+    pintarFunciones(await api("POST", { accion: "guardarFuncion", id: f.id, activa: !f.activa }));
+    $("#funcionesMensaje").textContent = "Listo. El sitio puede tardar hasta 1 minuto en reflejar el cambio.";
+    $("#funcionesLista").querySelector(`[data-funcion-id="${f.id}"]`)?.focus();
+  } catch (e) { $("#funcionesMensaje").textContent = e.message; }
+  finally { b.disabled = false; }
+});
+const monedaMetricas = new Intl.NumberFormat("es-EC", { style: "currency", currency: "USD" });
+const canalesMetricas = ["whatsapp", "web", "formulario"];
+const sumaCanales = (t, clave) => canalesMetricas.reduce((s,c) => s + Number(t[clave + "." + c] || 0), 0);
+const preciosMetricas = { entrada: "Entrada (USD por millón de tokens)", salida: "Salida (USD por millón de tokens)", cacheLectura: "Lectura de caché (USD por millón de tokens)", cacheEscritura: "Escritura de caché (USD por millón de tokens)", plantillaWhatsapp: "Plantilla de WhatsApp (USD por mensaje)" };
+function rangoMetricas() {
+  const hasta = hoyQuito(), desde = new Date(hasta + "T12:00:00Z");
+  if ($("#metricasPeriodo").value === "piloto") return { desde: metricasPanel.pilotoInicio, hasta };
+  desde.setUTCDate(desde.getUTCDate() - Number($("#metricasPeriodo").value) + 1);
+  return { desde: desde.toISOString().slice(0,10), hasta };
+}
+let lecturaMetricas = 0;
+async function cargarMetricas(inicial = false) {
+  const lectura = ++lecturaMetricas;
+  try {
+    const d = await api("GET", { accion: "metricas", ...rangoMetricas() });
+    if (lectura !== lecturaMetricas) return;
+    $("[data-tab=metricasV]").hidden = false;
+    pintarMetricas(d);
+  } catch (e) {
+    if (e.sinPermiso) { $("[data-tab=metricasV]").hidden = true; if (pestanaActual === "metricasV") pestana("app"); }
+    else if (!inicial) $("#metricasMensaje").textContent = e.message;
+  }
+}
+function pintarMetricas(d) {
+  metricasPanel = d;
+  const t = d.totales || {}, conv = sumaCanales(t,"conv.nueva"), derivadas = sumaCanales(t,"conv.derivada"), atendidas = Number(t["cita.atendida"] || 0), faltas = Number(t["cita.inasistencia"] || 0);
+  const porCanal = k => canalesMetricas.map(c => `${c === "whatsapp" ? "WhatsApp" : c === "web" ? "Web" : "Formulario"}: ${Number(t[k + "." + c] || 0)}`).join(" · ");
+  const pct = n => (n * 100).toLocaleString("es-EC", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %";
+  const tarjeta = (nombre, valor, detalle = "") => `<article class="funcion-card"><h3>${esc(nombre)}</h3><strong class="metrica-numero">${esc(valor)}</strong><p>${esc(detalle)}</p></article>`;
+  $("#metricasTarjetas").innerHTML = tarjeta("Conversaciones",conv,porCanal("conv.nueva")) + tarjeta("Mensajes de clientes",sumaCanales(t,"msg.cliente")) + tarjeta("Resueltas sin persona",pct(conv ? Math.max(0, 1 - derivadas / conv) : 0)) + tarjeta("Citas",sumaCanales(t,"cita.creada"),porCanal("cita.creada")) + tarjeta("Tasa de inasistencia",pct(atendidas + faltas ? faltas / (atendidas + faltas) : 0)) + tarjeta("Recordatorios enviados", t["recordatorio.enviado"] || 0) + tarjeta("Documentos recibidos",sumaCanales(t,"doc.recibido")) + tarjeta("Costo estimado",monedaMetricas.format(d.costo.total),`IA: ${monedaMetricas.format(d.costo.ia)} · WhatsApp: ${monedaMetricas.format(d.costo.whatsapp)} · Por conversación: ${monedaMetricas.format(d.costo.porConversacion)}. Estimación con los precios configurados`);
+  $("#metricasRango").textContent = `${d.desde} a ${d.hasta}`;
+  $("#inicioPiloto").value = d.pilotoInicio || "";
+  $("#metricasPeriodo option[value=piloto]").disabled = !d.pilotoInicio;
+  $("#metricasPrecios").innerHTML = Object.entries(preciosMetricas).map(([k,v]) => `<label for="metricaPrecio-${k}">${esc(v)}</label><input id="metricaPrecio-${k}" name="${k}" type="number" min="0" max="1000" step="any" required value="${esc(d.precios[k])}">`).join("") + '<button class="btn">Guardar</button>';
+  const semanas = new Map();
+  for (const dia of d.porDia || []) {
+    const fecha = new Date(dia.fecha + "T12:00:00Z"); fecha.setUTCDate(fecha.getUTCDate() - (fecha.getUTCDay() + 6) % 7);
+    const lunes = fecha.toISOString().slice(0,10), valores = dia.valores || {}, s = semanas.get(lunes) || { conv: 0, citas: 0, costo: 0 };
+    s.conv += sumaCanales(valores,"conv.nueva"); s.citas += sumaCanales(valores,"cita.creada");
+    for (const [clave,precio] of [["entrada","entrada"],["salida","salida"],["cache_lectura","cacheLectura"],["cache_escritura","cacheEscritura"]]) s.costo += Number(valores["ia.tokens_" + clave] || 0) / 1e6 * Number(d.precios[precio] || 0);
+    s.costo += (Number(valores["recordatorio.enviado"] || 0) + Number(valores["respuesta.automatica"] || 0)) * Number(d.precios.plantillaWhatsapp || 0);
+    semanas.set(lunes,s);
+  }
+  $("#metricasSemanas").innerHTML = [...semanas].sort(([a],[b]) => a.localeCompare(b)).map(([f,s]) => `<tr><th>${esc(f)}</th><td>${s.conv}</td><td>${s.citas}</td><td>${esc(monedaMetricas.format(s.costo))}</td></tr>`).join("") || '<tr><td colspan="4">No hay datos en este período.</td></tr>';
+  $("#metricasCsv").disabled = false;
+}
+$("#metricasPeriodo").addEventListener("change", () => cargarMetricas());
+$("#metricasCsv").addEventListener("click", () => {
+  if (!metricasPanel) return;
+  const d = metricasPanel, claves = [...new Set([...Object.keys(d.totales), ...d.porDia.flatMap(x => Object.keys(x.valores))])].sort();
+  const celda = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const csv = [["fecha", ...claves], ...d.porDia.map(x => [x.fecha,...claves.map(k => x.valores[k] || 0)])].map(f => f.map(celda).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })), a = document.createElement("a");
+  a.href = url; a.download = `metricas-${d.desde}-${d.hasta}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+async function guardarMetricas(form, pedido) {
+  const b = form.querySelector("button"); b.disabled = true;
+  try { const d = await api("POST", pedido); metricasPanel = d; if (!d.pilotoInicio && $("#metricasPeriodo").value === "piloto") $("#metricasPeriodo").value = "30"; await cargarMetricas(); $("#metricasMensaje").textContent = "Guardado."; }
+  catch (e) { $("#metricasMensaje").textContent = e.message; }
+  finally { b.disabled = false; }
+}
+$("#inicioPilotoForm").addEventListener("submit", e => { e.preventDefault(); guardarMetricas(e.currentTarget, { accion: "guardarInicioPiloto", fecha: $("#inicioPiloto").value || null }); });
+$("#metricasPrecios").addEventListener("submit", e => { e.preventDefault(); guardarMetricas(e.currentTarget, { accion: "guardarPreciosMetricas", ...Object.fromEntries([...new FormData(e.currentTarget)].map(([k,v]) => [k, Number(v)])) }); });
 
 const { data: { session } } = await sb.auth.getSession();
 if (errorEnlace) {

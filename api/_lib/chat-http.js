@@ -1,3 +1,5 @@
+import { leerAjustes, errorWeb, funcionActiva } from "./funciones.js";
+import { registrar } from "./metricas.js";
 // API del chat de la página web: el mismo asistente que WhatsApp, con límites para acotar costos y abusos.
 import { createHash } from "node:crypto";
 
@@ -9,6 +11,8 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 export function crearManejadorChat({ asistente, almacen, ahora = () => Date.now(), limites = LIMITES }) {
   return {
     async POST(request) {
+      const ajustes = await leerAjustes(almacen), apagada = errorWeb(ajustes, "chatWeb");
+      if (apagada) return json(apagada, 503);
       let b;
       try { b = await request.json(); } catch { return json({ error: "Solicitud inválida" }, 400); }
       const sesion = String(b?.sesion || ""), texto = String(b?.texto || "").trim();
@@ -29,7 +33,7 @@ export function crearManejadorChat({ asistente, almacen, ahora = () => Date.now(
 
       const eventos = [];
       const respuestas = await asistente.atender({ id: "web." + t + "." + Math.random().toString(36).slice(2, 10), de: "web:" + sesion, nombre: "", tipo: "texto", texto, canal: "web" }, { eventos });
-      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: true }));
+      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: funcionActiva(ajustes, "documentos") }));
       return json({ respuestas, tarjetas, ...(!respuestas.length ? { ocupado: true } : {}) });
     }
   };

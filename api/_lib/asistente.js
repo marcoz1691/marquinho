@@ -1,5 +1,7 @@
 // Asistente de WhatsApp de la notaría: conversa con Claude, ejecuta sus herramientas y guarda la conversación.
 // Interfaz: crearAsistente(dependencias).atender(mensaje) -> textos a enviar al cliente.
+import { leerAjustes, leerFunciones } from "./funciones.js";
+import { registrar, canalDeTelefono } from "./metricas.js";
 import { construirResumen } from "./resumen.js";
 import { reglasCitas, horasLibres, celular } from "./citas.js";
 import { tipoArchivo } from "./archivos.js";
@@ -155,7 +157,7 @@ ${faq}`;
 }
 
 const esWeb = (conv) => String(conv.telefono).startsWith("web:");
-function contexto(conv, t, C) {
+function contexto(conv, t, C, funciones) {
   const N = C.notaria;
   const fechaTxt = new Intl.DateTimeFormat("es-EC", { timeZone: ZONA, dateStyle: "full", timeStyle: "short" }).format(t);
   const iso = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA, year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
@@ -168,6 +170,8 @@ function contexto(conv, t, C) {
     : "Canal: WhatsApp.";
   return [`Fecha y hora en Quito: ${fechaTxt} (${iso}). La notaría está ${abierta ? "abierta" : "cerrada"} en este momento.`,
     canal,
+    !funciones.agenda ? "La agenda está desactivada por ahora: no ofrezcas ni agendes citas; si piden una, indica que llamen o escriban en horario de atención." : "",
+    !funciones.documentos ? "Por ahora no recibimos documentos: si el cliente envía uno, agradécele y pídele traerlo a su cita; no lo revises." : "",
     `Cliente: ${conv.nombre || "sin nombre"}${esWeb(conv) ? "" : " (" + conv.telefono + ")"}. Consentimiento de datos: ${conv.consentimiento ? "sí" : "no"}.`,
     avisos.length ? "Avisos vigentes: " + avisos.join(" | ") : ""].filter(Boolean).join("\n");
 }
@@ -208,6 +212,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "solicitar_cita": {
+        if (!ctx.funciones.agenda) return error("La agenda está desactivada por ahora.");
         const nombre = String(i.nombre || "").normalize("NFC").trim();
         if (!NOMBRE.test(nombre)) return error("El nombre no es válido: pide al cliente su nombre completo (solo letras, de 2 a 60 caracteres).");
         if (!/^\d{4}-\d{2}-\d{2}$/.test(i.fecha || "") || !/^\d{1,2}:\d{2}$/.test(i.hora || "")) return error("Fecha u hora con formato inválido (usa AAAA-MM-DD y HH:MM).");
@@ -215,6 +220,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const dia = new Date(i.fecha + "T12:00:00Z").getUTCDay(), hora = i.hora.padStart(5, "0"), H = C.notaria.horario, m = minutos(hora);
         if (i.fecha < hoy || (i.fecha === hoy && m <= enQuito(ctx.t).min)) return error("Esa fecha u hora ya pasó.");
         if (!H.dias.includes(dia) || m < minutos(H.abre) || m >= minutos(H.cierra)) return error(`Fuera del horario de atención (${H.texto}).`);
+        // Lectura estricta: si falla, la herramienta da error y Sofía no agenda sin conocer cupos ni bloqueos.
         const ajustes = await almacen.ajustes(), reglas = reglasCitas(C, ajustes);
         if (reglas.bloqueos.some(b => b.fijo && b.fecha === i.fecha)) return error(`El ${i.fecha} es feriado y la notaría no atiende: ofrece otro día.`);
         const contacto = esWeb(conv) ? celular(i.telefono) : null;
@@ -241,8 +247,9 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const recordatorio = i.fecha > manana || (i.fecha === manana && enQuito(ctx.t).min < 17 * 60);
         const nueva = await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre, nota: corto(i.nota, 200),
           estado: confirmada ? "confirmada" : "pendiente", ...(contacto ? { contacto } : {}) });
+        await registrar(almacen, "cita.creada." + canalDeTelefono(conv.telefono), 1, ctx.t);
         if (Array.isArray(ctx.eventos)) ctx.eventos.push({ tipo: "cita", resumen: construirResumen({ ...nueva, fecha: i.fecha, hora, nombre, tramiteId: t?.id || null,
-          estado: confirmada ? "confirmada" : "pendiente" }, C, { subirDocumentos: esWeb(conv) }) });
+          estado: confirmada ? "confirmada" : "pendiente" }, C, { subirDocumentos: esWeb(conv) && ctx.funciones.documentos }) });
         const cliente = `${nombre} ${contacto ? "(" + contacto + ")" : quien}`;
         // La anterior se cancela después de crear la nueva, para que el cliente nunca quede sin cita.
         for (const a of activas) {
@@ -270,6 +277,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         return ok("Consentimiento registrado.");
 
       case "guardar_documento": {
+        if (!ctx.funciones.documentos) return error("Por ahora no recibimos documentos: tráelos a tu cita.");
         if (esWeb(conv)) return error("Para enviar documentos en la web ofrece «Subir documentos» de la tarjeta de su cita.");
         if (!conv.consentimiento) return error("El cliente aún no ha dado su consentimiento de datos: muéstrale el aviso de privacidad y pide que acepte antes de guardar documentos.");
         if ((await almacen.documentos(conv.id)).length >= MAX_DOCS) return error(`Esta conversación ya tiene ${MAX_DOCS} documentos guardados: no se pueden recibir más por aquí. Ofrece pasar con una persona.`);
@@ -282,11 +290,17 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const t = i.tramite_id ? tramite(i.tramite_id) : null, descripcion = corto(i.descripcion, 120);
         await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: archivo.id, nombre: corto(archivo.nombre, 120), mime: tipo, bytes,
           descripcion, tramiteId: t ? t.id : null });
+        await registrar(almacen, "doc.recibido." + canalDeTelefono(conv.telefono), 1, ctx.t);
         await avisar(`Documento recibido de ${quien}: ${descripcion}${t ? " — " + t.nombre : ""}. Revísalo en el panel.`);
         return ok("Documento guardado para la pre-revisión del personal.");
       }
 
       case "derivar_a_persona":
+        // Cada conversación cuenta una sola vez como derivada: si no, «resueltas sin persona» podría salir negativo.
+        try {
+          if ((await almacen.contarUso("metricas:derivada:" + conv.id, 400 * 864e5, +ctx.t)) === 1)
+            await registrar(almacen, "conv.derivada." + canalDeTelefono(conv.telefono), 1, ctx.t);
+        } catch (e) { console.error("No se pudo contar la derivación:", e); }
         if (esWeb(conv)) {
           const contacto = celular(i.telefono);
           if (contacto) await avisar(`Cliente del chat web (${contacto}) pide que lo contacten: ${corto(i.motivo, 200) || "sin motivo"}.`);
@@ -311,21 +325,33 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
 
   // Un turno: toma los mensajes pendientes del cliente como un solo mensaje y conversa con Claude.
   // El historial se guarda vuelta a vuelta y siempre agregando al final.
-  async function turno(conversacionId, lote, eventos) {
+  async function turno(conversacionId, lote, eventos, ajustes) {
     const conv = await almacen.conversacionPorId(conversacionId);
     const C = await contenido();
     const t = ahora();
+    const funciones = leerFunciones(ajustes);
     let sesion = await almacen.sesionActiva(conv.id, { ahora: t.getTime(), sistema: construirSistema(C), inactividadMs: INACTIVIDAD_MS });
     const usuario = { role: "user", content: lote.map((p) => textoUsuario(p.mensaje)).join("\n") };
     const consumir = () => almacen.quitarPendientes(lote.map((p) => p.id));
 
+    if (canalDeTelefono(conv.telefono) === "whatsapp" && !funciones.whatsappBot) {
+      await almacen.agregarMensajes(sesion.id, [usuario], t.getTime());
+      await consumir();
+      if (await almacen.contarUso("whatsapp:auto:" + conv.id, 24 * 3600 * 1000, t.getTime()) === 1) {
+        const respuesta = "Gracias por escribir a la Notaría 41. Una persona del equipo te responderá por aquí en horario de atención (" + C.notaria.horario.texto + ").";
+        await almacen.agregarMensajes(sesion.id, [{ role: "assistant", content: [{ type: "text", text: respuesta }] }], t.getTime());
+        await registrar(almacen, "respuesta.automatica", 1, t);
+        return [respuesta];
+      }
+      return [];
+    }
     if (conv.derivada) {
       await almacen.agregarMensajes(sesion.id, [usuario], t.getTime());
       await consumir();
       return [];
     }
 
-    let porGuardar = [usuario, { role: "system", content: contexto(conv, t, C) }];
+    let porGuardar = [usuario, { role: "system", content: contexto(conv, t, C, funciones) }];
     const historial = [...porGuardar];
     const respuestas = [];
     const guardar = async () => {
@@ -343,7 +369,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       output_config: { effort: ESFUERZO },
       cache_control: { type: "ephemeral" },
       system: [{ type: "text", text: sesion.sistema, cache_control: { type: "ephemeral" } }],
-      tools: HERRAMIENTAS,
+      tools: HERRAMIENTAS.filter(h => (h.name !== "solicitar_cita" || funciones.agenda) && (h.name !== "guardar_documento" || funciones.documentos)),
       messages: [...sesion.mensajes, ...historial]
     });
 
@@ -360,13 +386,15 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
             r = await llamar();
           } else throw e;
         }
+        await registrar(almacen, "ia.llamadas", 1, t);
+        for (const [campo, clave] of Object.entries({ input_tokens: "entrada", output_tokens: "salida", cache_read_input_tokens: "cache_lectura", cache_creation_input_tokens: "cache_escritura" })) await registrar(almacen, "ia.tokens_" + clave, r.usage?.[campo] || 0, t);
         const asistente = { role: "assistant", content: r.content };
         historial.push(asistente); porGuardar.push(asistente);
         for (const b of r.content) if (b.type === "text" && b.text.trim()) respuestas.push(b.text.trim());
         if (r.stop_reason === "refusal" && !respuestas.length) respuestas.push("Disculpa, no puedo ayudarte con eso por aquí. Si quieres, te comunico con una persona de la notaría.");
         if (r.stop_reason !== "tool_use") { await guardar(); break; }
         const resultados = [];
-        for (const b of r.content.filter((x) => x.type === "tool_use")) resultados.push(await ejecutar(b, { conv, C, t, eventos, textoCliente: usuario.content }));
+        for (const b of r.content.filter((x) => x.type === "tool_use")) resultados.push(await ejecutar(b, { conv, C, t, eventos, funciones, ajustes, textoCliente: usuario.content }));
         const res = { role: "user", content: resultados };
         historial.push(res); porGuardar.push(res);
         await guardar();
@@ -381,11 +409,16 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
   }
 
   async function atender(m, { eventos } = {}) {
+    const ajustes = await leerAjustes(almacen);
     if (!(await almacen.marcarProcesado(m.id))) return [];
+    const previa = await almacen.conversacionPorTelefono(m.de);
     const conv = await almacen.conversacion(m.de, m.nombre);
+    const canal = canalDeTelefono(m.de);
+    if (!previa) await registrar(almacen, "conv.nueva." + canal, 1, ahora());
+    await registrar(almacen, "msg.cliente." + canal, 1, ahora());
     await almacen.marcarClienteEscribio(conv.id, m.timestamp ? Number(m.timestamp) * 1000 : ahora().getTime());
     // La web tiene sus propios límites (chat-http.js); en WhatsApp se acota por número y día.
-    if (m.canal !== "web") {
+    if (m.canal !== "web" && leerFunciones(ajustes).whatsappBot) {
       const n = await almacen.contarUso("wa:dia:" + conv.id, DIA_MS, ahora().getTime());
       if (n > limiteDiario) return n === limiteDiario + 1 ? [LIMITE_ALCANZADO] : [];
     }
@@ -399,7 +432,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         await esperar(m.canal === "web" ? 0 : AGRUPAR_MS);
         const lote = await almacen.pendientes(conv.id);
         if (!lote.length) break;
-        respuestas.push(...(await turno(conv.id, lote, eventos)));
+        respuestas.push(...(await turno(conv.id, lote, eventos, ajustes)));
       } finally {
         await almacen.liberarTurno(conv.id);
       }

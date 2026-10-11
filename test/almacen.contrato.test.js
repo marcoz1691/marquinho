@@ -12,6 +12,15 @@ const tel = () => "5939" + Math.floor(Math.random() * 1e8).toString().padStart(8
 const DIA = 864e5;
 
 describe.each(adaptadores)("almacén %s", (_, crear) => {
+  it("conserva detalles y suma métricas por fecha y clave", async () => {
+    const a = crear(), clave = "prueba." + Math.random();
+    await a.guardarAjuste(clave, "0", "admin");
+    expect(await a.ajustesConDetalle()).toContainEqual(expect.objectContaining({ clave, valor: "0", actualizadoPor: "admin", actualizadoEn: expect.any(String) }));
+    await a.sumarMetrica("2099-01-01", clave, 2); await a.sumarMetrica("2099-01-01", clave, 3);
+    await a.sumarMetrica("2099-01-02", clave, 1);
+    expect((await a.metricas("2099-01-01", "2099-01-02")).filter(r => r.clave === clave)).toEqual([{ fecha: "2099-01-01", clave, valor: 5 }, { fecha: "2099-01-02", clave, valor: 1 }]);
+    await a.restaurarAjuste(clave);
+  });
   it("guarda precios, restaura y conserva solo los ajustes guardados", async () => {
     const a = crear(), tramiteId = "prueba-" + Math.random();
     expect(await a.esAdmin("nadie@example.invalid")).toBe(false);

@@ -281,3 +281,9 @@ it('incluye feriados futuros fijos y no permite quitarlos',async()=>{
 });
 
 it.each([['web:abc','web'],['form:593991234567','formulario'],['593991234567','whatsapp']])('canalDe %s', (telefono, canal)=>expect(canalDe(telefono)).toBe(canal));
+it.each([["atendida", "cita.atendida"], ["rechazada", "cita.cancelada"]])("cuenta %s una sola vez", async (estado, clave) => {
+ const cita = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "09:00", nombre: "Ana", estado: "confirmada" });
+ await panel.decidirCita(cita.id, estado);
+ await expect(panel.decidirCita(cita.id, estado)).rejects.toThrow();
+ expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave, valor: 1 });
+});

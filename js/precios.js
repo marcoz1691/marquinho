@@ -22,10 +22,19 @@ export function aplicarPrecios(contenido, cambios) {
   if (cambios?.anio != null && /^\d{4}$/.test(String(cambios.anio))) contenido.tarifas.anio = String(cambios.anio);
   return contenido;
 }
+const configuraciones = new WeakMap();
+export function configPublica(fetch = globalThis.fetch) {
+  if (!configuraciones.has(fetch)) configuraciones.set(fetch, (async () => {
+    try { const r = await fetch("/api/precios"); return r.ok ? await r.json() : null; }
+    catch { return null; }
+  })());
+  return configuraciones.get(fetch);
+}
+export async function cargarFunciones(fetch = globalThis.fetch) {
+  const c = await configPublica(fetch);
+  return Object.fromEntries(["sitio", "chatWeb", "whatsappBot", "agenda", "documentos", "recordatorios"].map(id => [id, c?.funciones?.[id] !== false]));
+}
 export async function cargarPrecios(contenido, fetch = globalThis.fetch) {
-  try {
-    const r = await fetch("/api/precios");
-    if (!r.ok) return contenido;
-    return aplicarPrecios(structuredClone(contenido), await r.json());
-  } catch { return contenido; }
+  const c = await configPublica(fetch);
+  return c ? aplicarPrecios(structuredClone(contenido), c) : contenido;
 }

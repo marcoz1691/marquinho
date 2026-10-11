@@ -159,6 +159,7 @@ describe("herramientas", () => {
     expect(cita).toMatchObject({ tramiteId: "compraventa", fecha: "2026-10-08", hora: "10:00", estado: "pendiente" });
     expect(avisar.mock.calls[0][0]).toMatch(/Ana Pérez.*Compraventa/);
     expect(resultadoDe(claude).content).toMatch(/pendiente/i);
+    expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "cita.creada.whatsapp", valor: 1 });
   });
 
   describe("citas que se confirman solas", () => {
@@ -280,6 +281,7 @@ describe("herramientas", () => {
     const [doc] = await almacen.documentos(conv.id);
     expect(doc).toMatchObject({ mediaId: "M1", descripcion: "cédula", tramiteId: "compraventa" });
     expect([...doc.bytes]).toEqual(PDF);
+    expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "doc.recibido.whatsapp", valor: 1 });
     expect(avisar).toHaveBeenCalled();
   });
 
@@ -672,4 +674,46 @@ it.each(['cupo','bloqueo'])('Sofía respeta %s editable', async tipo=>{
  const resultados=claude.llamadas[1].messages.at(-1).content;
  expect(resultados[0]).toMatchObject({is_error:true,content:expect.stringContaining('No hay cupo')});
  expect(await almacen.solicitudesCita((await almacen.conversacion('593991112233')).id)).toEqual([]);
+});
+
+it("con el bot apagado guarda mensajes, responde una vez y no usa IA", async () => {
+  await almacen.guardarAjuste("funcion.whatsappBot", "0", "admin");
+  const claude = claudeFalso([]), a = nuevo(claude);
+  expect(await a.atender(mensaje())).toEqual([expect.stringContaining("Una persona del equipo")]);
+  expect(await a.atender(mensaje({ texto: "Otra consulta" }))).toEqual([]);
+  expect(claude.beta.messages.create).not.toHaveBeenCalled();
+  const c = await almacen.conversacionPorTelefono("593991112233");
+  expect(c.derivada).toBe(false);
+  expect((await almacen.historial(c.id)).filter(m => m.role === "user")).toHaveLength(2);
+  const filas = await almacen.metricas("2026-10-06", "2026-10-06");
+  expect(filas).toContainEqual({ fecha: "2026-10-06", clave: "msg.cliente.whatsapp", valor: 2 });
+  expect(filas).toContainEqual({ fecha: "2026-10-06", clave: "respuesta.automatica", valor: 1 });
+  expect(filas.some(r => r.clave.startsWith("ia."))).toBe(false);
+});
+it("filtra herramientas en orden estable, agrega contexto y registra usage", async () => {
+  await almacen.guardarAjuste("funcion.agenda", "0", "admin");
+  await almacen.guardarAjuste("funcion.documentos", "0", "admin");
+  const claude = claudeFalso([{ ...texto("ok"), usage: { input_tokens: 10, output_tokens: 20, cache_read_input_tokens: 30, cache_creation_input_tokens: 40 } }]);
+  await nuevo(claude).atender(mensaje({ de: "web:sesion", canal: "web" }));
+  expect(claude.llamadas[0].tools.map(h => h.name)).not.toContain("solicitar_cita");
+  expect(claude.llamadas[0].tools.map(h => h.name)).not.toContain("guardar_documento");
+  expect(claude.llamadas[0].messages.at(-1).content).toContain("La agenda está desactivada");
+  expect(claude.llamadas[0].messages.at(-1).content).toContain("Por ahora no recibimos documentos");
+  const filas = await almacen.metricas("2026-10-06", "2026-10-06");
+  for (const [clave, valor] of Object.entries({ llamadas: 1, tokens_entrada: 10, tokens_salida: 20, tokens_cache_lectura: 30, tokens_cache_escritura: 40 })) expect(filas).toContainEqual({ fecha: "2026-10-06", clave: "ia." + clave, valor });
+});
+it.each(["593991112233", "web:sesion"])("cuenta derivación del canal %s", async de => {
+ const claude = claudeFalso([herramienta("derivar_a_persona", { motivo: "ayuda" }), texto("Listo")]);
+ await nuevo(claude).atender(mensaje({ de, canal: de.startsWith("web:") ? "web" : "whatsapp" }));
+ expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "conv.derivada." + (de.startsWith("web:") ? "web" : "whatsapp"), valor: 1 });
+});
+
+it("una conversación cuenta una sola vez como derivada aunque se derive de nuevo", async () => {
+  const claude = claudeFalso([herramienta("derivar_a_persona", { motivo: "ayuda" }), texto("Listo"), herramienta("derivar_a_persona", { motivo: "otra vez" }), texto("Listo")]);
+  const asistente = nuevo(claude);
+  await asistente.atender(mensaje({ id: "m-deriva-1" }));
+  const conv = await almacen.conversacion("593991112233");
+  await almacen.actualizarConversacion(conv.id, { derivada: false });   // el personal la devuelve al asistente
+  await asistente.atender(mensaje({ id: "m-deriva-2" }));
+  expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "conv.derivada.whatsapp", valor: 1 });
 });
