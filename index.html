@@ -33,7 +33,7 @@
       <a href="#whatsapp">WhatsApp</a>
       <a href="#faq">Preguntas</a>
       <a href="#contacto">Contacto</a>
-      <a class="nav__agenda" href="cita.html">Agenda tu cita</a>
+      <a class="nav__agenda" data-funcion="agenda" href="cita.html">Agenda tu cita</a>
     </nav>
     <button class="icon-btn nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu" type="button"><i class="ph ph-list" aria-hidden="true"></i></button>
   </div>
@@ -54,7 +54,7 @@
           <p class="lema" id="heroLema">Fe pública al servicio de la comunidad.</p>
           <div class="cta">
             <a class="btn btn--primary" href="#tramites">Ver trámites</a>
-            <a class="btn" href="cita.html">Agenda tu cita</a>
+            <a class="btn" data-funcion="agenda" href="cita.html">Agenda tu cita</a>
           </div>
         </div>
         <div class="hero__seal">
@@ -152,7 +152,7 @@
         <ol class="wa-pasos" aria-label="Pasos para preparar tu trámite">
           <li><h3>Escribe qué trámite necesitas</h3><p>Envía «Hola, quiero hacer un trámite» y cuéntanos qué necesitas. Sofía te orienta, aunque aún no sepas cómo se llama tu trámite.</p></li>
           <li><h3>Recibe los requisitos y el costo</h3><p>Sofía te indica qué documentos necesitas y cuánto cuesta tu trámite, antes de que vengas.</p></li>
-          <li><h3>Envía fotos de tus documentos</h3><p>Envía fotos legibles por WhatsApp. Una persona de la notaría revisa tus documentos y te confirma si están completos o qué debes corregir.</p></li>
+          <li data-funcion="documentos"><h3>Envía fotos de tus documentos</h3><p>Envía fotos legibles por WhatsApp. Una persona de la notaría revisa tus documentos y te confirma si están completos o qué debes corregir.</p></li>
           <li><h3>Elige el día y la hora</h3><p>Escoge entre los horarios disponibles. Recibes los datos de tu cita y un ticket de 4 dígitos: guárdalo para tu visita.</p></li>
           <li><h3>Recibe tu recordatorio</h3><p>El día anterior a tu cita te llega un mensaje por WhatsApp para recordar el día, la hora y lo que debes llevar.</p></li>
           <li><h3>Ven a la notaría y firma</h3><p>Trae tu cédula, los documentos originales de tu trámite y tu ticket. El personal verifica todo y te acompaña en la firma presencial.</p></li>
@@ -172,7 +172,7 @@
       </div>
       <div class="wa-cierre">
         <p>Tus datos se tratan según nuestro <a href="privacidad.html">aviso de privacidad</a>. Sofía te ayuda a preparar el trámite; la firma siempre se realiza presencialmente en la notaría.</p>
-        <p>¿Prefieres no chatear? <a class="btn" href="cita.html">Agenda tu cita aquí</a></p>
+        <p>¿Prefieres no chatear? <a class="btn" data-funcion="agenda" href="cita.html">Agenda tu cita aquí</a></p>
       </div>
     </div>
   </section>
@@ -194,8 +194,8 @@
   </section>
 </main>
 
-<button class="chat-lanzador" id="chatAbrir" type="button" aria-label="Abrir el chat de ayuda" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
-<section class="chat" id="chat" role="dialog" aria-label="Chat con la Notaría 41" hidden>
+<button class="chat-lanzador" data-funcion="chatWeb" id="chatAbrir" type="button" aria-label="Abrir el chat de ayuda" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
+<section class="chat" data-funcion="chatWeb" id="chat" role="dialog" aria-label="Chat con la Notaría 41" hidden>
   <header class="chat__cab">
     <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="36" height="36">
     <div><b data-nombre>Sofía</b><small>Notaría 41 · respuestas automáticas</small></div>
