@@ -1,3 +1,5 @@
+import { leerAjustes, errorWeb } from "./funciones.js";
+import { registrar } from "./metricas.js";
 // Documentos de la web: solo para una cita vigente de la propia conversación.
 import { createHash, randomUUID } from "node:crypto";
 import { tipoArchivo } from "./archivos.js";
@@ -25,6 +27,8 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
 
   return {
     async POST(request) {
+      const ajustes = await leerAjustes(almacen), apagada = errorWeb(ajustes, "documentos");
+      if (apagada) return json(apagada, 503);
       let b;
       try { b = await request.json(); } catch { return json({ error: "Solicitud inválida" }, 400); }
       if (!sesionValida(b?.sesion)) return json({ error: "Sesión inválida" }, 400);
@@ -56,6 +60,7 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       if (!tipo) return json({ error: "Envía un archivo PDF, JPG, PNG o WEBP." }, 415);
       if ((await almacen.documentos(conv.id)).length >= 20) return json({ error: "Ya tienes 20 documentos en esta conversación." }, 409);
       await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: "web-" + randomUUID(), nombre, mime: tipo, bytes, descripcion, tramiteId: cita.tramiteId });
+      await registrar(almacen, "doc.recibido.web", 1, t);
       if (!conv.consentimiento) await almacen.actualizarConversacion(conv.id, {
         consentimiento: true, consentimientoEn: new Date(t).toISOString(),
         consentimientoTexto: `Casilla del aviso de privacidad en la web (ticket ${b.ticket})`, consentimientoAviso: AVISO_PRIVACIDAD

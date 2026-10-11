@@ -19,3 +19,12 @@ it("GET entrega los nombres de las categorías para agrupar la lista de trámite
   const a = crearManejadorCita({ almacen, contenido: async () => conCategorias, ahora: () => new Date("2026-10-12T12:00:00Z") });
   expect((await (await a.GET(new Request("https://n.ec/api/cita"))).json()).categorias).toEqual([{ id: "poderes", nombre: "Poderes" }]);
 });
+it.each(["agenda", "sitio"])("bloquea GET y POST con %s apagada", async id => {
+ await almacen.guardarAjuste("funcion." + id, "0", "admin");
+ for (const r of [await api.GET(new Request("https://n.ec/api/cita")), await api.POST(req())]) { expect(r.status).toBe(503); expect((await r.json()).apagada).toBe(true); }
+});
+it("cuenta conversación y cita de formulario", async () => {
+ await api.POST(req());
+ const filas = await almacen.metricas("2026-10-12", "2026-10-12");
+ for (const clave of ["conv.nueva.formulario", "cita.creada.formulario"]) expect(filas).toContainEqual({ fecha: "2026-10-12", clave, valor: 1 });
+});

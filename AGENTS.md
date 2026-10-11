@@ -30,3 +30,5 @@ Antes de dar un cambio por terminado, `npm test` y `npm run test:e2e` deben pasa
 - El asistente informa, cotiza y prepara trámites, pero nunca completa actos notariales ([ADR 0002](docs/adr/0002-el-asistente-no-completa-actos-notariales.md)).
 - No añadas scripts, estilos ni fuentes desde CDNs externos: sirve todo desde el propio sitio y mantén la CSP de [vercel.json](vercel.json) lo más cerrada posible.
 - Los secretos van en `.env.local` (local) o en Vercel; nunca en el repositorio.
+
+- Antes de desplegar los interruptores y métricas del piloto, ejecuta en Supabase el bloque «2026-10-11: métricas agregadas del piloto» de `supabase/esquema.sql`. Es la única migración de este cambio.

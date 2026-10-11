@@ -1,5 +1,8 @@
+import { leerAjustes, funcionActiva } from "./funciones.js";
+import { registrar } from "./metricas.js";
 // Recordatorio el día anterior a cada cita confirmada (mensaje de plantilla aprobada por Meta).
 export async function enviarRecordatorios({ almacen, whatsapp, contenido, plantilla, ahora = () => new Date() }) {
+  if (!funcionActiva(await leerAjustes(almacen), "recordatorios")) return 0;
   const manana = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(new Date(ahora().getTime() + 864e5));
   const C = await contenido();
   let enviados = 0;
@@ -7,6 +10,7 @@ export async function enviarRecordatorios({ almacen, whatsapp, contenido, planti
     const tramite = (C.data.tramites.find((t) => t.id === c.tramiteId) || {}).nombre || "tu trámite";
     try {
       await whatsapp.enviarPlantilla(c.telefono, plantilla, [c.nombre, tramite, c.hora]);
+      await registrar(almacen, "recordatorio.enviado", 1, ahora());
       await almacen.marcarRecordada(c.id);
       enviados++;
     } catch (e) {

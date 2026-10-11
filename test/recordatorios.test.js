@@ -70,3 +70,16 @@ describe("resumenDelDia", () => {
     expect(whatsapp.enviarPlantilla).not.toHaveBeenCalled();
   });
 });
+it("con recordatorios apagados devuelve cero sin consultar citas", async () => {
+ const almacen = crearAlmacenMemoria(), whatsapp = { enviarPlantilla: vi.fn() };
+ await almacen.guardarAjuste("funcion.recordatorios", "0", "admin");
+ almacen.citasDelDia = vi.fn();
+ expect(await enviarRecordatorios({ almacen, whatsapp, contenido })).toBe(0);
+ expect(almacen.citasDelDia).not.toHaveBeenCalled(); expect(whatsapp.enviarPlantilla).not.toHaveBeenCalled();
+});
+it("cuenta el envío de recordatorio", async () => {
+ const almacen = crearAlmacenMemoria(), c = await almacen.conversacion("5931");
+ await almacen.crearSolicitudCita({ conversacionId: c.id, fecha: "2026-10-07", hora: "09:00", estado: "confirmada", nombre: "Ana" });
+ await enviarRecordatorios({ almacen, whatsapp: { enviarPlantilla: async () => {} }, contenido, ahora: () => new Date("2026-10-06T15:00Z") });
+ expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "recordatorio.enviado", valor: 1 });
+});

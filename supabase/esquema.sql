@@ -192,3 +192,13 @@ create unique index if not exists solicitudes_cita_fecha_codigo on solicitudes_c
 -- Un precio de tipo porcentaje o fijo siempre lleva un valor positivo (la validación del panel no es la única defensa).
 alter table precios drop constraint if exists precios_valor_valido;
 alter table precios add constraint precios_valor_valido check (tipo not in ('pct','fija') or (valor is not null and valor > 0));
+
+-- 2026-10-11: métricas agregadas del piloto. Ejecuta este bloque antes de desplegar.
+create table if not exists metricas_dia (fecha date not null, clave text not null, valor bigint not null default 0, primary key (fecha, clave));
+alter table metricas_dia enable row level security;
+create or replace function sumar_metrica(p_fecha date, p_clave text, p_valor bigint) returns void language sql security definer set search_path = public as $$
+  insert into metricas_dia (fecha, clave, valor) values (p_fecha, p_clave, p_valor)
+  on conflict (fecha, clave) do update set valor = metricas_dia.valor + excluded.valor;
+$$;
+revoke execute on function sumar_metrica(date, text, bigint) from public, anon, authenticated;
+grant execute on function sumar_metrica(date, text, bigint) to service_role;
