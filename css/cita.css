@@ -1,6 +1,6 @@
 .agenda-cita {
   max-width: 1060px;
-  margin: 130px auto 70px;
+  margin: 104px auto 70px;
   padding: 0 24px;
   color: var(--ink, var(--fg));
 }
@@ -143,8 +143,19 @@
   background: var(--accent);
   color: var(--accent-fg);
 }
+/* El círculo del radio sobra: la hora entera es el botón. Sigue siendo un radio para el teclado y los lectores de pantalla. */
 #lista-horas input {
-  margin-right: 6px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+#lista-horas label:has(:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 .acepta {
   display: flex !important;
@@ -209,7 +220,7 @@
 @media (max-width: 650px) {
   .agenda-cita {
     padding: 0 16px;
-    margin-top: 110px;
+    margin-top: 84px;
   }
   .cita-layout {
     display: flex;
@@ -249,4 +260,122 @@
   .legal__volver {
     font-size: 0.8rem;
   }
+}
+
+/* Paso 1: lista de trámites para marcar */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.ayuda {
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+#lista-tramites {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 8px;
+  display: grid;
+  gap: 8px;
+}
+.opcion {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  margin: 0 !important;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer;
+  line-height: 1.35;
+}
+.opcion[hidden] {
+  display: none !important;
+}
+.opcion input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: var(--accent);
+  margin: 0;
+}
+.opcion span {
+  display: grid;
+  gap: 2px;
+}
+.opcion small {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.opcion:has(:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.opcion:has(:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.opcion--nose {
+  border-style: dashed;
+}
+.grupo {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.grupo[hidden] {
+  display: none;
+}
+.grupo summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.grupo summary::-webkit-details-marker {
+  display: none;
+}
+.grupo summary::after {
+  content: "+";
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--accent);
+}
+.grupo[open] summary::after {
+  content: "−";
+}
+.grupo__n {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+.grupo .opcion {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+.grupo .opcion:last-child {
+  border-radius: 0 0 12px 12px;
+}
+/* Error al enviar: junto al botón, con WhatsApp y teléfonos a la mano */
+.error--envio {
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+.error--envio p {
+  margin: 0 0 10px;
 }

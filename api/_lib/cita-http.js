@@ -29,7 +29,8 @@ export function crearManejadorCita({
       return json({
         dias: await disponibilidad(C, ajustes, t),
         horario: C.notaria.horario.texto,
-        tramites: C.data.tramites.map(({ id, nombre, cat }) => ({ id, nombre, cat }))
+        tramites: C.data.tramites.map(({ id, nombre, cat }) => ({ id, nombre, cat })),
+        categorias: (C.data.categorias || []).map(({ id, nombre }) => ({ id, nombre }))
       });
     },
     async POST(request) {

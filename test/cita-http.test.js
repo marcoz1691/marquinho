@@ -13,3 +13,9 @@ it('confirma, registra consentimiento y contacto, avisa hoy y rechaza cita activ
 it('queda pendiente si requiere revisión; desconocido queda confirmado',async()=>{let r=await api.POST(req({...cuerpo,tramiteId:'revision',fecha:'2026-10-13'}));expect((await r.json()).resumen.estado).toBe('pendiente');expect(avisar).toHaveBeenCalledOnce();r=await api.POST(req({...cuerpo,celular:'0991234568',tramiteId:null,fecha:'2026-10-13'}));expect((await r.json()).resumen.estado).toBe('confirmada');expect(avisar).toHaveBeenCalledOnce();});
 it('409 devuelve días renovados si se ocupó la hora',async()=>{await almacen.guardarAjuste('citas.porHora','1');await api.POST(req());const r=await api.POST(req({...cuerpo,celular:'0991234568',hora:'09:00'}));expect(r.status).toBe(409);const b=await r.json();expect(b.error).toBe('Esa hora acaba de ocuparse. Elige otra.');expect(b.dias[0].horas).not.toContain('09:30');});
 it.each(['consultas','porIp','porCelular','porDia'])('limita %s con 429',async clave=>{const limites={consultas:120,porIp:5,porCelular:3,porDia:200,[clave]:0};const a=crearManejadorCita({almacen,contenido:async()=>C,limites,ahora:()=>new Date('2026-10-12T12:00:00Z')});expect((await (clave==='consultas'?a.GET(new Request('https://n.ec/api/cita')):a.POST(req()))).status).toBe(429);});
+
+it("GET entrega los nombres de las categorías para agrupar la lista de trámites", async () => {
+  const conCategorias = { ...C, data: { ...C.data, categorias: [{ id: "poderes", nombre: "Poderes", desc: "no hace falta" }] } };
+  const a = crearManejadorCita({ almacen, contenido: async () => conCategorias, ahora: () => new Date("2026-10-12T12:00:00Z") });
+  expect((await (await a.GET(new Request("https://n.ec/api/cita"))).json()).categorias).toEqual([{ id: "poderes", nombre: "Poderes" }]);
+});
