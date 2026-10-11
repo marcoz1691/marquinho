@@ -379,7 +379,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   // Escenas fijas: cada [data-scene] recibe --p (0 a 1) según cuánto se ha recorrido.
   function scenes() {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // También con «Reducir movimiento»: el CSS deja solo los cambios de opacidad (portada que se desvanece, frase que se ilumina).
     var list = [].slice.call(document.querySelectorAll("[data-scene]"));
     var words = $("#words"), spans = [];
     if (words) {
