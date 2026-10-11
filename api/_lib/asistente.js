@@ -220,7 +220,8 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const dia = new Date(i.fecha + "T12:00:00Z").getUTCDay(), hora = i.hora.padStart(5, "0"), H = C.notaria.horario, m = minutos(hora);
         if (i.fecha < hoy || (i.fecha === hoy && m <= enQuito(ctx.t).min)) return error("Esa fecha u hora ya pasó.");
         if (!H.dias.includes(dia) || m < minutos(H.abre) || m >= minutos(H.cierra)) return error(`Fuera del horario de atención (${H.texto}).`);
-        const ajustes = ctx.ajustes, reglas = reglasCitas(C, ajustes);
+        // Lectura estricta: si falla, la herramienta da error y Sofía no agenda sin conocer cupos ni bloqueos.
+        const ajustes = await almacen.ajustes(), reglas = reglasCitas(C, ajustes);
         if (reglas.bloqueos.some(b => b.fijo && b.fecha === i.fecha)) return error(`El ${i.fecha} es feriado y la notaría no atiende: ofrece otro día.`);
         const contacto = esWeb(conv) ? celular(i.telefono) : null;
         if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo: los avisos de la cita llegarán por WhatsApp.");
@@ -295,7 +296,11 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
       }
 
       case "derivar_a_persona":
-        await registrar(almacen, "conv.derivada." + canalDeTelefono(conv.telefono), 1, ctx.t);
+        // Cada conversación cuenta una sola vez como derivada: si no, «resueltas sin persona» podría salir negativo.
+        try {
+          if ((await almacen.contarUso("metricas:derivada:" + conv.id, 400 * 864e5, +ctx.t)) === 1)
+            await registrar(almacen, "conv.derivada." + canalDeTelefono(conv.telefono), 1, ctx.t);
+        } catch (e) { console.error("No se pudo contar la derivación:", e); }
         if (esWeb(conv)) {
           const contacto = celular(i.telefono);
           if (contacto) await avisar(`Cliente del chat web (${contacto}) pide que lo contacten: ${corto(i.motivo, 200) || "sin motivo"}.`);

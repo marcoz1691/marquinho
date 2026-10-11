@@ -707,3 +707,13 @@ it.each(["593991112233", "web:sesion"])("cuenta derivación del canal %s", async
  await nuevo(claude).atender(mensaje({ de, canal: de.startsWith("web:") ? "web" : "whatsapp" }));
  expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "conv.derivada." + (de.startsWith("web:") ? "web" : "whatsapp"), valor: 1 });
 });
+
+it("una conversación cuenta una sola vez como derivada aunque se derive de nuevo", async () => {
+  const claude = claudeFalso([herramienta("derivar_a_persona", { motivo: "ayuda" }), texto("Listo"), herramienta("derivar_a_persona", { motivo: "otra vez" }), texto("Listo")]);
+  const asistente = nuevo(claude);
+  await asistente.atender(mensaje({ id: "m-deriva-1" }));
+  const conv = await almacen.conversacion("593991112233");
+  await almacen.actualizarConversacion(conv.id, { derivada: false });   // el personal la devuelve al asistente
+  await asistente.atender(mensaje({ id: "m-deriva-2" }));
+  expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "conv.derivada.whatsapp", valor: 1 });
+});

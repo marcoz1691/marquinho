@@ -13,6 +13,7 @@ it("cuenta las citas confirmadas de ayer en Quito, incluso sin recordatorios", a
  expect((await GET(new Request("https://x/api/recordatorios", { headers: { authorization: "Bearer " + secreto } }))).status).toBe(200);
  // Si el cron se repite el mismo día (reintento de Vercel), las inasistencias no se cuentan dos veces.
  expect((await GET(new Request("https://x/api/recordatorios", { headers: { authorization: "Bearer " + secreto } }))).status).toBe(200);
- expect(await almacen.metricas("2026-10-11", "2026-10-11")).toContainEqual({ fecha: "2026-10-11", clave: "cita.inasistencia", valor: 1 });
+ // Se guarda en el día de la cita (ayer en Quito), no en el día en que corre el cron.
+ expect(await almacen.metricas("2026-10-10", "2026-10-11")).toEqual([{ fecha: "2026-10-10", clave: "cita.inasistencia", valor: 1 }]);
  } finally { vi.useRealTimers(); }
 });

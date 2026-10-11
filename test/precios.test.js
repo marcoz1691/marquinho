@@ -38,3 +38,9 @@ it("publica los booleanos de funciones y mantiene privados los ajustes del pilot
  const r = await crearManejadorPrecios({ almacen: { precios: async () => [], ajustes: async () => ajustes } })();
  expect(await r.json()).toEqual({ precios: {}, funciones: leerFunciones(ajustes) });
 });
+
+it("si no se pueden leer los ajustes, responde 503 en vez de publicar precios con el SBU por defecto", async () => {
+  const r = await crearManejadorPrecios({ almacen: { precios: async () => [], ajustes: async () => { throw Error("sin base"); } } })();
+  expect(r.status).toBe(503);
+  expect(r.headers.get("Cache-Control")).toBe("no-store");
+});

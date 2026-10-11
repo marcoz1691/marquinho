@@ -1,4 +1,4 @@
-import { leerAjustes, errorWeb } from "./funciones.js";
+import { errorWeb } from "./funciones.js";
 import { registrar } from "./metricas.js";
 import { createHash } from "node:crypto";
 import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
@@ -23,7 +23,8 @@ export function crearManejadorCita({
   const disponibilidad = (C, ajustes, t) => diasDisponibles({ almacen, C, ajustes, desde: fechaQuito(t), ahora: t });
   return {
     async GET(request) {
-      const ajustes = await leerAjustes(almacen), apagada = errorWeb(ajustes, "agenda");
+      // Lectura estricta: sin ajustes no se conocen los cupos ni los bloqueos, así que no se agenda a ciegas.
+      const ajustes = await almacen.ajustes(), apagada = errorWeb(ajustes, "agenda");
       if (apagada) return json(apagada, 503);
       const t = new Date(ahora());
       if ((await almacen.contarUso("cita:get:" + huella(request), HORA, t.getTime())) > limites.consultas)
@@ -37,7 +38,8 @@ export function crearManejadorCita({
       });
     },
     async POST(request) {
-      const ajustes = await leerAjustes(almacen), apagada = errorWeb(ajustes, "agenda");
+      // Lectura estricta: sin ajustes no se conocen los cupos ni los bloqueos, así que no se agenda a ciegas.
+      const ajustes = await almacen.ajustes(), apagada = errorWeb(ajustes, "agenda");
       if (apagada) return json(apagada, 503);
       let b;
       try {

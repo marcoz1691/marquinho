@@ -28,3 +28,11 @@ it("cuenta conversación y cita de formulario", async () => {
  const filas = await almacen.metricas("2026-10-12", "2026-10-12");
  for (const clave of ["conv.nueva.formulario", "cita.creada.formulario"]) expect(filas).toContainEqual({ fecha: "2026-10-12", clave, valor: 1 });
 });
+
+it("si no se pueden leer los ajustes (cupos y bloqueos), no agenda a ciegas", async () => {
+  const roto = { ...almacen, ajustes: async () => { throw new Error("sin base"); } };
+  const a = crearManejadorCita({ almacen: roto, avisar, contenido: async () => C, ahora: () => new Date("2026-10-12T12:00:00Z") });
+  const r = await a.POST(req()).catch(() => null);
+  expect(r === null || r.status >= 500).toBe(true);
+  expect(await almacen.citasEntre("2026-10-01", "2026-10-31")).toEqual([]);
+});
