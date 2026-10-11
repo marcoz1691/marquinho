@@ -128,3 +128,19 @@ button:disabled{cursor:default}
 .metricas-tabla table{width:100%;border-collapse:collapse;font-size:14px}.metricas-tabla th,.metricas-tabla td{padding:8px 4px;text-align:left;border-bottom:1px solid var(--line)}
 button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
 @media(max-width:600px){header{flex-wrap:wrap}header .tabs{order:3;flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px}header .tabs button{padding:6px 10px}.metricas-tabla{font-size:13px}}
+/* Funciones: interruptor real (verde y a la derecha = encendida); el texto dice el estado, no solo el color. */
+.interruptor{display:inline-flex;align-items:center;gap:10px;padding:4px 0;border:0;background:none;color:var(--fg);font:inherit;font-weight:600;cursor:pointer}
+.interruptor__pista{position:relative;width:46px;height:26px;border-radius:999px;background:var(--line);transition:background .2s;flex:none}
+.interruptor__perilla{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.interruptor[aria-checked=true] .interruptor__pista{background:var(--acc)}
+.interruptor[aria-checked=true] .interruptor__perilla{transform:translateX(20px)}
+.interruptor:focus-visible{outline:3px solid var(--acc);outline-offset:4px;border-radius:999px}
+.funcion-card--apagada{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 6%,var(--card))}
+.funcion-card--apagada .interruptor__texto,.funcion-card--apagada .funcion-estado{color:var(--gold)}
+@media (prefers-reduced-motion:reduce){.interruptor__pista,.interruptor__perilla{transition:none}}
+/* Métricas: el formulario del inicio del piloto en una línea y aire antes del CSV */
+#inicioPilotoForm{display:flex;flex-wrap:wrap;align-items:end;gap:8px 12px;max-width:520px}
+#inicioPilotoForm label{flex-basis:100%;margin:0}
+#inicioPilotoForm input{flex:1 1 180px;width:auto}
+#inicioPilotoForm .btn{width:auto;flex:none}
+#metricasCsv{margin:16px 0 8px}

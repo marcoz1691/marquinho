@@ -472,7 +472,7 @@ $("#preciosV").addEventListener("click", async (e) => {
 let funcionesPanel = null, metricasPanel = null;
 function pintarFunciones(d) {
   funcionesPanel = d;
-  $("#funcionesLista").innerHTML = (d.funciones || []).map(f => `<article class="funcion-card"><h3>${esc(f.nombre)}</h3><p>${esc(f.descripcion)}</p>${d.esAdmin ? `<button class="btn btn--line" role="switch" aria-label="${esc(f.nombre)}" aria-checked="${!!f.activa}" data-funcion-id="${esc(f.id)}">${f.activa ? "Encendida" : "Apagada"}</button>` : `<strong>${f.activa ? "Encendida" : "Apagada"}</strong>`}${f.actualizadoEn ? `<p>Cambiado por ${esc(f.actualizadoPor)} el ${esc(fechaLegible(f.actualizadoEn))}</p>` : ""}</article>`).join("");
+  $("#funcionesLista").innerHTML = (d.funciones || []).map(f => `<article class="funcion-card${f.activa ? "" : " funcion-card--apagada"}"><h3>${esc(f.nombre)}</h3><p>${esc(f.descripcion)}</p>${d.esAdmin ? `<button class="interruptor" type="button" role="switch" aria-label="${esc(f.nombre)}" aria-checked="${!!f.activa}" data-funcion-id="${esc(f.id)}"><span class="interruptor__pista" aria-hidden="true"><span class="interruptor__perilla"></span></span><span class="interruptor__texto">${f.activa ? "Encendida" : "Apagada"}</span></button>` : `<strong class="funcion-estado">${f.activa ? "Encendida" : "Apagada"}</strong>`}${f.actualizadoEn ? `<p>Cambiado por ${esc(f.actualizadoPor)} el ${esc(fechaLegible(f.actualizadoEn))}</p>` : ""}</article>`).join("");
 }
 async function cargarFuncionesPanel() {
   try { pintarFunciones(await api("GET", { accion: "funciones" })); }

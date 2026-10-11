@@ -11,6 +11,8 @@ it("cuenta las citas confirmadas de ayer en Quito, incluso sin recordatorios", a
  for (const estado of ["confirmada", "atendida", "pendiente"]) await almacen.crearSolicitudCita({ conversacionId: c.id, fecha: "2026-10-10", hora: "09:00", estado });
  const secreto = "s".repeat(32); estado.s = { almacen, env: { CRON_SECRET: secreto } };
  expect((await GET(new Request("https://x/api/recordatorios", { headers: { authorization: "Bearer " + secreto } }))).status).toBe(200);
+ // Si el cron se repite el mismo día (reintento de Vercel), las inasistencias no se cuentan dos veces.
+ expect((await GET(new Request("https://x/api/recordatorios", { headers: { authorization: "Bearer " + secreto } }))).status).toBe(200);
  expect(await almacen.metricas("2026-10-11", "2026-10-11")).toContainEqual({ fecha: "2026-10-11", clave: "cita.inasistencia", valor: 1 });
  } finally { vi.useRealTimers(); }
 });

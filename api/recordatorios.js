@@ -10,7 +10,9 @@ export async function GET(request) {
   if (!autorizadoCron(request, s.env.CRON_SECRET)) return new Response("Unauthorized", { status: 401 });
   const ayer = sumarDias(fechaQuito(new Date()), -1);
   try {
-    await registrar(s.almacen, "cita.inasistencia", (await s.almacen.agenda(ayer)).filter(c => c.estado === "confirmada").length);
+    // Solo la primera corrida del día suma: si Vercel reintenta el cron, las inasistencias de ayer no se cuentan dos veces.
+    if ((await s.almacen.contarUso("metricas:inasistencia:" + ayer, 7 * 864e5, Date.now())) === 1)
+      await registrar(s.almacen, "cita.inasistencia", (await s.almacen.agenda(ayer)).filter(c => c.estado === "confirmada").length);
   } catch (e) { console.error("No se pudieron contar las inasistencias:", e); }
   const enviados = await enviarRecordatorios({ almacen: s.almacen, whatsapp: s.whatsapp, contenido: s.contenido, plantilla: s.env.RECORDATORIO_PLANTILLA || "recordatorio_cita" });
   return Response.json({ enviados });

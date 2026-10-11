@@ -126,7 +126,7 @@ function aviso(texto, alternativa = false) {
   $("alternativas").hidden = !alternativa;
 }
 function agendaApagada() {
-  document.querySelectorAll(".progreso, .cita-layout").forEach(el => { el.hidden = true; });
+  document.querySelectorAll(".intro-cita, .progreso, .cita-layout").forEach(el => { el.hidden = true; });
   aviso("La agenda en línea no está disponible por ahora", true);
 }
 async function cargar() {
