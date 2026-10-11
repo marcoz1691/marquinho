@@ -296,15 +296,17 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .reveal.in{opacity:1;transform:none;filter:none}
 
 /* Sin animaciones si el usuario lo pide */
+/* «Reducir movimiento» (iOS, Android, macOS, Windows): se quitan desplazamientos, zooms, giros y desenfoques.
+   Se conservan los desvanecidos y la frase que se ilumina: solo cambian de opacidad, no mueven nada. */
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .reveal{opacity:1;transform:none;filter:none;transition:none}
+  .reveal{transform:none;filter:none;transition:opacity .8s ease;transition-delay:calc(var(--i,0) * 90ms)}
   .btn{transition:none}
-  .hero,.statement{height:auto;margin-top:0}
-  .hero__pin,.statement__pin{position:static;height:auto;min-height:80vh}
-  .seal,.hero__copy,.hero__copy>*{animation:none;transform:none;opacity:1;filter:none}
-  .words span{opacity:1}
+  .hero__copy,.hero__copy>*{transform:none;filter:none}
+  .seal{transform:none}
+  .seal,.hero__copy>*{animation-name:aparecer}
 }
+@keyframes aparecer{from{opacity:0}}
 
 /* Responsive */
 @media (max-width:860px){

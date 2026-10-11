@@ -324,3 +324,19 @@ test.describe("Flujo de WhatsApp y agenda", () => {
     }
   });
 });
+
+test("con «Reducir movimiento» las animaciones quedan solo como desvanecidos, sin desplazar ni desenfocar @movil", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await abrirPortada(page);
+  const portada = page.locator(".hero__copy");
+  await page.evaluate(() => scrollTo(0, 250));
+  await expect.poll(() => portada.evaluate((e) => +getComputedStyle(e).opacity)).toBeLessThan(0.5);
+  expect(await portada.evaluate((e) => [getComputedStyle(e).transform, getComputedStyle(e).filter])).toEqual(["none", "none"]);
+  await page.locator("#words").scrollIntoViewIfNeeded();
+  await page.evaluate(() => scrollBy(0, innerHeight * 0.6));
+  await expect.poll(() => page.locator("#words span.on").count()).toBeGreaterThan(0);
+  await page.locator("#categorias").scrollIntoViewIfNeeded();
+  const bloque = page.locator("#categorias .reveal.in").first();
+  await expect(bloque).toBeVisible();
+  expect(await bloque.evaluate((e) => getComputedStyle(e).transform)).toBe("none");
+});
