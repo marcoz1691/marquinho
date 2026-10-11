@@ -1,11 +1,15 @@
+import { cargarFunciones } from "./precios.js";
+import { enviarChat as enviarMensaje } from "./funciones.js";
 // Burbuja de chat del asistente en la página principal. La página completa está en asistente.html.
-import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, enviarMensaje, formato } from "./chat-nucleo.js";
+import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, formato } from "./chat-nucleo.js";
 import { tarjetaCita } from "./cita-tarjeta.js";
 
 const $ = (s) => document.querySelector(s);
 // Los cinco trámites más pedidos según el notario, como casos reales.
 const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas o materializar un documento"];
 const raiz = $("#chat"), lista = $("#chatMensajes"), form = $("#chatForm"), campo = $("#chatTexto"), lanzador = $("#chatAbrir");
+const funciones = await cargarFunciones();
+if (!funciones.chatWeb) { raiz.hidden = true; lanzador.hidden = true; }
 let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
 nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); });
 
@@ -51,10 +55,15 @@ async function enviar(texto) {
     r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
     r.tarjetas.forEach((resumen) => agregar({ autor: "tarjeta", resumen }, sesion));
   }
-  enviando = false; form.classList.remove("chat__form--ocupado"); campo.focus();
+  if (r.apagada) {
+    const aviso = document.createElement("p"); aviso.className = "servicio-aviso"; aviso.setAttribute("role", "alert"); aviso.tabIndex = -1; aviso.textContent = r.error;
+    const contacto = document.createElement("a"); contacto.href = "#contacto"; contacto.textContent = " Contactar a la notaría"; aviso.appendChild(contacto); document.querySelector("main").appendChild(aviso); aviso.focus();
+    raiz.hidden = true; funciones.chatWeb = false; lanzador.hidden = true; form.hidden = true; lanzador.setAttribute("aria-expanded", "false"); document.body.classList.remove("chat-abierto"); }
+  enviando = false; form.classList.remove("chat__form--ocupado"); if (!r.apagada) campo.focus();
 }
 
 function abrir() {
+  if (!funciones.chatWeb) return;
   raiz.hidden = false; lanzador.setAttribute("aria-expanded", "true"); document.body.classList.add("chat-abierto");
   const wa = document.documentElement.dataset.wa, enlace = $("#chatWhatsapp");
   if (wa) { enlace.href = "https://wa.me/" + wa; enlace.hidden = false; }
@@ -63,6 +72,7 @@ function abrir() {
 }
 function cerrar() { raiz.hidden = true; lanzador.setAttribute("aria-expanded", "false"); document.body.classList.remove("chat-abierto"); lanzador.focus(); }
 
+if (funciones.chatWeb) {
 lanzador.addEventListener("click", () => (raiz.hidden ? abrir() : cerrar()));
 $("#chatCerrar").addEventListener("click", cerrar);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !raiz.hidden) cerrar(); });
@@ -79,3 +89,5 @@ document.addEventListener("n41:preguntar", (e) => {
   setTimeout(() => { campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }, 60);
 });
 $("#chatNueva").addEventListener("click", () => { crearChat(); pintar(); campo.focus(); });
+
+}

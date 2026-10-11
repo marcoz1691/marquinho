@@ -1,4 +1,5 @@
-import { cargarPrecios } from "./precios.js";
+import { aplicarFunciones } from "./funciones.js";
+import { cargarPrecios, cargarFunciones } from "./precios.js";
 import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES, esHabilitante } from "./nucleo.js";
 
 (function () {
@@ -10,7 +11,8 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   };
 
-  var state = { cat: "destacados", q: "", sel: null, data: null, tarifas: null, notaria: null };
+  var funcionesLista = cargarFunciones().then(function (f) { state.funciones = f; if (!f.sitio) location.replace("mantenimiento.html"); aplicarFunciones(f); if (f.chatWeb && $("#chatAbrir").getAttribute("aria-expanded") !== "true") $("#chat").hidden = true; });
+  var state = { funciones: {}, cat: "destacados", q: "", sel: null, data: null, tarifas: null, notaria: null };
   // La pestaña inicial "Más pedidos": la lista de los trámites más pedidos que dio el notario, en su orden.
   var DESTACADOS = ["compraventa-vehiculo", "declaracion-natural", "poder-natural", "salida-pais", "copias-certificadas", "certificacion-electronica", "posesion-efectiva", "disolucion-sociedad-conyugal", "divorcio"];
 
@@ -81,9 +83,9 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var acciones = [];
     if (tieneWa()) acciones.push('<a class="act act--wa" target="_blank" rel="noopener" href="' + esc(wa("Hola, quiero información sobre el trámite: " + t.nombre)) + '"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>Consultar por WhatsApp</a>');
     else if (telefono()) acciones.push('<a class="act act--wa" href="' + esc(telefono()) + '"><i class="ph ph-phone" aria-hidden="true"></i>Llamar a la notaría</a>');
-    acciones.push('<a class="act" href="cita.html?tramite=' + esc(encodeURIComponent(t.id)) + '"><i class="ph ph-calendar-check" aria-hidden="true"></i>Agendar cita</a>');
-    if (tieneWa()) acciones.push('<a class="act" target="_blank" rel="noopener" href="' + esc(wa("Hola, quiero enviar mis documentos para revisión previa del trámite: " + t.nombre)) + '"><i class="ph ph-file-arrow-up" aria-hidden="true"></i>Enviar documentos</a>');
-    else if (state.notaria.correo) acciones.push('<a class="act" href="mailto:' + esc(state.notaria.correo) + "?subject=" + encodeURIComponent("Revisión previa: " + t.nombre) + '"><i class="ph ph-envelope-simple" aria-hidden="true"></i>Enviar documentos por correo</a>');
+    if (state.funciones.agenda !== false) acciones.push('<a class="act" href="cita.html?tramite=' + esc(encodeURIComponent(t.id)) + '"><i class="ph ph-calendar-check" aria-hidden="true"></i>Agendar cita</a>');
+    if (state.funciones.documentos !== false && tieneWa()) acciones.push('<a class="act" target="_blank" rel="noopener" href="' + esc(wa("Hola, quiero enviar mis documentos para revisión previa del trámite: " + t.nombre)) + '"><i class="ph ph-file-arrow-up" aria-hidden="true"></i>Enviar documentos</a>');
+    else if (state.funciones.documentos !== false && state.notaria.correo) acciones.push('<a class="act" href="mailto:' + esc(state.notaria.correo) + "?subject=" + encodeURIComponent("Revisión previa: " + t.nombre) + '"><i class="ph ph-envelope-simple" aria-hidden="true"></i>Enviar documentos por correo</a>');
     if (t.tarifa.tipo !== "consultar") acciones.push('<button class="act" type="button" data-calc="' + esc(t.id) + '"><i class="ph ph-calculator" aria-hidden="true"></i>Calcular costo</button>');
     acciones.push('<button class="act" type="button" data-share="' + esc(t.id) + '"><i class="ph ph-share-network" aria-hidden="true"></i>Compartir</button>');
     acciones.push('<button class="act" type="button" data-print="' + esc(t.id) + '"><i class="ph ph-printer" aria-hidden="true"></i>Imprimir</button>');
@@ -103,6 +105,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   // La web da lo general; el asistente resuelve el caso particular de cada persona.
   function sofia(t) {
+    if (state.funciones.chatWeb === false) return "";
     var n = state.notaria.asistente || "Sofía";
     return '<div class="tp__sofia"><p><strong>¿Tu caso es distinto?</strong> Cuéntaselo a ' + esc(n) + ' y te dice qué requisitos y costo aplican a tu situación.</p>' +
       '<button class="act act--sofia" type="button" data-sofia="' + esc(t.nombre) + '"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Preguntarle a ' + esc(n) + '</button></div>';
@@ -440,7 +443,8 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     scenes();
   }
 
-  cargar().then(cargarPrecios).then(function (r) {
+  cargar().then(cargarPrecios).then(async function (r) {
+    await funcionesLista;
     state.data = r.data; state.tarifas = r.tarifas; state.notaria = r.notaria;
     renderAvisos(); renderCategorias(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
   }).catch(function (e) {

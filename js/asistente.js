@@ -1,14 +1,21 @@
+import { cargarFunciones } from "./precios.js";
+import { enviarChat as enviarMensaje } from "./funciones.js";
 // Página del asistente a pantalla completa (diseño tipo LibreChat).
-import { esc, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chats, chatActual, elegirChat, crearChat, agregarMensaje, borrarChat, enviarMensaje, formato } from "./chat-nucleo.js";
+import { esc, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chats, chatActual, elegirChat, crearChat, agregarMensaje, borrarChat, formato } from "./chat-nucleo.js";
 import { tarjetaCita } from "./cita-tarjeta.js";
 
 const $ = (s) => document.querySelector(s);
 const hilo = $("#hilo"), mensajes = $("#mensajes"), form = $("#form"), campo = $("#texto"), boton = $("#enviar");
+const funciones = await cargarFunciones();
+if (!funciones.sitio) location.replace("mantenimiento.html");
+function apagado() { funciones.chatWeb = false; document.querySelectorAll(".ac-lado, .ac-main, .ac-movil, #velo").forEach(el => { el.hidden = true; }); $("#asistenteApagado").hidden = false; }
+if (!funciones.chatWeb) apagado();
 let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
 nombreAsistente().then((n) => { nombre = n; mostrarNombre(n); document.title = n + " | Notaría 41 de Quito"; });
 
 // Número de WhatsApp de la notaría (mismo dato que usa la página principal).
 fetch("data/notaria.json").then((r) => r.json()).then((n) => {
+  $("#asistenteContacto").innerHTML = `<a href="https://wa.me/${esc(String(n.whatsapp || "").replace(/\D/g, ""))}">Escríbenos por WhatsApp</a>` + (n.telefonos || []).map(t => `<p><a href="tel:${esc(t.replace(/[^\d+]/g, ""))}">${esc(t)}</a></p>`).join("");
   const wa = String(n.whatsapp || "").replace(/\D/g, "");
   if (wa) { const a = $("#ladoWhatsapp"); a.href = "https://wa.me/" + wa; a.hidden = false; }
 }).catch(() => {});
@@ -74,12 +81,13 @@ async function enviar(texto) {
   const sesion = chat.sesion;
   const r = await enviarMensaje(sesion, texto);
   pensando.remove();
+  if (r.apagada) apagado();
   if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);
   else {
     r.respuestas.forEach((t) => agregar({ autor: "asistente", texto: t }, sesion));
     r.tarjetas.forEach((resumen) => agregar({ autor: "tarjeta", resumen }, sesion));
   }
-  enviando = false; boton.disabled = !campo.value.trim(); campo.focus();
+  enviando = false; boton.disabled = !campo.value.trim(); if (funciones.chatWeb) campo.focus();
 }
 
 function nueva() { chat = crearChat(); pintar(); cerrarLado(); campo.focus(); }
@@ -108,4 +116,4 @@ $("#historial").addEventListener("click", (e) => {
 });
 
 pintar();
-campo.focus();
+if (funciones.chatWeb) campo.focus();

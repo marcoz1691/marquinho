@@ -111,3 +111,6 @@ body.ac{display:grid;grid-template-columns:272px 1fr;height:100vh;height:100dvh;
   .ac-borrar{opacity:1}
 }
 .ac-vacio{margin:14px 10px;color:var(--muted);font-size:14px}
+
+.servicio-aviso{width:min(100% - 32px,640px);margin:48px auto;padding:24px;overflow-wrap:anywhere}.servicio-aviso h1{font-size:clamp(24px,5vw,40px)}
+[hidden]{display:none!important}
