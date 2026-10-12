@@ -46,7 +46,11 @@ function disponibles({ C, ajustes, fecha, ahora = new Date(), excluirIds = [] },
   for (let m = minutos(H.abre); m < minutos(H.cierra); m += 30) {
     const hora = String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
     if (new Date(fecha + "T" + hora + ":00-05:00") <= ahora) continue;
-    if (bloqueos.some((b) => b.fecha === fecha && b.hora?.slice(0, 2) === hora.slice(0, 2))) continue;
+    // Con horarios de matriceros la cita dura duracionMin: no se ofrece si cruza una hora bloqueada (una hora bloqueada cubre HH:00–HH:59).
+    const bloqueada = modoHorarios
+      ? bloqueos.some((b) => b.fecha === fecha && b.hora && m < minutos(b.hora.slice(0, 2) + ":00") + 60 && minutos(b.hora.slice(0, 2) + ":00") < m + duracionMin)
+      : bloqueos.some((b) => b.fecha === fecha && b.hora?.slice(0, 2) === hora.slice(0, 2));
+    if (bloqueada) continue;
     if (modoHorarios ? m + duracionMin <= minutos(H.cierra) && candidatos(personas, ocupadas, fecha, hora, duracionMin).length > 0 : ocupadas.filter((c) => c.hora.slice(0, 2) === hora.slice(0, 2)).length < porHora) libres.push(hora);
   }
   return libres;

@@ -176,3 +176,15 @@ describe("citas antiguas con la asignación escrita a mano", () => {
     expect(await horasLibres(opciones(a))).toContain("10:30");
   });
 });
+
+describe("bloqueos de una hora y citas de 90 minutos", () => {
+  it("no ofrece una hora cuya cita cruzaría una hora bloqueada", async () => {
+    const a = crearAlmacenMemoria({ personal: [persona("a@test.ec")] });
+    const libres = await horasLibres({ ...opciones(a), ajustes: { "citas.bloqueos": JSON.stringify([{ fecha, hora: "11:00" }]) } });
+    expect(libres).toContain("09:30");        // 09:30–11:00 termina justo cuando empieza el bloqueo
+    expect(libres).not.toContain("10:00");    // 10:00–11:30 cruza las 11:00
+    expect(libres).not.toContain("10:30");    // 10:30–12:00 cruza las 11:00
+    expect(libres).not.toContain("11:00");
+    expect(libres).not.toContain("11:30");    // 11:30 cae dentro de la hora bloqueada (11:00–11:59)
+  });
+});
