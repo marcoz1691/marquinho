@@ -202,3 +202,8 @@ create or replace function sumar_metrica(p_fecha date, p_clave text, p_valor big
 $$;
 revoke execute on function sumar_metrica(date, text, bigint) from public, anon, authenticated;
 grant execute on function sumar_metrica(date, text, bigint) to service_role;
+
+-- 2026-10-11: perfil notario.
+alter table personal drop constraint if exists personal_rol_check;
+alter table personal add constraint personal_rol_check check (rol in ('admin','notario','personal'));
+alter table personal add column if not exists creado timestamptz not null default now();

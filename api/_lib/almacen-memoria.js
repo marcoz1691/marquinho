@@ -2,6 +2,8 @@
 import { textoVisible } from "./mensajes.js";
 
 export function crearAlmacenMemoria({ personal = [] } = {}) {
+  personal = structuredClone(personal);
+  const invitaciones = [];
   const precios = new Map(), ajustes = {}, detalles = {}, metricas = new Map();
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
   let archivos = [], docs = [], citas = [], pendientes = [];
@@ -21,7 +23,15 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async metricas(desde, hasta) { return copia([...metricas.values()].filter(r => r.fecha >= desde && r.fecha <= hasta).sort((a,b) => a.fecha.localeCompare(b.fecha) || a.clave.localeCompare(b.clave))); },
     async restaurarAjuste(clave) { delete ajustes[clave]; delete detalles[clave]; },
     async guardarAjuste(clave, valor, por) { ajustes[clave] = clave === "sbu" ? Number(valor) : String(valor); detalles[clave] = { clave, valor: String(valor), actualizadoPor: por || "", actualizadoEn: new Date().toISOString() }; },
-    async esAdmin(email) { return personal.some((p) => p.email.toLowerCase() === String(email).toLowerCase() && p.rol === "admin"); },
+    invitaciones,
+    async rolDe(email) { return personal.find(p => p.email.toLowerCase() === String(email || "").toLowerCase())?.rol || null; },
+    async esAdmin(email) { return await this.rolDe(email) === "admin"; },
+    async esPersonal(email) { return !!await this.rolDe(email); },
+    async equipo() { return personal.map(p => ({ email: p.email, nombre: p.nombre, rol: p.rol, dosPasos: !!p.mfa_en || conMfa.has(p.email), creado: p.creado || null })).sort((a,b) => a.nombre.localeCompare(b.nombre)); },
+    async agregarMiembro(p) { if (await this.rolDe(p.email)) throw Object.assign(new Error("Duplicado"), { code: "23505" }); personal.push({ ...copia(p), creado: new Date().toISOString() }); },
+    async quitarMiembro(email) { personal = personal.filter(p => p.email !== email); conMfa.delete(email); },
+    async cambiarRol(email, rol) { const p = personal.find(p => p.email === email); if (p) p.rol = rol; },
+    async invitar(email, redirectTo) { invitaciones.push({ email, redirectTo }); return { yaTeniaCuenta: false }; },
     async marcarProcesado(waId) {
       if (procesados.has(waId)) return false;
       procesados.add(waId);

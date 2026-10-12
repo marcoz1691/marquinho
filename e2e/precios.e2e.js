@@ -4,7 +4,7 @@ async function preparar(page, esAdmin, editada = {}, extra = {}) {
   const pedidos = [];
   await page.route("**/vendor/supabase-js-*.js", (r) => r.fulfill({ contentType: "application/javascript", body: `window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'TOKEN'}}}),signOut:async()=>({})}})};` }));
   await page.route("**/api/panel-config", (r) => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
-  await page.route("**/api/panel?**", (r) => r.fulfill({ json: new URL(r.request().url()).searchParams.get("accion") === "precios" ? {
+  await page.route("**/api/panel?**", (r) => r.fulfill({ json: new URL(r.request().url()).searchParams.get("accion") === "yo" ? { email: "yo@test.ec", nombre: "Yo", rol: esAdmin ? "admin" : "personal" } : new URL(r.request().url()).searchParams.get("accion") === "precios" ? {
     ...extra, esAdmin, tarifas: { sbu: 482, anio: "2026", iva: 0.15, tablas: { inmueble: [[null, 0.1]] } },
     tramites: [{ id: "poder", nombre: "Poder general", tarifa: { tipo: "pct", valor: 0.12, unidad: "", tabla: "" }, editada: false, ...editada }]
   } : [] }));

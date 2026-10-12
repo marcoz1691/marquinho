@@ -144,3 +144,12 @@ button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px soli
 #inicioPilotoForm input{flex:1 1 180px;width:auto}
 #inicioPilotoForm .btn{width:auto;flex:none}
 #metricasCsv{margin:16px 0 8px}
+
+#equipoV { max-width: 1000px; margin: auto; padding: 24px; }
+.equipo-miembro { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 16px 0; }
+.equipo-miembro > div { min-width: 0; overflow-wrap: anywhere; }
+.equipo-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.equipo-acciones label { display: grid; gap: 6px; }
+#equipoInvitar { max-width: 460px; }
+#equipoInvitar input, #equipoInvitar select, .equipo-acciones select { width: 100%; max-width: 100%; }
+#perfilSesion { white-space: nowrap; }

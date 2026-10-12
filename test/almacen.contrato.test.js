@@ -12,6 +12,23 @@ const tel = () => "5939" + Math.floor(Math.random() * 1e8).toString().padStart(8
 const DIA = 864e5;
 
 describe.each(adaptadores)("almacén %s", (_, crear) => {
+  it("gestiona miembros, roles y estado de dos pasos", async () => {
+    const a = crear(), email = `contrato-${Date.now()}-${Math.random()}@example.test`;
+    expect(await a.rolDe(email)).toBeNull();
+    try {
+      await a.agregarMiembro({ email, nombre: "Contrato", rol: "personal" });
+      expect(await a.rolDe(email.toUpperCase())).toBe("personal");
+      expect(await a.esPersonal(email)).toBe(true);
+      expect(await a.esAdmin(email)).toBe(false);
+      expect(await a.equipo()).toContainEqual(expect.objectContaining({ email, nombre: "Contrato", dosPasos: false, creado: expect.any(String) }));
+      await a.marcarMfa(email);
+      expect(await a.equipo()).toContainEqual(expect.objectContaining({ email, dosPasos: true }));
+      await a.cambiarRol(email, "notario"); expect(await a.rolDe(email)).toBe("notario");
+      await a.cambiarRol(email, "admin"); expect(await a.esAdmin(email)).toBe(true);
+    } finally { await a.quitarMiembro(email); }
+    expect(await a.rolDe(email)).toBeNull();
+  });
+
   it("conserva detalles y suma métricas por fecha y clave", async () => {
     const a = crear(), clave = "prueba." + Math.random();
     await a.guardarAjuste(clave, "0", "admin");
@@ -245,4 +262,21 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     await a.auditar({ email: "carla@notaria41.ec", accion: "documento", objetivo, ok: true });
     expect((await a.auditoria()).find((x) => x.objetivo === objetivo)).toMatchObject({ email: "carla@notaria41.ec", accion: "documento", ok: true });
   });
+});
+
+it("contrato de invitación sin envío real en ambos adaptadores", async () => {
+  const memoria = crearAlmacenMemoria();
+  const llamadas = [];
+  const supabase = crearAlmacenSupabase({ cliente: { auth: { admin: { inviteUserByEmail: async (...args) => { llamadas.push(args); return { error: null }; } } } } });
+  for (const a of [memoria, supabase]) expect(await a.invitar("a@example.test", "https://sitio.ec/panel/")).toEqual({ yaTeniaCuenta: false });
+  expect(memoria.invitaciones).toEqual([{ email: "a@example.test", redirectTo: "https://sitio.ec/panel/" }]);
+  expect(llamadas).toEqual([["a@example.test", { redirectTo: "https://sitio.ec/panel/" }]]);
+});
+it("Supabase reconoce cuenta Auth existente y propaga otros errores", async () => {
+  for (const error of [{ code: "email_exists", message: "Existe" }, { message: "A user with this email address has already been registered" }]) {
+    const a = crearAlmacenSupabase({ cliente: { auth: { admin: { inviteUserByEmail: async () => ({ error }) } } } });
+    expect(await a.invitar("a@example.test", "https://sitio.ec/panel/")).toEqual({ yaTeniaCuenta: true });
+  }
+  const a = crearAlmacenSupabase({ cliente: { auth: { admin: { inviteUserByEmail: async () => ({ error: { message: "SMTP no disponible" } }) } } } });
+  await expect(a.invitar("a@example.test", "https://sitio.ec/panel/")).rejects.toThrow("SMTP no disponible");
 });
