@@ -1,6 +1,6 @@
 import { FUNCIONES, leerFunciones } from "./funciones.js";
 import { registrar, canalDeTelefono, CLAVES, PRECIOS } from "./metricas.js";
-import { reglasCitas, fechaQuito, fechaValida } from "./citas.js";
+import { reglasCitas, fechaQuito, fechaValida, duracionValida, seCruzan } from "./citas.js";
 import { minutos } from "../../js/nucleo.js";
 // Acciones del panel del personal sobre conversaciones, citas y documentos.
 import { textoVisible, PREFIJO_PERSONAL } from "./mensajes.js";
@@ -59,12 +59,61 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fallo("Escribe un correo válido.");
     return email;
   };
-  async function permitir(por, roles) {
+  async function permitir(por, roles, mensaje = "No tienes permiso para cambiar este perfil.") {
     const rol = await almacen.rolDe(por);
-    if (!roles.includes(rol)) fallo("No tienes permiso para cambiar este perfil.", 403);
+    if (!roles.includes(rol)) fallo(mensaje, 403);
     return rol;
   }
+  async function personaAusencias(email, por) {
+    email = correo(email || por);
+    const rol = await almacen.rolDe(por);
+    if (email !== por && !["admin", "notario"].includes(rol)) fallo("Tu perfil Personal solo puede gestionar tus propias ausencias.", 403);
+    const p = (await almacen.equipo()).find(p => p.email === email);
+    if (!p) fallo("Esa persona no está en el equipo.", 404);
+    return p;
+  }
+  async function editarHorarios(por) {
+    await permitir(por, ["admin", "notario"], "Tu perfil Personal no puede cambiar horarios ni la duración de las citas; pide ayuda al notario o a un administrador.");
+  }
   return {
+    async misAusencias(email, por) {
+      const p = await personaAusencias(email, por);
+      return { email: p.email, nombre: p.nombre, ausencias: p.ausencias.filter(a => a.hasta >= fechaQuito(ahora())), puedeEditar: true };
+    },
+    async guardarHorario({ email, atiendeCitas, horario }, por) {
+      await editarHorarios(por);
+      email = correo(email);
+      if (typeof atiendeCitas !== "boolean" || !horario || typeof horario !== "object" || Array.isArray(horario)) fallo("Marca si atiende citas y elige un horario válido.");
+      const horaValida = h => typeof h === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(h) && minutos(h) % 5 === 0;
+      for (const [dia, tramos] of Object.entries(horario)) {
+        if (!/^[0-6]$/.test(dia) || !Array.isArray(tramos) || tramos.length > 3) fallo("Cada día debe tener hasta tres tramos; usa días de lunes a domingo.");
+        let fin = -1;
+        for (const tramo of tramos) {
+          if (!Array.isArray(tramo) || tramo.length !== 2 || !tramo.every(horaValida) || minutos(tramo[0]) >= minutos(tramo[1]) || minutos(tramo[0]) < fin) fallo("Elige horas válidas en múltiplos de cinco minutos, ordenadas y sin cruces; Desde debe ser anterior a Hasta.");
+          fin = minutos(tramo[1]);
+        }
+      }
+      if (!(await almacen.rolDe(email))) fallo("Esa persona no está en el equipo.", 404);
+      await almacen.guardarHorario(email, { atiendeCitas, horario });
+      return { ok: true, ...await this.equipo(por) };
+    },
+    async guardarAusencias({ email, ausencias }, por) {
+      const p = await personaAusencias(email, por);
+      if (!Array.isArray(ausencias) || ausencias.length > 24) fallo("Puedes registrar hasta 24 ausencias.");
+      const hoy = fechaQuito(ahora());
+      for (const a of ausencias) {
+        if (!a || typeof a !== "object" || Array.isArray(a) || Object.keys(a).some(k => !["desde", "hasta", "motivo"].includes(k)) || !fechaValida(a.desde) || !fechaValida(a.hasta) || a.desde > a.hasta || typeof a.motivo !== "string" || a.motivo.length > 80 || /[\u0000-\u001f\u007f-\u009f]/.test(a.motivo)) fallo("Elige fechas válidas y un motivo de hasta 80 caracteres sin caracteres de control.");
+      }
+      ausencias = ausencias.filter(a => a.hasta >= hoy).map(a => ({ desde: a.desde, hasta: a.hasta, motivo: a.motivo }));
+      await almacen.guardarAusencias(p.email, ausencias);
+      return { ok: true, ausencias };
+    },
+    async guardarDuracionCita({ minutos }, por) {
+      await editarHorarios(por);
+      if (!duracionValida(minutos)) fallo("Elige una duración entre 30 y 240 minutos, en múltiplos de 30.");
+      await almacen.guardarAjuste("citas.duracionMin", minutos, por);
+      return { ok: true, ...await this.citasConfig() };
+    },
     async yo(email) { const p = (await almacen.equipo()).find(p => p.email === email); return { email, nombre: p?.nombre || "", rol: await almacen.rolDe(email) }; },
     async equipo(por) {
       const rol = await permitir(por, ["admin", "notario"]);
@@ -154,7 +203,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     },
     async citasConfig() {
       const r = reglasCitas(await contenido(), await almacen.ajustes());
-      return { porHora:r.porHora, porHoraOficial:r.porHoraOficial, bloqueos:r.bloqueos.filter(b=>b.fecha>=fechaQuito(ahora())) };
+      return { duracionMin: r.duracionMin, modoHorarios: (await almacen.matriceros()).some(p => p.horario !== null) ? "matriceros" : "cupoFijo", porHora:r.porHora, porHoraOficial:r.porHoraOficial, bloqueos:r.bloqueos.filter(b=>b.fecha>=fechaQuito(ahora())) };
     },
     async guardarCupo({porHora}, por) {
       if (!Number.isInteger(porHora) || porHora<1 || porHora>20) throw new Aviso("El cupo debe ser un entero de 1 a 20.");
@@ -246,7 +295,8 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new Aviso("Fecha inválida");
       const C = await contenido();
       const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
-      return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: nombreDe(x.tramiteId) })) };
+      const equipo = await almacen.equipo();
+      return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, asignadaNombre: equipo.find(p => p.email === x.asignadaA)?.nombre || x.asignadaA || "", canal: canalDe(x.telefonoConversacion), tramite: nombreDe(x.tramiteId) })) };
     },
 
     async buscarTicket(codigo) {
@@ -257,9 +307,15 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     },
 
     async asignarCita(citaId, persona) {
-      if (!(await almacen.cita(citaId))) throw new Aviso("Cita no encontrada");
-      if (String(persona || "").length > 60) throw new Aviso("El nombre de la persona asignada es demasiado largo.");
-      await almacen.actualizarCita(citaId, { asignadaA: limpio(persona, 60) });
+      const cita = await almacen.cita(citaId);
+      if (!cita) throw new Aviso("Cita no encontrada");
+      if (typeof persona !== "string" || persona.length > (persona.includes("@") ? 254 : 60)) throw new Aviso("El nombre o correo de la persona asignada es demasiado largo.");
+      persona = limpio(persona, 254);
+      const equipo = await almacen.equipo(), p = equipo.find(p => p.email === persona || p.nombre === persona);
+      const r = reglasCitas(await contenido(), await almacen.ajustes());
+      const cruce = p && (await almacen.agenda(cita.fecha)).some(c => c.id !== citaId && ["pendiente", "confirmada"].includes(c.estado) && [p.email, p.nombre].includes(c.asignadaA) && seCruzan(c.hora, cita.hora, r.duracionMin));
+      await almacen.actualizarCita(citaId, { asignadaA: persona });
+      return { ok: true, ...(cruce ? { aviso: `${p.nombre} ya tiene una cita a esa hora` } : {}) };
     },
 
     async decidirCita(citaId, estado, motivo = "") {

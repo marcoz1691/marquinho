@@ -717,3 +717,18 @@ it("una conversación cuenta una sola vez como derivada aunque se derive de nuev
   await asistente.atender(mensaje({ id: "m-deriva-2" }));
   expect(await almacen.metricas("2026-10-06", "2026-10-06")).toContainEqual({ fecha: "2026-10-06", clave: "conv.derivada.whatsapp", valor: 1 });
 });
+it('Sofía asigna al matricero libre y no ofrece intervalos ocupados', async () => {
+ await almacen.agregarMiembro({ email: 'matricero@test.ec', nombre: 'Matricero', rol: 'notario' });
+ await almacen.guardarHorario('matricero@test.ec', { atiendeCitas: true, horario: { 1: [['08:00','17:00']] } });
+ const input = { nombre: 'Ana Pérez', fecha: '2026-10-12', hora: '09:00', tramite_id: 'poder' };
+ const claude = claudeFalso([herramienta('solicitar_cita', input),texto('Listo')]);
+ await nuevo(claude).atender(mensaje());
+ expect((await almacen.agenda(input.fecha))[0].asignadaA).toBe('matricero@test.ec');
+ const otro = claudeFalso([herramienta('solicitar_cita', { ...input, hora: '10:00' }),texto('Elige otra hora')]);
+ await nuevo(otro).atender(mensaje({ de: '593991112234' }));
+ const resultado = otro.llamadas[1].messages.at(-1).content[0];
+ expect(resultado.is_error).toBe(true);
+ expect(resultado.content).toContain('Horas libres');
+ expect(resultado.content).not.toMatch(/Horas libres[^.]*10:00/);
+ expect(await almacen.agenda(input.fecha)).toHaveLength(1);
+});

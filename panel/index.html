@@ -116,6 +116,13 @@
   <div class="ag-lista ag-resultados" id="agResultados"></div>
   <div id="agResumen" class="ag-resumen" aria-label="Resumen del día"></div>
   <div class="ag-lista" id="agLista"></div>
+  <p id="agAsignacionMensaje" role="status"></p>
+  <details id="misAusencias" class="ag-config"><summary>Mis ausencias</summary>
+    <div id="ausenciasPersonaCampo" hidden><label for="ausenciasPersona">Persona</label><select id="ausenciasPersona"></select></div>
+    <ul id="ausenciasLista" class="bloqueos"></ul>
+    <form id="ausenciasForm" class="config-fila"><label for="ausenciaDesde">Desde</label><input id="ausenciaDesde" name="desde" type="date" required><label for="ausenciaHasta">Hasta</label><input id="ausenciaHasta" name="hasta" type="date" required><label for="ausenciaMotivo">Motivo</label><input id="ausenciaMotivo" name="motivo" maxlength="80"><button class="btn">Agregar</button></form>
+    <p id="ausenciasMensaje" role="status"></p>
+  </details>
   <details id="agConfig" class="ag-config" hidden><summary>Cupos y bloqueos</summary><div id="agConfigContenido"></div><p id="agConfigMensaje" role="status"></p></details>
 </section>
 
@@ -139,6 +146,10 @@
 <details><summary>Precios para el costo</summary><form id="metricasPrecios"></form></details>
 </section>
 <section id="equipoV" hidden><h2>Equipo</h2><div id="equipoLista"></div>
+<dialog id="horarioDialogo" aria-labelledby="horarioTitulo"><form id="horarioForm">
+<h2 id="horarioTitulo">Horario</h2><label><input id="horarioAtiende" type="checkbox"> Atiende citas</label>
+<div id="horarioDias"></div><button type="button" id="horarioCopiar" class="btn btn--line">Copiar el lunes a toda la semana</button>
+<p id="horarioMensaje" role="status"></p><div class="horario-botones"><button class="btn" type="submit">Guardar horario</button><button class="btn btn--line" type="button" id="horarioCerrar">Cerrar</button></div></form></dialog>
 <h3>Invitar a alguien</h3><form id="equipoInvitar">
 <div class="campo"><label for="equipoNombre">Nombre</label><input id="equipoNombre" name="nombre" minlength="2" maxlength="80" autocomplete="name" required></div>
 <div class="campo"><label for="equipoEmail">Correo</label><input id="equipoEmail" name="email" type="email" autocomplete="email" required></div>

@@ -36,3 +36,20 @@ it("si no se pueden leer los ajustes (cupos y bloqueos), no agenda a ciegas", as
   expect(r === null || r.status >= 500).toBe(true);
   expect(await almacen.citasEntre("2026-10-01", "2026-10-31")).toEqual([]);
 });
+it('asigna automáticamente por horario y no ofrece intervalos ocupados', async () => {
+ await almacen.agregarMiembro({ email: 'ana@test.ec', nombre: 'Ana', rol: 'personal' });
+ await almacen.guardarHorario('ana@test.ec', { atiendeCitas: true, horario: { 1: [['08:00','17:00']] } });
+ expect((await api.POST(req())).status).toBe(201);
+ expect((await almacen.agenda(cuerpo.fecha))[0].asignadaA).toBe('ana@test.ec');
+ const dias = (await (await api.GET(new Request('https://n.ec/api/cita'))).json()).dias;
+ expect(dias[0].horas).not.toContain('10:30');
+ expect((await api.POST(req({ ...cuerpo, celular: '0991234568', hora: '10:30' }))).status).toBe(409);
+});
+it('respaldo conserva asignación vacía y fallo de matriceros impide reservar', async () => {
+ expect((await api.POST(req())).status).toBe(201);
+ expect((await almacen.agenda(cuerpo.fecha))[0].asignadaA).toBe('');
+ almacen.matriceros = async () => { throw new Error('sin horarios'); };
+ await expect(api.GET(new Request('https://n.ec/api/cita'))).rejects.toThrow('sin horarios');
+ await expect(api.POST(req({ ...cuerpo, celular: '0991234568' }))).rejects.toThrow('sin horarios');
+ expect(await almacen.agenda(cuerpo.fecha)).toHaveLength(1);
+});

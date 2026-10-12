@@ -21,6 +21,12 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
       expect(await a.esPersonal(email)).toBe(true);
       expect(await a.esAdmin(email)).toBe(false);
       expect(await a.equipo()).toContainEqual(expect.objectContaining({ email, nombre: "Contrato", dosPasos: false, creado: expect.any(String) }));
+      expect(await a.equipo()).toContainEqual(expect.objectContaining({ email, atiendeCitas: true, horario: null, ausencias: [] }));
+      const horario = { 1: [["08:00", "17:00"]] }, ausencias = [{ desde: "2099-01-01", hasta: "2099-01-03", motivo: "Vacaciones" }];
+      await a.guardarHorario(email, { atiendeCitas: true, horario }); await a.guardarAusencias(email, ausencias);
+      expect(await a.matriceros()).toContainEqual({ email, nombre: "Contrato", atiendeCitas: true, horario, ausencias });
+      await a.guardarHorario(email, { atiendeCitas: false, horario });
+      expect(await a.matriceros()).not.toContainEqual(expect.objectContaining({ email }));
       await a.marcarMfa(email);
       expect(await a.equipo()).toContainEqual(expect.objectContaining({ email, dosPasos: true }));
       await a.cambiarRol(email, "notario"); expect(await a.rolDe(email)).toBe("notario");
@@ -279,4 +285,46 @@ it("Supabase reconoce cuenta Auth existente y propaga otros errores", async () =
   }
   const a = crearAlmacenSupabase({ cliente: { auth: { admin: { inviteUserByEmail: async () => ({ error: { message: "SMTP no disponible" } }) } } } });
   await expect(a.invitar("a@example.test", "https://sitio.ec/panel/")).rejects.toThrow("SMTP no disponible");
+});
+
+// Contrato de horarios contra ambos adaptadores sin necesitar credenciales de Supabase.
+function clienteHorarios() {
+  let filas = [{email:'contrato@test.ec',nombre:'Contrato',rol:'notario',atiende_citas:true,horario:null,ausencias:[]}];
+  let error = null;
+  return {
+    fallar() { error = {message:'lectura fallida'}; },
+    from(tabla) {
+      expect(tabla).toBe('personal');
+      const filtros = []; let cambios;
+      const q = {
+        select() { return q; }, order() { return q; },
+        eq(k,v) { filtros.push([k,v]); return q; },
+        update(v) { cambios = v; return q; },
+        then(resolve,reject) {
+          const seleccion = filas.filter(p => filtros.every(([k,v]) => p[k] === v));
+          if (!error && cambios) seleccion.forEach(p => Object.assign(p,structuredClone(cambios)));
+          return Promise.resolve({data:structuredClone(seleccion),error}).then(resolve,reject);
+        }
+      }; return q;
+    }
+  };
+}
+describe.each(['memoria','supabase simulado'])('contrato de horarios %s', tipo => {
+  it('conserva horario, ausencias, estado y cualquier perfil', async () => {
+    const cliente = clienteHorarios();
+    const a = tipo === 'memoria' ? crearAlmacenMemoria({personal:[{email:'contrato@test.ec',nombre:'Contrato',rol:'notario'}]}) : crearAlmacenSupabase({cliente});
+    expect(await a.matriceros()).toEqual([{email:'contrato@test.ec',nombre:'Contrato',atiendeCitas:true,horario:null,ausencias:[]}]);
+    const horario = {1:[['08:00','13:00'],['14:00','17:00']]}, ausencias = [{desde:'2099-01-01',hasta:'2099-01-03',motivo:'Vacaciones'}];
+    await a.guardarHorario('contrato@test.ec',{atiendeCitas:true,horario}); await a.guardarAusencias('contrato@test.ec',ausencias);
+    expect(await a.matriceros()).toEqual([{email:'contrato@test.ec',nombre:'Contrato',atiendeCitas:true,horario,ausencias}]);
+    expect(await a.equipo()).toContainEqual(expect.objectContaining({email:'contrato@test.ec',rol:'notario',atiendeCitas:true,horario,ausencias}));
+    await a.guardarHorario('contrato@test.ec',{atiendeCitas:false,horario});
+    expect(await a.matriceros()).toEqual([]);
+    await a.guardarAusencias('contrato@test.ec',[]);
+    expect(await a.equipo()).toContainEqual(expect.objectContaining({email:'contrato@test.ec',ausencias:[]}));
+    if (tipo !== 'memoria') {
+      cliente.fallar();
+      for (const leer of [() => a.equipo(),() => a.matriceros(),() => a.guardarHorario('contrato@test.ec',{atiendeCitas:true,horario}),() => a.guardarAusencias('contrato@test.ec',[])]) await expect(leer()).rejects.toThrow('lectura fallida');
+    }
+  });
 });

@@ -35,3 +35,9 @@ Antes de dar un cambio por terminado, `npm test` y `npm run test:e2e` deben pasa
 
 - Las cuentas se crean desde la pestaña **Equipo**: admin gestiona todos los perfiles y notario solo invita/da de baja a Personal. La primera cuenta admin se configura en Supabase (README).
 - Antes de usar Equipo, ejecuta el bloque «2026-10-11: perfil notario» de `supabase/esquema.sql` y permite la URL `…/panel/` en Authentication → URL Configuration.
+
+### Horarios y ausencias de los matriceros
+
+Antes de usar los horarios, ejecuta en Supabase el bloque «2026-10-12: horarios de los matriceros» de `supabase/esquema.sql`. No se necesitan políticas públicas nuevas.
+Admin y notario cargan los días y tramos desde **Equipo → Horario** y marcan **Atiende citas**. La agenda calcula la disponibilidad por el intervalo completo y asigna al matricero con menos carga. Hasta cargar el primer horario activo, conserva el cupo fijo por hora. Un horario vacío indica que esa persona no trabaja ningún día.
+Cada persona gestiona **Agenda → Mis ausencias**; admin y notario pueden elegir otra persona. La duración se configura en **Agenda → Cupos y bloqueos** (90 minutos por defecto, entre 30 y 240 en múltiplos de 30).

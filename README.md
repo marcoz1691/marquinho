@@ -85,3 +85,9 @@ La guía para el notario está en [cms/GUIA-NOTARIO.md](cms/GUIA-NOTARIO.md).
 
 ## Logo
 [assets/logo/generar_sello.py](assets/logo/generar_sello.py) genera el sello vectorial calcado del original. Usa las fuentes Arimo y UnifrakturMaguntia (OFL), recortadas en `assets/logo/fuentes/`.
+
+### Horarios y ausencias de los matriceros
+
+Antes de usar los horarios, ejecuta en Supabase el bloque «2026-10-12: horarios de los matriceros» de `supabase/esquema.sql`. No se necesitan políticas públicas nuevas.
+Admin y notario cargan los días y tramos desde **Equipo → Horario** y marcan **Atiende citas**. La agenda calcula la disponibilidad por el intervalo completo y asigna al matricero con menos carga. Hasta cargar el primer horario activo, conserva el cupo fijo por hora. Un horario vacío indica que esa persona no trabaja ningún día.
+Cada persona gestiona **Agenda → Mis ausencias**; admin y notario pueden elegir otra persona. La duración se configura en **Agenda → Cupos y bloqueos** (90 minutos por defecto, entre 30 y 240 en múltiplos de 30).
