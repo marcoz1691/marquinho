@@ -89,3 +89,13 @@ it.each(["quitarMiembro", "cambiarRol"])("protege último admin en %s", async ac
   a.rolDe = async email => email === "yo@test.ec" ? "admin" : original(email);
   await expect(p[accion]({ email: "ultimo@test.ec", rol: "personal" }, "yo@test.ec")).rejects.toThrow(/último administrador/);
 });
+
+it("no deja darse de baja a sí mismo aunque el correo de la sesión tenga mayúsculas", async () => {
+  const { crearAlmacenMemoria } = await import("../api/_lib/almacen-memoria.js");
+  const { crearPanel } = await import("../api/_lib/panel.js");
+  const almacen = crearAlmacenMemoria();
+  await almacen.agregarMiembro({ email: "jefe@n.ec", nombre: "Jefe", rol: "admin" });
+  await almacen.agregarMiembro({ email: "otro@n.ec", nombre: "Otro", rol: "admin" });
+  const panel = crearPanel({ almacen, whatsapp: {}, contenido: async () => ({ data: { tramites: [] }, notaria: {} }) });
+  await expect(panel.quitarMiembro({ email: "jefe@n.ec" }, "Jefe@N.ec")).rejects.toThrow("No puedes darte de baja a ti mismo.");
+});

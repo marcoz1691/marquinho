@@ -87,7 +87,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     },
     async quitarMiembro(b, por) {
       const actor = await permitir(por, ["admin", "notario"]), email = correo(b.email);
-      if (email === por) fallo("No puedes darte de baja a ti mismo.");
+      if (email === String(por).toLowerCase()) fallo("No puedes darte de baja a ti mismo.");
       const miembros = await almacen.equipo(), p = miembros.find(p => p.email === email);
       if (!p) fallo("Esa persona no está en el equipo.", 404);
       if (actor === "notario" && p.rol !== "personal") fallo("Solo puedes dar de baja al perfil Personal.", 403);
@@ -98,7 +98,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     async cambiarRol(b, por) {
       await permitir(por, ["admin"]);
       const email = correo(b.email);
-      if (email === por) fallo("No puedes cambiar tu propio perfil.");
+      if (email === String(por).toLowerCase()) fallo("No puedes cambiar tu propio perfil.");
       if (!["admin", "notario", "personal"].includes(b.rol)) fallo("Elige un perfil válido.");
       const miembros = await almacen.equipo(), p = miembros.find(p => p.email === email);
       if (!p) fallo("Esa persona no está en el equipo.", 404);
