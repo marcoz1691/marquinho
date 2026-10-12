@@ -637,9 +637,16 @@ const diasHorario = [[1,"Lunes"],[2,"Martes"],[3,"Miércoles"],[4,"Jueves"],[5,"
 let horarioPersona = null;
 function resumenHorario(h) {
   if (h == null) return "Sin horario cargado";
-  const semana = [1,2,3,4,5].map(d => JSON.stringify(h[d] || []));
-  if (semana[0] !== "[]" && semana.every(s => s === semana[0]) && !h[0]?.length && !h[6]?.length) return "Lun a vie " + h[1].map(t => t.join("–")).join(" / ");
-  return diasHorario.filter(([d]) => h[d]?.length).map(([d,n]) => n.slice(0,3) + " " + h[d].map(t => t.join("–")).join(" / ")).join("; ") || "No trabaja ningún día";
+  // Agrupa los días seguidos con las mismas horas: «Lun a jue 08:00–12:00 / 14:00–17:00 · Vie 08:00–13:00».
+  const grupos = [];
+  for (const [d, nombre] of diasHorario) {
+    const tramos = h[d] || [];
+    if (!tramos.length) continue;
+    const horas = tramos.map(t => t.join("–")).join(" / "), ultimo = grupos.at(-1);
+    if (ultimo && ultimo.horas === horas && ultimo.siguiente === d) { ultimo.hasta = nombre; ultimo.siguiente = diasHorario[diasHorario.findIndex(([x]) => x === d) + 1]?.[0]; }
+    else grupos.push({ desde: nombre, hasta: nombre, horas, siguiente: diasHorario[diasHorario.findIndex(([x]) => x === d) + 1]?.[0] });
+  }
+  return grupos.map(g => (g.desde === g.hasta ? g.desde.slice(0, 3) : g.desde.slice(0, 3) + " a " + g.hasta.slice(0, 3)) + " " + g.horas).join(" · ") || "No trabaja ningún día";
 }
 function pintarHorario(h) {
   $("#horarioDias").innerHTML = diasHorario.map(([d,n]) => `<fieldset data-dia-horario="${d}"><legend>${n}</legend><label><input type="checkbox" data-trabaja${h[d]?.length ? " checked" : ""}> Trabaja</label><div data-tramos>${(h[d]?.length ? h[d] : [["08:00","17:00"]]).map((t,i) => tramoHorario(t,n,i,!h[d]?.length)).join("")}</div><button type="button" class="btn btn--line" data-agregar-tramo${!h[d]?.length ? " disabled" : ""}>+ Agregar otro tramo</button></fieldset>`).join("");

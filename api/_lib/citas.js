@@ -31,7 +31,9 @@ function candidatos(personas, citas, fecha, hora, duracion) {
   const libres = personas.filter(p => p.atiendeCitas && p.horario?.[dia]?.some(([a,b]) => minutos(a) <= inicio && minutos(b) >= inicio + duracion) &&
     !p.ausencias.some(a => a.desde <= fecha && a.hasta >= fecha) &&
     !citas.some(c => c.asignadaA === p.email && seCruzan(c.hora, hora, duracion)));
-  return libres.length > citas.filter(c => !c.asignadaA && seCruzan(c.hora, hora, duracion)).length ? libres : [];
+  // Una cita sin matricero, o con un nombre escrito a mano que no es el correo de nadie del equipo (citas de antes de los horarios), ocupa a un matricero cualquiera.
+  const sinMatricero = c => !personas.some(p => p.email === c.asignadaA);
+  return libres.length > citas.filter(c => sinMatricero(c) && seCruzan(c.hora, hora, duracion)).length ? libres : [];
 }
 function disponibles({ C, ajustes, fecha, ahora = new Date(), excluirIds = [] }, citas, personas) {
   if (!fechaValida(fecha)) return [];

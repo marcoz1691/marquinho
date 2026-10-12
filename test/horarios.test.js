@@ -166,3 +166,13 @@ it('elige menor carga incluso si todas las personas están libres', async () => 
   await a.crearSolicitudCita({fecha,hora:'14:00',asignadaA:'a@test.ec'});
   expect(await elegirMatricero({...opciones(a),hora:'08:00'})).toBe('b@test.ec');
 });
+
+describe("citas antiguas con la asignación escrita a mano", () => {
+  it("un nombre libre en «asignada a» sigue ocupando a un matricero", async () => {
+    const a = crearAlmacenMemoria({ personal: [persona("a@test.ec")] });
+    await a.crearSolicitudCita({ fecha, hora: "09:00", asignadaA: "Lucía" });   // texto libre de antes de esta función
+    expect(await horasLibres(opciones(a))).not.toContain("09:00");
+    expect(await horasLibres(opciones(a))).not.toContain("10:00");
+    expect(await horasLibres(opciones(a))).toContain("10:30");
+  });
+});
