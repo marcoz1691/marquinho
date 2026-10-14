@@ -73,7 +73,7 @@ a:hover{text-decoration:underline}
 /* Hero: acto oscuro fijo; texto a la izquierda y sello a la derecha; se desvanece al hacer scroll (--p de 0 a 1) */
 .hero{--p:0;height:135vh;position:relative;margin-top:-64px}
 .hero__pin{position:sticky;top:0;min-height:100vh;min-height:100dvh;height:100dvh;display:flex;align-items:center;padding:76px 20px 32px;overflow:hidden;
-  background:radial-gradient(38% 46% at 78% 52%,rgba(95,211,162,.16),transparent 72%),var(--bg)}
+  background:radial-gradient(40% 50% at 78% 52%,rgba(95,211,162,.2),transparent 72%),linear-gradient(155deg,#0B1712 0%,#0E2419 42%,#164A37 78%,#226B50 100%)}
 .hero__pin::after{content:"";position:absolute;left:20px;right:20px;bottom:0;max-width:var(--max);margin:0 auto;height:1px;background:var(--line)}
 .hero__copy{transform:translateY(calc(var(--p) * -8vh));opacity:calc(1 - var(--p) * 1.15);filter:blur(calc(var(--p) * 6px))}
 .hero__grid{width:100%;max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(24px,5vw,72px);align-items:center}
@@ -556,4 +556,4 @@ h2,.sub{text-align:left}
 .foot.oscuro .foot__links{display:flex;flex-direction:column;gap:8px}
 .foot.oscuro .foot__links a{color:var(--fg)}
 @media (max-width:860px){.foot.oscuro .foot__in{grid-template-columns:1fr}}
-@media (max-width:860px){.hero__pin{background:radial-gradient(60% 34% at 50% 76%,rgba(95,211,162,.16),transparent 72%),var(--bg)}}
+@media (max-width:860px){.hero__pin{background:radial-gradient(60% 34% at 50% 76%,rgba(95,211,162,.2),transparent 72%),linear-gradient(170deg,#0B1712 0%,#0E2419 45%,#164A37 82%,#226B50 100%)}}
