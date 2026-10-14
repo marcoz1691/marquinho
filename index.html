@@ -96,10 +96,10 @@
             <select id="calcTramite"></select>
           </label>
           <label id="calcMontoWrap" hidden>Valor del contrato o avalúo (USD)
-            <input id="calcMonto" type="text" inputmode="decimal" placeholder="Ej.: 85000" autocomplete="off">
+            <input id="calcMonto" type="text" inputmode="decimal" maxlength="15" placeholder="Ej.: 85000" autocomplete="off">
           </label>
           <label id="calcQtyWrap">Cantidad <span id="calcUnit"></span>
-            <input id="calcQty" type="number" min="1" value="1" inputmode="numeric">
+            <input id="calcQty" type="text" inputmode="numeric" maxlength="4" value="1" autocomplete="off">
           </label>
           <fieldset class="calc__hab">
             <legend>Documentos habilitantes <span>(opcional)</span></legend>
@@ -129,7 +129,7 @@
         <p class="sub reveal">Empieza con un mensaje y llega a la notaría con todo listo. La ayuda es gratis; el trámite tiene su tarifa. La firma siempre es presencial.</p>
         <div class="wa__acciones reveal">
           <a class="btn btn--primary wa-inicio" id="waInicio" href="https://wa.me/593996530276?text=Hola%2C%20quiero%20hacer%20un%20tr%C3%A1mite" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>Escribir por WhatsApp</a>
-          <p class="wa-contacto"><strong id="waNumero">+593 99 653 0276</strong><span>Atención humana: <span id="waHorario">Lunes a viernes, de 08:00 a 17:00</span> (hora de Quito). Sofía responde las 24 horas.</span></p>
+          <p class="wa-contacto"><strong id="waNumero">+593 99 653 0276</strong><span>En la notaría: <span id="waHorario">Lunes a viernes, de 08:00 a 17:00</span>. Sofía responde las 24 horas.</span></p>
         </div>
       </header>
       <ol class="wa-pasos" aria-label="Pasos para preparar tu trámite">

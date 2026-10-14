@@ -138,6 +138,21 @@ test.describe("Calculadora de tarifas", () => {
     await expect(page.locator("#calcNote")).toHaveText("Cada otorgante adicional suma 3% del SBU.");
   });
 
+  test("CF-158 el monto, la cantidad y las hojas no aceptan letras", async ({ page }) => {
+    await page.selectOption("#calcTramite", "compraventa");
+    await page.locator("#calcMonto").pressSequentially("8a5b0x00");
+    await expect(page.locator("#calcMonto")).toHaveValue("85000");
+    await resultado(page, "$443,44");
+    await page.selectOption("#calcTramite", "salida-pais");
+    await page.fill("#calcQty", "");
+    await page.locator("#calcQty").pressSequentially("3abc");
+    await expect(page.locator("#calcQty")).toHaveValue("3");
+    const hojas = page.locator('[data-hab="copias"] input');
+    await hojas.fill("");
+    await hojas.pressSequentially("2xyz");
+    await expect(hojas).toHaveValue("2");
+  });
+
   test.describe("Documentos habilitantes", () => {
     const hab = (page, id) => page.locator(`[data-hab="${id}"]`);
     const mas = (page, id) => hab(page, id).locator("[data-mas]");

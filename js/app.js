@@ -170,7 +170,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       var n = esc(h.nombre.charAt(0).toLowerCase() + h.nombre.slice(1));
       return '<div class="hab" data-hab="' + esc(h.id) + '"><p class="hab__txt"><span class="hab__nombre">' + esc(h.nombre) + '</span><span class="hab__precio">' + esc(precioTexto(tramite(h.tramite), T)) + "</span></p>" +
         '<div class="hab__step"><button class="hab__btn" type="button" data-menos aria-label="Quitar una hoja de ' + n + '"><span aria-hidden="true">−</span></button>' +
-        '<input class="hab__n" type="number" min="0" max="200" step="1" value="0" inputmode="numeric" aria-label="Hojas de ' + n + '">' +
+        '<input class="hab__n" type="text" inputmode="numeric" maxlength="3" value="0" autocomplete="off" aria-label="Hojas de ' + n + '">' +
         '<button class="hab__btn" type="button" data-mas aria-label="Agregar una hoja de ' + n + '"><span aria-hidden="true">+</span></button></div></div>';
     }).join("");
     var acotar = function (v) { var n = Math.floor(Number(v)); return isFinite(n) ? Math.min(200, Math.max(0, n)) : 0; };
@@ -214,9 +214,18 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       input.value = acotar(acotar(input.value) + (b.hasAttribute("data-mas") ? 1 : -1));
       calc();
     });
-    habs.addEventListener("input", calc);
+    // Solo cifras: Safari y Firefox dejan escribir letras incluso en type="number", así que se filtra al escribir o pegar.
+    var limpiar = function (el, noPermitido) {
+      var v = el.value, limpio = v.replace(noPermitido, "");
+      if (limpio === v) return;
+      var pos = Math.max(0, (el.selectionStart || 0) - (v.length - limpio.length));
+      el.value = limpio;
+      try { el.setSelectionRange(pos, pos); } catch (e) {}
+    };
+    habs.addEventListener("input", function (e) { if (e.target.matches("input")) limpiar(e.target, /[^\d-]/g); calc(); });
     habs.addEventListener("change", function (e) { if (e.target.matches("input")) { e.target.value = acotar(e.target.value); calc(); } });
-    sel.addEventListener("change", calc); $("#calcQty").addEventListener("input", calc); $("#calcMonto").addEventListener("input", calc);
+    sel.addEventListener("change", calc); $("#calcQty").addEventListener("input", function () { limpiar(this, /[^\d-]/g); calc(); });
+    $("#calcMonto").addEventListener("input", function () { limpiar(this, /[^\d,.]/g); calc(); });
     $("#calc").addEventListener("submit", function (e) { e.preventDefault(); });
     setupCalc.elegir = function (id) {
       sel.value = id;
