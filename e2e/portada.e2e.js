@@ -172,7 +172,7 @@ test.describe("Carga de datos", () => {
     page.on("request", (r) => pedidos.push(r.url()));
     await abrirPortada(page);
     expect(pedidos.some((u) => u.includes("docs.google.com"))).toBe(false);
-    await expect(page.locator("#categorias .svc__row")).toHaveCount(datos.categorias.length);
+    await expect(page.locator("#chips .tab")).toHaveCount(datos.categorias.length + 1);
   });
 
   test("CF-87 la portada carga sin errores de JavaScript", async ({ page }) => {
@@ -186,7 +186,7 @@ test.describe("Carga de datos", () => {
 test.describe("Navegación", () => {
   test("CF-90 cada enlace del menú lleva a su sección", async ({ page }) => {
     await abrirPortada(page);
-    for (const id of ["servicios", "tramites", "calculadora", "faq", "contacto"]) {
+    for (const id of ["tramites", "calculadora", "faq", "contacto"]) {
       await page.locator(`#menu a[href="#${id}"]`).click();
       await expect(page.locator("#" + id)).toBeInViewport();
     }
@@ -290,14 +290,14 @@ test.describe("Páginas secundarias", () => {
 
 
 test.describe("Flujo de WhatsApp y agenda", () => {
-  test("muestra el inicio, los seis pasos y la alternativa sin chat", async ({ page }) => {
+  test("muestra el inicio, los tres pasos y la alternativa sin chat", async ({ page }) => {
     await abrirPortada(page);
     const seccion = page.locator("#whatsapp");
     const boton = seccion.getByRole("link", { name: "Escribir por WhatsApp", exact: true });
     await expect(boton).toHaveAttribute("href", "https://wa.me/593996530276?text=" + encodeURIComponent("Hola, quiero hacer un trámite"));
     await expect(seccion.locator("#waNumero")).toHaveText("+593 99 653 0276");
     await expect(seccion.locator("#waHorario")).toHaveText(notaria.horario.texto);
-    await expect(seccion.locator(".wa-pasos > li")).toHaveCount(6);
+    await expect(seccion.locator(".wa-pasos > li")).toHaveCount(3);
     for (const paso of await seccion.locator(".wa-pasos > li").all()) await expect(paso).toBeVisible();
     await expect(seccion.getByRole("link", { name: "Agenda tu cita aquí", exact: true })).toHaveAttribute("href", "cita.html");
     await expect(seccion.getByRole("link", { name: "aviso de privacidad", exact: true })).toHaveAttribute("href", "privacidad.html");
@@ -335,8 +335,8 @@ test("con «Reducir movimiento» las animaciones quedan solo como desvanecidos, 
   await page.locator("#words").scrollIntoViewIfNeeded();
   await page.evaluate(() => scrollBy(0, innerHeight * 0.6));
   await expect.poll(() => page.locator("#words span.on").count()).toBeGreaterThan(0);
-  await page.locator("#categorias").scrollIntoViewIfNeeded();
-  const bloque = page.locator("#categorias .reveal.in").first();
+  await page.locator("#tramitesUi").scrollIntoViewIfNeeded();
+  const bloque = page.locator("#tramitesUi .reveal.in, #lista .tl__item").first();
   await expect(bloque).toBeVisible();
   expect(await bloque.evaluate((e) => getComputedStyle(e).transform)).toBe("none");
 });

@@ -61,14 +61,6 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   /* ---------- Render ---------- */
 
-  function renderCategorias() {
-    $("#categorias").innerHTML = state.data.categorias.map(function (c) {
-      var n = state.data.tramites.filter(function (t) { return t.cat === c.id; }).length;
-      return '<button class="svc__row reveal" type="button" data-cat="' + esc(c.id) + '"><span class="svc__name">' + esc(c.nombre) +
-        '</span><span class="svc__desc">' + esc(c.resumen) + '</span><span class="svc__count">' + n + (n === 1 ? " trámite" : " trámites") + '</span><span class="svc__arr" aria-hidden="true">→</span></button>';
-    }).join("");
-  }
-
   function renderChips() {
     var items = [{ id: "destacados", nombre: "Más pedidos" }].concat(state.data.categorias);
     $("#chips").innerHTML = items.map(function (c) {
@@ -91,25 +83,23 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     acciones.push('<button class="act" type="button" data-print="' + esc(t.id) + '"><i class="ph ph-printer" aria-hidden="true"></i>Imprimir</button>');
 
     return '<button class="tp__cerrar" type="button" data-cerrar aria-label="Cerrar el trámite"><i class="ph ph-x" aria-hidden="true"></i></button>' +
-      '<div class="tp__libro"><div class="tp__pag tp__pag--izq">' +
       '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
       '<p class="tp__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
       (esHabilitante(t.id) ? "" : '<p class="tp__aviso">' + esc(AVISO_HABILITANTES) + "</p>") +
-      '</div><div class="tp__pag tp__pag--der"><div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
+      '<div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
       t.req.map(function (r, i) {
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
       }).join("") + "</ul></div>" +
       (t.pasos.length ? '<div><h4>Cómo es el trámite</h4><ol class="pasos">' + t.pasos.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ol></div>" : "") +
       "</div>" + (t.nota ? '<p class="nota">' + esc(t.nota) + "</p>" : "") + sofia(t) +
-      '<div class="acts">' + acciones.join("") + "</div></div></div>";
+      '<div class="acts">' + acciones.join("") + "</div>";
   }
 
   // La web da lo general; el asistente resuelve el caso particular de cada persona.
   function sofia(t) {
     if (state.funciones.chatWeb === false) return "";
     var n = state.notaria.asistente || "Sofía";
-    return '<div class="tp__sofia"><p><strong>¿Tu caso es distinto?</strong> Cuéntaselo a ' + esc(n) + ' y te dice qué requisitos y costo aplican a tu situación.</p>' +
-      '<button class="act act--sofia" type="button" data-sofia="' + esc(t.nombre) + '"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Preguntarle a ' + esc(n) + '</button></div>';
+    return '<p class="tp__sofia"><button class="act act--sofia" type="button" data-sofia="' + esc(t.nombre) + '"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>¿Tu caso es distinto? Pregúntale a ' + esc(n) + '</button></p>';
   }
 
   // Lista compacta (izquierda) + panel del trámite elegido (derecha).
@@ -301,7 +291,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     velo.className = "tp-velo"; velo.hidden = true; document.body.appendChild(velo);
     var origen = null;
     var abrirHoja = function () {
-      if (!angosta.matches) { det.scrollIntoView({ behavior: "smooth", block: "start" }); return; }   // en la computadora el libro se abre debajo de la rejilla
+      if (!angosta.matches) return;
       origen = lista.querySelector('[data-sel="' + state.sel + '"]');   // la lista se repintó: el botón tocado ya no existe
       velo.hidden = false; det.scrollTop = 0;
       det.setAttribute("role", "dialog"); det.setAttribute("aria-modal", "true"); det.setAttribute("aria-label", "Detalle del trámite");
@@ -362,11 +352,6 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       else window.open(wa(texto, ""), "_blank", "noopener");
     });
 
-    $("#categorias").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-cat]"); if (!b) return;
-      state.cat = b.dataset.cat; state.q = ""; $("#buscar").value = ""; state.sel = null; renderChips(); renderLista();
-      $("#tramites").scrollIntoView({ behavior: "smooth" });
-    });
 
     // Enlace directo: notaria/#t-compraventa muestra ese trámite en su categoría.
     var abrirHash = function () {
@@ -398,7 +383,9 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
         var p = run > 0 ? Math.min(1, Math.max(0, -r.top / run)) : 0;
         el.style.setProperty("--p", p.toFixed(4));
         if (el.contains(words)) {
-          var lit = Math.round((p * 1.25 - .1) * spans.length);
+          // La frase se ilumina mientras sube desde el 85 % al 35 % de la pantalla.
+          var w = words.getBoundingClientRect();
+          var lit = Math.round(Math.min(1, Math.max(0, (innerHeight * .85 - w.top) / (innerHeight * .5))) * spans.length);
           spans.forEach(function (s, i) { s.classList.toggle("on", i < lit); });
         }
 
@@ -411,11 +398,16 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   function observe() {
     var els = document.querySelectorAll(".reveal:not(.in)");
-    // Las filas de servicios aparecen escalonadas.
-    [].forEach.call($("#categorias").children, function (c, i) { c.style.setProperty("--i", i); });
     if (!("IntersectionObserver" in window)) { els.forEach(function (e) { e.classList.add("in"); }); return; }
     var io = new IntersectionObserver(function (en) { en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }); }, { threshold: .12 });
     els.forEach(function (e) { io.observe(e); });
+    // La conversación de ejemplo se escribe sola, burbuja a burbuja, al entrar en pantalla.
+    var burbujas = $("#waBurbujas");
+    if (burbujas && !burbujas.hasAttribute("data-secuencia") && matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+      burbujas.setAttribute("data-secuencia", "");
+      var ob = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { burbujas.classList.add("en-vivo"); ob.disconnect(); } }, { threshold: .3 });
+      ob.observe(burbujas);
+    }
   }
 
   function setupUI() {
@@ -447,7 +439,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   cargar().then(cargarPrecios).then(async function (r) {
     await funcionesLista;
     state.data = r.data; state.tarifas = r.tarifas; state.notaria = r.notaria;
-    renderAvisos(); renderCategorias(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
+    renderAvisos(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
   }).catch(function (e) {
     document.body.insertAdjacentHTML("afterbegin", '<p style="padding:16px;text-align:center">No se pudieron cargar los datos. Abre el sitio desde un servidor web (no file://). ' + esc(e.message) + "</p>");
     document.querySelectorAll(".reveal").forEach(function (x) { x.classList.add("in"); });
