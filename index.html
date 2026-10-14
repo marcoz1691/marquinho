@@ -16,6 +16,7 @@
 <link rel="apple-touch-icon" href="assets/logo/icono-512.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<script src="js/tema.js"></script>
 <link rel="stylesheet" href="assets/fonts/archivo.css">
 <link rel="stylesheet" href="assets/fonts/phosphor.css">
 <link rel="stylesheet" href="css/styles.css">
@@ -23,7 +24,7 @@
 <body>
 <a class="skip" href="#main">Saltar al contenido</a>
 
-<header class="nav nav--portada" id="nav">
+<header class="nav" id="nav">
   <div class="nav__in">
     <a class="nav__brand" href="#inicio"><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt=""><img class="brand--dark" src="assets/logo/logo-notaria41-blanco.svg" alt=""><span class="brand__txt"><b id="brandName">Dr. Dobri Albornoz Donoso</b><small id="brandSub">Notaría 41 · Quito</small></span></a>
     <nav class="nav__links" id="menu" aria-label="Principal">
@@ -34,6 +35,7 @@
       <a href="#contacto">Contacto</a>
       <a class="nav__agenda" data-funcion="agenda" href="cita.html">Agenda tu cita</a>
     </nav>
+    <button class="icon-btn" id="tema" type="button" aria-label="Cambiar a tema oscuro" aria-pressed="false"><i class="ph ph-moon" aria-hidden="true"></i></button>
     <button class="icon-btn nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu" type="button"><i class="ph ph-list" aria-hidden="true"></i></button>
   </div>
 </header>
@@ -44,7 +46,7 @@
 </div>
 
 <main id="main">
-  <section class="hero oscuro" id="inicio" data-scene>
+  <section class="hero" id="inicio" data-scene>
     <div class="hero__pin">
       <div class="hero__grid">
         <div class="hero__copy">
@@ -57,7 +59,8 @@
           </div>
         </div>
         <div class="hero__seal">
-          <img class="seal" src="assets/logo/logo-notaria41-blanco.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
+          <img class="seal tema-claro" src="assets/logo/logo-notaria41.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
+          <img class="seal tema-oscuro" src="assets/logo/logo-notaria41-blanco.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
         </div>
       </div>
     </div>
@@ -89,6 +92,23 @@
       <div class="calc__intro">
         <h2 class="reveal">Calcula tu costo.</h2>
         <p class="sub reveal">Tarifas oficiales <span id="anioTarifa">2026</span> del Consejo de la Judicatura, sobre el Salario Básico Unificado de <span id="sbuTxt"></span>, más IVA.</p>
+        <figure class="firma reveal" aria-hidden="true">
+          <svg viewBox="0 0 320 380" focusable="false">
+            <rect class="firma__hoja" x="16" y="10" width="288" height="360" rx="8"/>
+            <path class="firma__renglon" style="--d:0" pathLength="1" d="M52 62h188"/>
+            <path class="firma__renglon" style="--d:1" pathLength="1" d="M52 92h216"/>
+            <path class="firma__renglon" style="--d:2" pathLength="1" d="M52 122h200"/>
+            <path class="firma__renglon" style="--d:3" pathLength="1" d="M52 152h216"/>
+            <path class="firma__renglon" style="--d:4" pathLength="1" d="M52 182h132"/>
+            <path class="firma__renglon firma__linea" style="--d:5" pathLength="1" d="M52 300h150"/>
+            <path class="firma__trazo" pathLength="1" d="M58 288c8-34 20-52 28-40s-14 44-4 42 20-52 33-44-9 40 4 37 17-33 27-27 3 24 16 20 21-24 33-18 8 14 20 10"/>
+            <g class="firma__sello">
+              <circle cx="246" cy="282" r="38"/>
+              <circle cx="246" cy="282" r="29"/>
+              <text x="246" y="291" text-anchor="middle">41</text>
+            </g>
+          </svg>
+        </figure>
       </div>
       <form class="calc reveal" id="calc">
         <div class="calc__fields">
@@ -121,7 +141,7 @@
     </div>
   </section>
 
-  <section class="section oscuro" id="whatsapp" aria-labelledby="waTitulo">
+  <section class="section section--alt" id="whatsapp" aria-labelledby="waTitulo">
     <div class="wa">
       <header class="wa__cab">
         <p class="kicker reveal">Con Sofía, nuestro asistente</p>
@@ -141,7 +161,8 @@
         <div class="wa-tel">
           <div class="wa-tel__in">
             <header class="wa-tel__cab">
-              <img src="assets/logo/logo-notaria41-blanco.svg" alt="" width="34" height="34">
+              <img class="tema-claro" src="assets/logo/logo-notaria41-verde.svg" alt="" width="34" height="34">
+              <img class="tema-oscuro" src="assets/logo/logo-notaria41-blanco.svg" alt="" width="34" height="34">
               <div><b id="waEjemploTitulo">Sofía · Notaría 41</b><small>En línea</small></div>
             </header>
             <div class="wa-burbujas" id="waBurbujas">
@@ -196,10 +217,11 @@
   <p class="chat__pie">Respuestas automáticas; no compartas datos sensibles. <a href="privacidad.html">Privacidad</a> <a id="chatWhatsapp" target="_blank" rel="noopener" hidden>Prefiero WhatsApp</a></p>
 </section>
 
-<footer class="foot oscuro">
+<footer class="foot">
   <div class="foot__in">
     <div class="foot__marca">
-      <img src="assets/logo/logo-notaria41-blanco.svg" alt="" width="64" height="64">
+      <img class="tema-claro" src="assets/logo/logo-notaria41-verde.svg" alt="" width="64" height="64">
+      <img class="tema-oscuro" src="assets/logo/logo-notaria41-blanco.svg" alt="" width="64" height="64">
       <p id="footTxt"></p>
     </div>
     <p class="foot__aviso">Las tarifas y requisitos son referenciales y pueden variar según la normativa del Consejo de la Judicatura. Confirma con la notaría.</p>

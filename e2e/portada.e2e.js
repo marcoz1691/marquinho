@@ -340,3 +340,14 @@ test("con «Reducir movimiento» las animaciones quedan solo como desvanecidos, 
   await expect(bloque).toBeVisible();
   expect(await bloque.evaluate((e) => getComputedStyle(e).transform)).toBe("none");
 });
+
+test("el botón de tema cambia a oscuro y la elección se recuerda al recargar", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await abrirPortada(page);
+  await expect(page.locator("#tema")).toHaveAttribute("aria-label", "Cambiar a tema oscuro");
+  await page.locator("#tema").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("#tema")).toHaveAttribute("aria-label", "Cambiar a tema claro");
+});

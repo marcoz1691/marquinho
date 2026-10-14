@@ -421,6 +421,25 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   function setupUI() {
     var nav = $("#nav"), menu = $("#menu"), burger = $("#burger");
+    // Tema claro u oscuro: la elección se guarda; sin elección, manda el sistema (js/tema.js la aplica antes de pintar).
+    var temaBtn = $("#tema"), sistemaOscuro = matchMedia("(prefers-color-scheme: dark)");
+    var temaActual = function () { return document.documentElement.getAttribute("data-theme") || (sistemaOscuro.matches ? "dark" : "light"); };
+    var pintarTema = function () {
+      var oscuro = temaActual() === "dark";
+      temaBtn.setAttribute("aria-pressed", String(oscuro));
+      temaBtn.setAttribute("aria-label", oscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+      temaBtn.innerHTML = '<i class="ph ' + (oscuro ? "ph-sun" : "ph-moon") + '" aria-hidden="true"></i>';
+    };
+    if (temaBtn) {
+      pintarTema();
+      temaBtn.addEventListener("click", function () {
+        var nuevo = temaActual() === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nuevo);
+        try { localStorage.setItem("n41-tema", nuevo); } catch (e) {}
+        pintarTema();
+      });
+      sistemaOscuro.addEventListener("change", pintarTema);
+    }
     window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", window.scrollY > 8); }, { passive: true });
     // El menú marca la sección que se está viendo.
     if ("IntersectionObserver" in window) {
