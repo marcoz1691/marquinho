@@ -86,6 +86,7 @@ a:hover{text-decoration:underline}
   transform:translateY(calc(var(--p) * -4vh)) rotate(calc(var(--p) * -8deg)) scale(calc(1 - var(--p) * .12));opacity:calc(1 - var(--p) * .9);animation:in-seal 1.4s cubic-bezier(.2,.7,.2,1) both}
 @keyframes in-seal{from{opacity:0;transform:scale(.9) rotate(6deg)}}
 @keyframes in-up{from{opacity:0;transform:translateY(20px)}}
+@keyframes libro-abre{from{opacity:0;transform:perspective(1200px) rotateY(-10deg) translateY(12px)}}
 .eyebrow{color:var(--gold-text);margin:0 0 22px}
 h1{font-family:var(--serif);font-size:clamp(54px,min(8vw,12vh),112px);line-height:.94;letter-spacing:-.018em;font-weight:400;margin:0;color:var(--fg)}
 /* Portada: el nombre del notario es el título; nunca se corta una palabra */
@@ -183,16 +184,27 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .empty{text-align:center;color:var(--muted);margin-top:30px}
 
 /* Trámites: lista compacta + panel del trámite elegido */
-.tl{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(24px,4vw,56px);align-items:start;margin-top:4px}
+.tl{display:block;margin-top:4px}
 .tl[hidden]{display:none}
-.tl__lista{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.tl__item{position:relative;width:100%;display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:15px 12px 15px 18px;background:none;border:0;border-bottom:1px solid var(--line);
-  font:inherit;font-size:16px;color:var(--fg);text-align:left;cursor:pointer;transition:background .2s,color .2s}
-.tl__item:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
-.tl__item[aria-current="true"]{color:var(--accent);font-weight:600;background:var(--card)}
-.tl__item[aria-current="true"]::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:2px;background:var(--accent)}
-.tl__precio{font-family:var(--mono);font-size:12.5px;font-weight:400;color:var(--muted);white-space:nowrap}
-.tp{position:sticky;top:88px;background:var(--card);border-radius:var(--r-card);padding:clamp(24px,3vw,40px);box-shadow:var(--sombra);animation:in-up .45s cubic-bezier(.2,.7,.2,1)}
+/* Folios: cada trámite es una carpeta de expediente; el lomo esmeralda y el filete dorado le dan aire de libro */
+.tl__lista{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;counter-reset:folio}
+.tl__lista li{counter-increment:folio;perspective:900px}
+.tl__item{position:relative;width:100%;height:100%;min-height:148px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;padding:22px 20px 20px 34px;background:var(--card);border:1px solid var(--line);border-radius:6px 16px 16px 6px;
+  box-shadow:var(--sombra);font:inherit;font-size:16px;line-height:1.35;color:var(--fg);text-align:left;cursor:pointer;transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .25s,box-shadow .35s}
+.tl__item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:14px;border-radius:6px 0 0 6px;background:linear-gradient(180deg,var(--esm-700),var(--esm-900))}
+.tl__item::after{content:counter(folio,upper-roman);position:absolute;left:24px;top:14px;width:auto;height:auto;margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--gold-text)}
+.tl__item:hover{transform:translateY(-3px) rotateX(1.5deg);box-shadow:0 1px 2px rgba(10,59,46,.06),0 26px 44px -20px rgba(10,59,46,.34)}
+.tl__item:focus-visible{outline-offset:4px}
+.tl__item[aria-current="true"]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),var(--sombra);font-weight:600;color:var(--accent)}
+.tl__item span:first-child{padding-top:14px}
+.tl__precio{align-self:flex-start;padding:4px 10px;border-radius:999px;background:var(--bg-alt);font-family:var(--mono);font-size:12.5px;font-weight:400;color:var(--muted);white-space:nowrap}
+/* Folio abierto: libro de dos páginas a todo el ancho, debajo de la rejilla */
+.tp{position:relative;margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:6px 20px 20px 6px;padding:clamp(28px,3.4vw,48px) clamp(24px,3.4vw,48px) clamp(24px,3vw,40px) clamp(40px,4.4vw,60px);box-shadow:var(--sombra);transform-origin:left center;scroll-margin-top:96px;animation:libro-abre .6s cubic-bezier(.2,.7,.2,1)}
+.tp::before{content:"";position:absolute;left:0;top:0;bottom:0;width:14px;border-radius:6px 0 0 6px;background:linear-gradient(180deg,var(--esm-700),var(--esm-900))}
+.tp::after{content:"";position:absolute;left:50%;top:28px;bottom:28px;width:1px;background:linear-gradient(180deg,transparent,var(--line) 12%,var(--line) 88%,transparent);pointer-events:none}
+.tp__libro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,5vw,72px)}
+.tp__pag--der .tp__cols{grid-template-columns:1fr}
+.tp__pag--der .tp__cols>div+div{margin-top:28px}
 .tp__cat{margin:0 0 10px;color:var(--gold-text)}
 .tp__nombre{font-family:var(--serif);font-weight:400;font-size:clamp(32px,3.2vw,44px);line-height:1;letter-spacing:-.01em;margin:0 0 12px}
 .tp__desc{margin:0;color:var(--muted);max-width:56ch}
@@ -343,7 +355,9 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   body[data-print] .tr__head,body[data-print] .tabs,body[data-print] .tl__lista,body[data-print] .acts,body[data-print] .hint,body[data-print] .empty{display:none!important}
   body[data-print] #tramites{padding:0;background:none}
   body[data-print] .tl{display:block}
-  body[data-print] .tp{position:static;box-shadow:none;padding:0}
+  body[data-print] .tp{position:static;box-shadow:none;padding:0;border:0}
+  body[data-print] .tp::before,body[data-print] .tp::after{display:none}
+  body[data-print] .tp__libro{display:block}
   body[data-print] .reveal{opacity:1;transform:none;filter:none}
   body::after{display:none}
 }
@@ -453,7 +467,7 @@ h2,.sub{text-align:left}
 .tp-velo{position:fixed;inset:0;z-index:69;background:rgba(7,19,14,.45);opacity:0;transition:opacity .3s}
 .tp-velo.on{opacity:1}
 @media print{.tp-velo,.tp__cerrar{display:none!important}}
-@media screen and (prefers-reduced-motion:reduce){.tp,.tp.tp--abierto,.tp-velo{transition:none}}
+@media screen and (prefers-reduced-motion:reduce){.tp,.tp.tp--abierto,.tp-velo{transition:none}.tp{animation:none}.tl__item,.tl__item:hover{transform:none}}
 @media screen and (max-width:860px){
   .tp{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;
     padding:20px 20px calc(28px + env(safe-area-inset-bottom));transform:translateY(105%);visibility:hidden;animation:none;
@@ -461,8 +475,15 @@ h2,.sub{text-align:left}
   .tp.tp--abierto{transform:none;visibility:visible;transition:transform .4s cubic-bezier(.2,.7,.2,1)}
   .tp__cerrar{display:grid;place-items:center;position:sticky;top:0;margin:-6px -6px 0 auto;width:40px;height:40px;border:0;border-radius:50%;background:var(--bg-alt);color:var(--fg);font-size:18px;cursor:pointer;z-index:1}
   .hoja-abierta,.hoja-abierta body{overflow:hidden}
-  .tl__item{padding:16px 6px 16px 12px}
-  .tl__item::after{content:"›";color:var(--muted);font-size:20px;line-height:1;margin-left:4px}
+  .tl__lista{grid-template-columns:1fr;gap:12px}
+  .tl__item{min-height:0;padding:18px 16px 16px 30px}
+  .tl__item::after{display:none}
+  .tp::after{display:none}
+  .tp{margin-top:0;border-radius:24px 24px 0 0;border:0;padding:20px 20px calc(28px + env(safe-area-inset-bottom))}
+  .tp::before{display:none}
+  .tp__libro{display:block}
+  .tp__pag--der{margin-top:24px}
+  .tp__pag--der .tp__cols{grid-template-columns:1fr 1fr}
 }
 
 /* Preguntas frecuentes: acordeón en el celular */

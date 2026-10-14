@@ -91,16 +91,17 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     acciones.push('<button class="act" type="button" data-print="' + esc(t.id) + '"><i class="ph ph-printer" aria-hidden="true"></i>Imprimir</button>');
 
     return '<button class="tp__cerrar" type="button" data-cerrar aria-label="Cerrar el trámite"><i class="ph ph-x" aria-hidden="true"></i></button>' +
+      '<div class="tp__libro"><div class="tp__pag tp__pag--izq">' +
       '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
       '<p class="tp__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
       (esHabilitante(t.id) ? "" : '<p class="tp__aviso">' + esc(AVISO_HABILITANTES) + "</p>") +
-      '<div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
+      '</div><div class="tp__pag tp__pag--der"><div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
       t.req.map(function (r, i) {
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
       }).join("") + "</ul></div>" +
       (t.pasos.length ? '<div><h4>Cómo es el trámite</h4><ol class="pasos">' + t.pasos.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ol></div>" : "") +
       "</div>" + (t.nota ? '<p class="nota">' + esc(t.nota) + "</p>" : "") + sofia(t) +
-      '<div class="acts">' + acciones.join("") + "</div>";
+      '<div class="acts">' + acciones.join("") + "</div></div></div>";
   }
 
   // La web da lo general; el asistente resuelve el caso particular de cada persona.
@@ -300,7 +301,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     velo.className = "tp-velo"; velo.hidden = true; document.body.appendChild(velo);
     var origen = null;
     var abrirHoja = function () {
-      if (!angosta.matches) return;
+      if (!angosta.matches) { det.scrollIntoView({ behavior: "smooth", block: "start" }); return; }   // en la computadora el libro se abre debajo de la rejilla
       origen = lista.querySelector('[data-sel="' + state.sel + '"]');   // la lista se repintó: el botón tocado ya no existe
       velo.hidden = false; det.scrollTop = 0;
       det.setAttribute("role", "dialog"); det.setAttribute("aria-modal", "true"); det.setAttribute("aria-label", "Detalle del trámite");
