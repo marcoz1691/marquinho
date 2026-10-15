@@ -16,7 +16,7 @@ function preparar({ usuario = { email: "carla@notaria41.ec", email_confirmed_at:
     borrarDocumento: vi.fn(async () => {})
   };
   const almacen = crearAlmacenMemoria();
-  const auth = Object.assign(almacen, { usuarioDeToken: vi.fn(async (t) => (t === "TOKEN" ? usuario : null)), esPersonal: vi.fn(async () => esPersonal) });
+  const auth = Object.assign(almacen, { usuarioDeToken: vi.fn(async (t) => (t === "TOKEN" ? usuario : null)), esPersonal: vi.fn(async () => esPersonal), rolDe: vi.fn(async () => "personal") });
   return { m: crearManejadorPanel({ panel, auth, exigirMfa, limiteDescargas, avisar, ahora: () => 1_000_000 }), panel, almacen };
 }
 const req = (metodo, ruta, { token = "TOKEN", body } = {}) => new Request("https://x/api/panel" + ruta, {
@@ -153,7 +153,7 @@ it("audita la lectura y rechaza cambios de precios sin rol admin", async () => {
   for (const accion of ["guardarPrecio", "restaurarPrecio", "guardarSBU", "restaurarSBU"]) {
     const r = await m.POST(req("POST", "", { body: { accion, tramiteId: "t" } }));
     expect(r.status).toBe(403);
-    expect((await r.json()).error).toBe("Solo un administrador puede cambiar los precios.");
+    expect((await r.json()).error).toBe("Solo el notario o un administrador puede cambiar los precios.");
   }
   expect(panel.guardarPrecio).not.toHaveBeenCalled();
   expect((await almacen.auditoria()).filter((x) => x.accion !== "mfa_activado").map((x) => [x.accion, x.ok])).toEqual([["precios", true], ["guardarPrecio", false], ["restaurarPrecio", false], ["guardarSBU", false], ["restaurarSBU", false]]);
@@ -161,7 +161,7 @@ it("audita la lectura y rechaza cambios de precios sin rol admin", async () => {
 
 it("permite cambios al administrador y los audita", async () => {
   const { m, panel, almacen } = preparar();
-  almacen.esAdmin = async () => true;
+  almacen.rolDe = async () => "admin";
   panel.guardarPrecio = vi.fn(async () => {});
   panel.restaurarPrecio = vi.fn(async () => {});
   panel.guardarSBU = vi.fn(async () => {});
@@ -190,11 +190,11 @@ it("audita también una búsqueda de ticket fallida", async () => {
 
 it.each(['guardarCupo','agregarBloqueo','quitarBloqueo'])('cupos: %s exige administrador y audita el rechazo',async accion=>{
  const {m,almacen}=preparar();const r=await m.POST(req('POST','',{body:{accion,porHora:3,fecha:'2026-10-08',hora:null}}));
- expect(r.status).toBe(403);expect((await r.json()).error).toBe('Solo un administrador puede cambiar los cupos.');
+ expect(r.status).toBe(403);expect((await r.json()).error).toBe('Solo el notario o un administrador puede cambiar los cupos.');
  expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({accion,ok:false}));
 });
 it('lee configuración y ejecuta cupos como administrador con auditoría',async()=>{
- const {m,panel,almacen}=preparar();almacen.esAdmin=async()=>true;
+ const {m,panel,almacen}=preparar();almacen.rolDe=async()=>"admin";
  panel.citasConfig=async()=>({porHora:2,porHoraOficial:2,bloqueos:[]});
  expect(await (await m.GET(req('GET','?accion=citasConfig'))).json()).toMatchObject({porHora:2,esAdmin:true});
  for(const accion of ['guardarCupo','agregarBloqueo','quitarBloqueo']){
@@ -208,14 +208,14 @@ it("protege funciones y métricas y audita el objetivo del interruptor", async (
  panel.guardarFuncion = vi.fn(async () => ({ ok: true, funciones: [] }));
  expect((await m.POST(req("POST", "", { body: { accion: "guardarFuncion", id: "agenda", activa: false } }))).status).toBe(403);
  expect((await m.GET(req("GET", "?accion=metricas"))).status).toBe(403);
- almacen.esAdmin = async () => true;
+ almacen.rolDe = async () => "admin";
  const r = await m.POST(req("POST", "", { body: { accion: "guardarFuncion", id: "agenda", activa: false } }));
- expect(await r.json()).toEqual({ ok: true, funciones: [], esAdmin: true });
+ expect(await r.json()).toEqual({ ok: true, funciones: [], esAdmin: true, rol: "admin" });
  expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ accion: "guardarFuncion", objetivo: "funcion.agenda", ok: true }));
 });
 it("devuelve 400 con fechas inválidas y audita la lectura de métricas", async () => {
  const { crearPanel } = await import("../api/_lib/panel.js");
- const { m, almacen, panel } = preparar(); almacen.esAdmin = async () => true;
+ const { m, almacen, panel } = preparar(); almacen.rolDe = async () => "admin";
  panel.metricas = (...args) => crearPanel({ almacen }).metricas(...args);
  const r = await m.GET(req("GET", "?accion=metricas&desde=2026-02-30&hasta=2026-10-11"));
  expect(r.status).toBe(400);

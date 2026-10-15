@@ -53,7 +53,59 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     return C;
   }
 
+  const fallo = (mensaje, status = 400) => { throw Object.assign(new Aviso(mensaje), { status }); };
+  const correo = v => {
+    const email = typeof v === "string" ? v.trim().toLowerCase() : "";
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fallo("Escribe un correo válido.");
+    return email;
+  };
+  async function permitir(por, roles) {
+    const rol = await almacen.rolDe(por);
+    if (!roles.includes(rol)) fallo("No tienes permiso para cambiar este perfil.", 403);
+    return rol;
+  }
   return {
+    async yo(email) { const p = (await almacen.equipo()).find(p => p.email === email); return { email, nombre: p?.nombre || "", rol: await almacen.rolDe(email) }; },
+    async equipo(por) {
+      const rol = await permitir(por, ["admin", "notario"]);
+      return { miembros: await almacen.equipo(), yo: por, rol };
+    },
+    async invitarMiembro(b, por, redirectTo) {
+      const actor = await permitir(por, ["admin", "notario"]), email = correo(b.email);
+      const nombre = typeof b.nombre === "string" ? b.nombre.trim() : "";
+      if (nombre.length < 2 || nombre.length > 80 || /[\u0000-\u001f\u007f]/.test(nombre)) fallo("Escribe un nombre de 2 a 80 caracteres.");
+      if (!["admin", "notario", "personal"].includes(b.rol)) fallo("Elige un perfil válido.");
+      if (actor === "notario" && b.rol !== "personal") fallo("Solo puedes invitar al perfil Personal.", 403);
+      if (await almacen.rolDe(email)) fallo("Esa persona ya está en el equipo.", 409);
+      if (await almacen.contarUso("panel:invitaciones:" + por, VENTANA_MS, ahora().getTime()) > 20) fallo("Ya enviaste 20 invitaciones hoy. Intenta mañana.", 429);
+      try { await almacen.agregarMiembro({ email, nombre, rol: b.rol }); }
+      catch (e) { if (e.code === "23505") fallo("Esa persona ya está en el equipo.", 409); throw e; }
+      let invitacion;
+      try { invitacion = await almacen.invitar(email, redirectTo); }
+      catch { await almacen.quitarMiembro(email); fallo("No se pudo enviar la invitación. Intenta de nuevo.", 502); }
+      return { ok: true, ...await this.equipo(por), ...invitacion, ...(invitacion.yaTeniaCuenta ? { aviso: "Ya tenía cuenta: puede entrar con su contraseña o usar ¿Olvidaste tu contraseña?" } : {}) };
+    },
+    async quitarMiembro(b, por) {
+      const actor = await permitir(por, ["admin", "notario"]), email = correo(b.email);
+      if (email === String(por).toLowerCase()) fallo("No puedes darte de baja a ti mismo.");
+      const miembros = await almacen.equipo(), p = miembros.find(p => p.email === email);
+      if (!p) fallo("Esa persona no está en el equipo.", 404);
+      if (actor === "notario" && p.rol !== "personal") fallo("Solo puedes dar de baja al perfil Personal.", 403);
+      if (p.rol === "admin" && miembros.filter(p => p.rol === "admin").length <= 1) fallo("No puedes dar de baja al último administrador.");
+      await almacen.quitarMiembro(email);
+      return { ok: true, ...await this.equipo(por) };
+    },
+    async cambiarRol(b, por) {
+      await permitir(por, ["admin"]);
+      const email = correo(b.email);
+      if (email === String(por).toLowerCase()) fallo("No puedes cambiar tu propio perfil.");
+      if (!["admin", "notario", "personal"].includes(b.rol)) fallo("Elige un perfil válido.");
+      const miembros = await almacen.equipo(), p = miembros.find(p => p.email === email);
+      if (!p) fallo("Esa persona no está en el equipo.", 404);
+      if (p.rol === "admin" && b.rol !== "admin" && miembros.filter(p => p.rol === "admin").length <= 1) fallo("No puedes cambiar el perfil del último administrador.");
+      await almacen.cambiarRol(email, b.rol);
+      return { ok: true, ...await this.equipo(por) };
+    },
     async funciones() {
       const detalles = await almacen.ajustesConDetalle();
       const f = leerFunciones(Object.fromEntries(detalles.map(r => [r.clave, r.valor])));

@@ -43,23 +43,36 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     }
   }
 
+  async function exigir(email, roles, mensaje) {
+    const rol = await auth.rolDe(email);
+    if (!roles.includes(rol)) throw Object.assign(new Aviso(mensaje), { status: 403 });
+    return rol;
+  }
+  // En precios y cupos esAdmin significa «puede editar»: incluye al notario.
   async function comoAdmin(email, fn) {
-    if (!(await auth.esAdmin(email))) throw Object.assign(new Aviso("Solo un administrador puede cambiar los precios."), { status: 403 });
+    await exigir(email, ["admin", "notario"], "Solo el notario o un administrador puede cambiar los precios.");
     return fn();
   }
   async function cuposAdmin(email, fn) {
-    if (!(await auth.esAdmin(email))) throw Object.assign(new Aviso("Solo un administrador puede cambiar los cupos."), {status:403});
-    return {...await fn(), esAdmin:true};
+    const rol = await exigir(email, ["admin", "notario"], "Solo el notario o un administrador puede cambiar los cupos.");
+    return { ...await fn(), esAdmin: true, rol };
   }
+  // En funciones y métricas esAdmin significa exclusivamente administrador.
   async function pilotoAdmin(email, fn, funciones = false) {
-    if (!(await auth.esAdmin(email))) throw Object.assign(new Aviso(funciones ? "Solo un administrador puede cambiar las funciones." : "Solo un administrador puede consultar o cambiar las métricas."), { status: 403 });
-    return { ...await fn(), esAdmin: true };
+    const rol = await exigir(email, ["admin"], funciones ? "Solo un administrador puede cambiar las funciones." : "Solo un administrador puede consultar o cambiar las métricas.");
+    return { ...await fn(), esAdmin: true, rol };
+  }
+  async function editable(email, datos) {
+    const rol = await auth.rolDe(email);
+    return { ...datos, rol, esAdmin: ["admin", "notario"].includes(rol) };
   }
   const lecturas = {
-    funciones: { fn: async (q, email) => ({ ...await panel.funciones(), esAdmin: await auth.esAdmin(email) }) },
+    yo: { fn: (q, email) => panel.yo(email) },
+    equipo: { auditar: true, fn: (q, email) => panel.equipo(email) },
+    funciones: { fn: (q, email) => pilotoAdmin(email, () => panel.funciones(), true) },
     metricas: { auditar: true, fn: (q, email) => pilotoAdmin(email, () => panel.metricas(q.get("desde") ?? undefined, q.get("hasta") ?? undefined)) },
-    citasConfig: { fn: async (q,email) => ({...await panel.citasConfig(), esAdmin:await auth.esAdmin(email)}) },
-    precios: { auditar: true, fn: async (q, email) => ({ ...await panel.precios(), esAdmin: await auth.esAdmin(email) }) },
+    citasConfig: { fn: async (q,email) => editable(email, await panel.citasConfig()) },
+    precios: { auditar: true, fn: async (q, email) => editable(email, await panel.precios()) },
     conversaciones: { fn: () => panel.conversaciones() },
     buscarTicket: { fn: (q) => panel.buscarTicket(q.get("codigo")), auditar: true },
     agenda: { fn: (q) => panel.agenda(q.get("fecha")) },
@@ -72,6 +85,15 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     } }
   };
   const acciones = {
+    invitarMiembro: (b, email, request) => {
+      const origen = process.env.SITIO_URL || request.headers.get("origin");
+      let redirectTo;
+      try { const url = new URL(origen); if (!["https:", "http:"].includes(url.protocol)) throw new Error(); redirectTo = url.origin + "/panel/"; }
+      catch { throw new Aviso("No se pudo determinar la dirección del panel para la invitación."); }
+      return panel.invitarMiembro(b, email, redirectTo);
+    },
+    quitarMiembro: (b, email) => panel.quitarMiembro(b, email),
+    cambiarRol: (b, email) => panel.cambiarRol(b, email),
     guardarFuncion: (b, email) => pilotoAdmin(email, () => panel.guardarFuncion(b, email), true),
     guardarPreciosMetricas: (b, email) => pilotoAdmin(email, () => panel.guardarPreciosMetricas(b, email)),
     guardarInicioPiloto: (b, email) => pilotoAdmin(email, () => panel.guardarInicioPiloto(b, email)),
@@ -100,7 +122,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
       const a = await autorizar(request); if (a.no) return a.no;
       let b; try { b = await request.json(); } catch { return json({ error: "JSON inválido" }, 400); }
       const accion = b?.accion, fn = typeof accion === "string" && Object.hasOwn(acciones, accion) && acciones[accion];
-      return fn ? ejecutar(accion, (accion === "guardarFuncion" ? "funcion." + b.id : "") || b.tramiteId || b.id || b.fecha || (accion === "guardarCupo" ? "citas.porHora" : "") || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email), true) : json({ error: "Acción desconocida" }, 400);
+      return fn ? ejecutar(accion, (accion === "guardarFuncion" ? "funcion." + b.id : "") || b.email || b.tramiteId || b.id || b.fecha || (accion === "guardarCupo" ? "citas.porHora" : "") || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email, request), true) : json({ error: "Acción desconocida" }, 400);
     }
   };
 }

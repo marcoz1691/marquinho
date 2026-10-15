@@ -25,7 +25,18 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     async metricas(desde, hasta) { return ok(await db.from("metricas_dia").select("fecha, clave, valor").gte("fecha", desde).lte("fecha", hasta).order("fecha").order("clave")).map(r => ({ ...r, valor: Number(r.valor) })); },
     async restaurarAjuste(clave) { ok(await db.from("ajustes").delete().eq("clave", clave)); },
     async guardarAjuste(clave, valor, por) { ok(await db.from("ajustes").upsert({ clave, valor: String(valor), actualizado_por: por, actualizado_en: new Date().toISOString() })); },
-    async esAdmin(email) { return !!ok(await db.from("personal").select("email").eq("email", String(email || "").toLowerCase()).eq("rol", "admin").maybeSingle()); },
+    async rolDe(email) { return ok(await db.from("personal").select("rol").eq("email", String(email || "").toLowerCase()).maybeSingle())?.rol || null; },
+    async esAdmin(email) { return await this.rolDe(email) === "admin"; },
+    async equipo() { return ok(await db.from("personal").select("email,nombre,rol,mfa_en,creado").order("nombre")).map(({ mfa_en, ...p }) => ({ ...p, dosPasos: mfa_en != null })); },
+    async agregarMiembro(p) { const { error } = await db.from("personal").insert(p); if (error) throw Object.assign(new Error(error.message), { code: error.code }); },
+    async quitarMiembro(email) { ok(await db.from("personal").delete().eq("email", email)); },
+    async cambiarRol(email, rol) { ok(await db.from("personal").update({ rol }).eq("email", email)); },
+    async invitar(email, redirectTo) {
+      const { error } = await db.auth.admin.inviteUserByEmail(email, { redirectTo });
+      if (error && (["email_exists", "user_already_exists"].includes(error.code) || /already (?:been )?(?:registered|exists)/i.test(error.message))) return { yaTeniaCuenta: true };
+      if (error) throw new Error(error.message);
+      return { yaTeniaCuenta: false };
+    },
     async marcarProcesado(waId) {
       const { error } = await db.from("procesados").insert({ wa_id: waId });
       if (error?.code === "23505") return false;
@@ -229,7 +240,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
 
     // Para el panel: comprueba que el usuario autenticado pertenece al personal.
     // Los correos de la tabla "personal" se guardan en minúsculas.
-    async esPersonal(email) { return !!ok(await db.from("personal").select("email").eq("email", String(email || "").toLowerCase()).maybeSingle()); },
+    async esPersonal(email) { return !!await this.rolDe(email); },
     // Valida el token con Supabase Auth y agrega su nivel de verificación (aal1 = solo contraseña, aal2 = con código de la app).
     async usuarioDeToken(token) {
       const { data, error } = await db.auth.getUser(token);

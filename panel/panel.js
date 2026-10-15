@@ -39,6 +39,7 @@ async function api(metodo, params) {
 // Solo una pantalla visible a la vez.
 function vista(id) {
   clearInterval(timer);
+  $("#equipoV").hidden = true; $("#perfilSesion").hidden = true; $("#funcionesV").hidden = true; $("#metricasV").hidden = true;
   $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
   document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
   document.querySelectorAll(".msg").forEach((m) => { m.textContent = ""; m.className = "msg"; });
@@ -100,8 +101,18 @@ setInterval(async () => {
   mensaje("mEntrar", "Cerramos tu sesión después de 30 minutos sin uso.", "info");
 }, 60 * 1000);
 
+let rolSesion = null;
+const perfiles = { admin: "Administrador", notario: "Notario", personal: "Personal" };
 async function mostrarApp() {
   try {
+    const yo = await api("GET", { accion: "yo" });
+    rolSesion = yo.rol;
+    $("#perfilSesion").textContent = perfiles[rolSesion] || "";
+    $("#perfilSesion").hidden = false;
+    $("[data-tab=funcionesV]").hidden = rolSesion !== "admin";
+    $("[data-tab=metricasV]").hidden = rolSesion !== "admin";
+    $("[data-tab=equipoV]").hidden = !["admin", "notario"].includes(rolSesion);
+    if ((["funcionesV", "metricasV"].includes(pestanaActual) && rolSesion !== "admin") || (pestanaActual === "equipoV" && !["admin", "notario"].includes(rolSesion))) pestanaActual = "app";
     await cargarLista();
   } catch (e) {
     if (e.sinPermiso) {
@@ -115,9 +126,9 @@ async function mostrarApp() {
   ultimoUso = Date.now();
   $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
   pestana(pestanaActual);
-  cargarMetricas(true);
+  if (rolSesion === "admin") cargarMetricas(true);
   clearInterval(timer);
-  const refrescar = () => ["preciosV", "funcionesV", "metricasV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
+  const refrescar = () => ["preciosV", "funcionesV", "metricasV", "equipoV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
   timer = setInterval(() => refrescar().catch((e) => console.warn("No se pudo actualizar:", e.message)), 15000);
 }
 
@@ -207,6 +218,8 @@ async function abrir(id, silencioso) {
 const hoyQuito = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(new Date());
 function pestana(id) {
   pestanaActual = id;
+  $("#equipoV").hidden = id !== "equipoV";
+  if (id === "equipoV") cargarEquipo();
   $("#funcionesV").hidden = id !== "funcionesV";
   $("#metricasV").hidden = id !== "metricasV";
   if (id === "funcionesV") cargarFuncionesPanel();
@@ -569,3 +582,50 @@ if (errorEnlace) {
   }
 } else if (session) continuar().catch(() => vista("vEntrar"));
 else vista("vEntrar");
+
+/* ---------- Equipo ---------- */
+let equipoPanel = null;
+function opcionesPerfil(rol) {
+  return Object.entries(perfiles).map(([valor, texto]) => `<option value="${esc(valor)}"${valor === rol ? " selected" : ""}>${esc(texto)}</option>`).join("");
+}
+function pintarEquipo(d) {
+  equipoPanel = d;
+  $("#equipoRol").innerHTML = d.rol === "admin" ? opcionesPerfil("personal") : '<option value="personal">Personal</option>';
+  const admins = d.miembros.filter(p => p.rol === "admin").length;
+  $("#equipoLista").innerHTML = d.miembros.map(p => {
+    const propio = p.email === d.yo, ultimo = p.rol === "admin" && admins === 1;
+    const quitar = !propio && !ultimo && (d.rol === "admin" || p.rol === "personal");
+    return `<article class="equipo-miembro"><div><h3>${esc(p.nombre)}</h3><p>${esc(p.email)}</p><p>${esc(perfiles[p.rol] || p.rol)} · ${p.dosPasos ? "Dos pasos activos" : "Pendiente de configurar"}</p></div><div class="equipo-acciones">${d.rol === "admin" ? `<label>Perfil de ${esc(p.nombre)}<select data-equipo-rol="${esc(p.email)}"${propio || ultimo ? " disabled" : ""}>${opcionesPerfil(p.rol)}</select></label>` : ""}${quitar ? `<button type="button" class="btn btn--warn" data-equipo-quitar="${esc(p.email)}">Dar de baja</button>` : ""}</div></article>`;
+  }).join("");
+}
+async function cargarEquipo() {
+  try { pintarEquipo(await api("GET", { accion: "equipo" })); }
+  catch (e) { $("#equipoMensaje").textContent = e.message; }
+}
+$("#equipoInvitar").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.currentTarget, boton = form.querySelector("button"), b = Object.fromEntries(new FormData(form));
+  boton.disabled = true;
+  try {
+    const d = await api("POST", { accion: "invitarMiembro", ...b });
+    pintarEquipo(d); form.reset();
+    $("#equipoMensaje").textContent = d.yaTeniaCuenta ? d.aviso : `Listo. Le llegó un correo a ${b.email.trim().toLowerCase()} para crear su contraseña; al entrar configurará su código de dos pasos.`;
+  } catch (e) { $("#equipoMensaje").textContent = e.message; }
+  finally { boton.disabled = false; }
+});
+$("#equipoLista").addEventListener("click", async e => {
+  const b = e.target.closest("[data-equipo-quitar]");
+  if (!b) return;
+  const p = equipoPanel.miembros.find(p => p.email === b.dataset.equipoQuitar);
+  if (!p || !confirm(`¿Quieres dar de baja a ${p.nombre}? Perderá el acceso al panel.`)) return;
+  b.disabled = true;
+  try { pintarEquipo(await api("POST", { accion: "quitarMiembro", email: p.email })); $("#equipoMensaje").textContent = "Listo. Esa persona ya no tiene acceso al panel."; }
+  catch (e) { $("#equipoMensaje").textContent = e.message; b.disabled = false; }
+});
+$("#equipoLista").addEventListener("change", async e => {
+  const s = e.target.closest("[data-equipo-rol]");
+  if (!s) return;
+  s.disabled = true;
+  try { pintarEquipo(await api("POST", { accion: "cambiarRol", email: s.dataset.equipoRol, rol: s.value })); $("#equipoMensaje").textContent = "Perfil guardado."; }
+  catch (e) { pintarEquipo(equipoPanel); $("#equipoMensaje").textContent = e.message; }
+});

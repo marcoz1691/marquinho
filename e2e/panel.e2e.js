@@ -30,6 +30,7 @@ test("ticket en agenda y conversación; búsqueda de cuatro dígitos y Ver chat"
   const busquedas = [];
   await page.route("**/api/panel?**", async (route) => {
     const params = new URL(route.request().url()).searchParams;
+    if (params.get("accion") === "yo") return route.fulfill({ json: { email: "yo@test.ec", rol: "personal", nombre: "Yo" } });
     let json;
     if (params.get("accion") === "agenda") json = { fecha: "2026-10-08", citas: [cita], personal: [] };
     else if (params.get("accion") === "buscarTicket") { busquedas.push(params.get("codigo")); json = [cita]; }
@@ -56,6 +57,7 @@ async function agendaSimulada(page, admin = true, fallaConfig = false) {
   const citas = ["pendiente", "confirmada", "atendida", "rechazada"].map((estado,i) => ({ id: `c${i}`, codigo: `482${i}`, fecha: "2026-10-12", hora: "09:00", nombre: `Cliente ${i}`, tramite: "", estado, telefono: "593999999991", canal: i === 0 ? "formulario" : i === 1 ? "web" : "whatsapp", conversacionId: `conv${i}` }));
   await page.route("**/api/panel?**", r => {
     const accion = new URL(r.request().url()).searchParams.get("accion");
+    if (accion === "yo") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", rol: admin ? "admin" : "personal" } });
     if (accion === "citasConfig" && fallaConfig) return r.fulfill({ status: 404, json: { error: "No disponible" } });
     return r.fulfill({ json: accion === "agenda" ? { fecha: "2026-10-12", citas, personal: [{ nombre: "Ana" }] } : accion === "citasConfig" ? config : accion === "detalle" ? { conversacion: { nombre: "Cliente 0" }, citas: [citas[0]], documentos: [], mensajes: [], puedeResponder: false } : [] });
   });
@@ -120,7 +122,7 @@ test("agenda: muestra celulares de Ecuador en formato local y otros números com
     { ...base, id: "b", codigo: "2222", hora: "10:00", nombre: "John", telefono: "14155552671", conversacionId: "c2" },
     { ...base, id: "c", codigo: "3333", hora: "11:00", nombre: "Marta", telefono: "59322345678", conversacionId: "c3" }
   ];
-  await page.route("**/api/panel?**", (route) => route.fulfill({ json: new URL(route.request().url()).searchParams.get("accion") === "agenda" ? { fecha: "2026-10-08", citas, personal: [] } : [] }));
+  await page.route("**/api/panel?**", (route) => route.fulfill({ json: new URL(route.request().url()).searchParams.get("accion") === "yo" ? { email: "yo@test.ec", nombre: "Yo", rol: "personal" } : new URL(route.request().url()).searchParams.get("accion") === "agenda" ? { fecha: "2026-10-08", citas, personal: [] } : [] }));
   await page.goto("/panel/");
   await page.getByRole("button", { name: "Agenda", exact: true }).click();
   const lista = page.locator("#agLista");

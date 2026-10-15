@@ -10,7 +10,7 @@
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button><button data-tab="funcionesV">Funciones</button><button data-tab="metricasV" hidden>Métricas</button></nav><span class="sp"></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
 
 <section class="acceso" id="acceso" hidden>
   <!-- Entrar -->
@@ -138,6 +138,12 @@
 <button id="metricasCsv" class="btn" disabled>Descargar CSV</button>
 <details><summary>Precios para el costo</summary><form id="metricasPrecios"></form></details>
 </section>
+<section id="equipoV" hidden><h2>Equipo</h2><div id="equipoLista"></div>
+<h3>Invitar a alguien</h3><form id="equipoInvitar">
+<div class="campo"><label for="equipoNombre">Nombre</label><input id="equipoNombre" name="nombre" minlength="2" maxlength="80" autocomplete="name" required></div>
+<div class="campo"><label for="equipoEmail">Correo</label><input id="equipoEmail" name="email" type="email" autocomplete="email" required></div>
+<div class="campo"><label for="equipoRol">Perfil</label><select id="equipoRol" name="rol"><option value="personal">Personal</option></select></div>
+<button class="btn" type="submit">Enviar invitación</button></form><p id="equipoMensaje" role="status" aria-live="polite"></p></section>
 <!-- Librería de Supabase alojada aquí con versión fija (no desde un CDN): nadie puede cambiar el código que maneja las sesiones. -->
 <script src="vendor/supabase-js-2.117.2.js"></script>
 <script type="module" src="panel.js"></script>

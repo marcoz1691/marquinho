@@ -8,6 +8,7 @@ async function panel(page, admin = true) {
     const req = r.request(), p = new URL(req.url()).searchParams, body = req.method() === "POST" ? req.postDataJSON() : null;
     if (body) { pedidos.push(body); activa = body.activa; }
     const accion = body?.accion || p.get("accion");
+    if (accion === "yo") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", rol: admin ? "admin" : "personal" } });
     if (accion === "funciones" || accion === "guardarFuncion") return r.fulfill({ json: { esAdmin: admin, funciones: [{ id: "agenda", nombre: "Agendar citas", descripcion: "Agenda en línea", efectoAlApagar: "Se ocultan los botones de agenda.", activa }] } });
     if (accion === "metricas") {
       pedidos.push(Object.fromEntries(p));
@@ -35,11 +36,9 @@ test("administrador apaga con confirmación y enciende sin ella", async ({ page 
   expect(confirmaciones).toBe(1);
   expect(pedidos).toContainEqual({ accion: "guardarFuncion", id: "agenda", activa: true });
 });
-test("personal consulta funciones y no ve métricas", async ({ page }) => {
+test("personal no ve funciones ni métricas", async ({ page }) => {
   await panel(page, false);
-  await page.getByRole("button", { name: "Funciones", exact: true }).click();
-  await expect(page.locator("#funcionesLista")).toContainText("Encendida");
-  await expect(page.getByRole("switch")).toHaveCount(0);
+  await expect(page.locator('[data-tab="funcionesV"]')).toBeHidden();
   await expect(page.locator('[data-tab="metricasV"]')).toBeHidden();
 });
 test("métricas, período y CSV a 390 px", async ({ page }) => {
