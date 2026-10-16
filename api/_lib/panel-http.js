@@ -4,9 +4,11 @@ import { Aviso } from "./errores.js";
 
 const HORA = 3600 * 1000;
 const GENERICO = "No se pudo completar la acción. Intenta de nuevo en unos segundos.";
+const SOLO_EDITORES_TRAMITES = "Solo el notario o un administrador puede editar los trámites.";
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDescargas = 60, ahora = () => Date.now(), avisar = async () => {} }) {
+  const mfaRegistrada = new Set();
   async function autorizar(request) {
     const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
     const usuario = token ? await auth.usuarioDeToken(token) : null;
@@ -17,9 +19,14 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     const email = String(usuario.email).toLowerCase();
     // Primera vez con verificación en dos pasos: queda registrado y se avisa, para que el administrador note si alguien
     // distinto al dueño activó la verificación de una cuenta nueva (ver docs/notario: «activa tu verificación el mismo día»).
-    if (exigirMfa && (await auth.marcarMfa(email).catch(() => false))) {
-      await auth.auditar({ email, accion: "mfa_activado", objetivo: email, ok: true }).catch(() => {});
-      await avisar(`Se activó la verificación en dos pasos de ${email} en el panel. Si no fue esa persona, avisa de inmediato al administrador.`).catch(() => {});
+    // Se consulta una vez por persona y por instancia, no en cada pedido: ahorra una escritura en la base por clic.
+    if (exigirMfa && !mfaRegistrada.has(email)) {
+      let nueva = false;
+      try { nueva = await auth.marcarMfa(email); mfaRegistrada.add(email); } catch {}
+      if (nueva) {
+        await auth.auditar({ email, accion: "mfa_activado", objetivo: email, ok: true }).catch(() => {});
+        await avisar(`Se activó la verificación en dos pasos de ${email} en el panel. Si no fue esa persona, avisa de inmediato al administrador.`).catch(() => {});
+      }
     }
     return { email };
   }
@@ -49,8 +56,8 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     return rol;
   }
   // En precios y cupos esAdmin significa «puede editar»: incluye al notario.
-  async function comoAdmin(email, fn) {
-    await exigir(email, ["admin", "notario"], "Solo el notario o un administrador puede cambiar los precios.");
+  async function comoAdmin(email, fn, mensaje = "Solo el notario o un administrador puede cambiar los precios.") {
+    await exigir(email, ["admin", "notario"], mensaje);
     return fn();
   }
   async function cuposAdmin(email, fn) {
@@ -102,6 +109,8 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     quitarBloqueo: (b,email) => cuposAdmin(email, () => panel.quitarBloqueo(b,email)),
     guardarPrecio: (b, email) => comoAdmin(email, () => panel.guardarPrecio(b, email)),
     restaurarPrecio: (b, email) => comoAdmin(email, () => panel.restaurarPrecio(b.tramiteId)),
+    guardarTexto: (b, email) => comoAdmin(email, () => panel.guardarTexto(b, email), SOLO_EDITORES_TRAMITES),
+    restaurarTexto: (b, email) => comoAdmin(email, () => panel.restaurarTexto(b.tramiteId), SOLO_EDITORES_TRAMITES),
     guardarSBU: (b, email) => comoAdmin(email, () => panel.guardarSBU(b, email)),
     restaurarSBU: (b, email) => comoAdmin(email, () => panel.restaurarSBU()),
     responder: (b) => panel.responder(b.id, b.texto),

@@ -9,7 +9,8 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const enlace = new URLSearchParams(location.hash.slice(1) + "&" + location.search.slice(1));
 const tipoEnlace = enlace.get("type");               // invite | recovery
 const errorEnlace = enlace.get("error_code") || enlace.get("error");
-const cfg = await (await fetch("/api/panel-config")).json();
+const cfg = await fetch("/api/panel-config").then((r) => r.json()).catch(() => null);
+if (!cfg) { $("#cargando span").textContent = "No pudimos abrir el panel. Revisa tu conexión y recarga la página."; throw new Error("Sin configuración del panel"); }
 // Los enlaces de invitación y recuperación traen la sesión en la URL (#access_token…): flujo "implicit".
 // PKCE no sirve aquí: las invitaciones las crea el administrador desde Supabase y no hay un verificador en este navegador.
 // El token del enlace lo protege la política de seguridad (CSP) del sitio y la verificación en dos pasos.
@@ -39,6 +40,7 @@ async function api(metodo, params) {
 // Solo una pantalla visible a la vez.
 function vista(id) {
   clearInterval(timer);
+  $("#cargando").hidden = true;
   $("#equipoV").hidden = true; $("#perfilSesion").hidden = true; $("#funcionesV").hidden = true; $("#metricasV").hidden = true;
   $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
   document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
@@ -105,7 +107,8 @@ let rolSesion = null;
 const perfiles = { admin: "Administrador", notario: "Notario", personal: "Personal" };
 async function mostrarApp() {
   try {
-    const yo = await api("GET", { accion: "yo" });
+    // El perfil y las conversaciones se piden a la vez: el panel aparece completo de una sola vez.
+    const [yo] = await Promise.all([api("GET", { accion: "yo" }), cargarLista()]);
     rolSesion = yo.rol;
     $("#perfilSesion").textContent = perfiles[rolSesion] || "";
     $("#perfilSesion").hidden = false;
@@ -113,7 +116,6 @@ async function mostrarApp() {
     $("[data-tab=metricasV]").hidden = rolSesion !== "admin";
     $("[data-tab=equipoV]").hidden = !["admin", "notario"].includes(rolSesion);
     if ((["funcionesV", "metricasV"].includes(pestanaActual) && rolSesion !== "admin") || (pestanaActual === "equipoV" && !["admin", "notario"].includes(rolSesion))) pestanaActual = "app";
-    await cargarLista();
   } catch (e) {
     if (e.sinPermiso) {
       const { data: { user } } = await sb.auth.getUser();
@@ -124,7 +126,7 @@ async function mostrarApp() {
     throw e;
   }
   ultimoUso = Date.now();
-  $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
+  $("#cargando").hidden = true; $("#acceso").hidden = true; $("#salir").hidden = false; $("#tabs").hidden = false;
   pestana(pestanaActual);
   if (rolSesion === "admin") cargarMetricas(true);
   clearInterval(timer);
@@ -377,6 +379,25 @@ $("#detalle").addEventListener("click", async (e) => {
 /* ---------- Precios y SBU ---------- */
 let preciosPanel = null;
 const borradoresPrecio = new Map();
+// Texto del trámite (nombre, descripción, requisitos, pasos y nota): un editor abierto a la vez y su borrador.
+let editandoTexto = null;
+const borradoresTexto = new Map();
+const LAPIZ = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+function editorTexto(t) {
+  const x = borradoresTexto.get(t.id) || { nombre: t.nombre, desc: t.desc || "", req: (t.req || []).join("\n"), pasos: (t.pasos || []).join("\n"), nota: t.nota || "" };
+  return `<form class="texto-editor" data-texto-form novalidate>
+    <div class="campo"><label for="tx-nombre">Nombre</label><input id="tx-nombre" name="nombre" maxlength="120" required value="${esc(x.nombre)}"></div>
+    <div class="campo"><label for="tx-desc">Descripción</label><textarea id="tx-desc" name="desc" rows="2" maxlength="500">${esc(x.desc)}</textarea></div>
+    <div class="texto-columnas">
+      <div class="campo"><label for="tx-req">Requisitos</label><textarea id="tx-req" name="req" rows="6">${esc(x.req)}</textarea><small>Uno por línea.</small></div>
+      <div class="campo"><label for="tx-pasos">Cómo es el trámite</label><textarea id="tx-pasos" name="pasos" rows="6">${esc(x.pasos)}</textarea><small>Un paso por línea.</small></div>
+    </div>
+    <div class="campo"><label for="tx-nota">Nota</label><textarea id="tx-nota" name="nota" rows="2" maxlength="500">${esc(x.nota)}</textarea><small>Opcional. Aparece debajo de los requisitos.</small></div>
+    <div class="texto-acciones"><button class="btn" type="submit">Guardar texto</button><button class="btn btn--line" type="button" data-texto="cerrar">Cancelar</button>${t.textoEditado ? '<button class="btn btn--line" type="button" data-texto="restaurar">Volver al texto de la hoja</button>' : ""}</div>
+  </form>`;
+}
+const textoDeForm = (form) => { const d = Object.fromEntries(new FormData(form)); return { nombre: d.nombre, desc: d.desc, req: d.req, pasos: d.pasos, nota: d.nota }; };
+const lineas = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 const ETIQUETA_VALOR = { pct: "Porcentaje del SBU (%)", fija: "Valor en dólares (USD)" };
 // "2026-10-07T15:00:00Z" → "7 oct 2026, 10:00" (hora de Quito).
 function fechaLegible(iso) {
@@ -408,14 +429,14 @@ function pintarPrecios() {
   if (!preciosPanel) return;
   const buscar = $("#preciosBuscar").value.toLocaleLowerCase();
   let categoriaPrecio;
-  $("#preciosLista").innerHTML = `<div class="precios-cabecera"><span>Trámite</span><span>Tipo</span><span>Valor</span><span>Unidad</span><span>Total con IVA</span><span>Acciones</span></div>` + preciosPanel.tramites.toSorted((a,b) => String(a.cat || "").localeCompare(String(b.cat || ""))).filter((t) => t.nombre.toLocaleLowerCase().includes(buscar) && (!$("#preciosEditados").checked || t.editada)).map((t) => {
+  $("#preciosLista").innerHTML = `<div class="precios-cabecera"><span>Trámite</span><span>Tipo</span><span>Valor</span><span>Unidad</span><span>Total con IVA</span><span>Acciones</span></div>` + preciosPanel.tramites.toSorted((a,b) => String(a.cat || "").localeCompare(String(b.cat || ""))).filter((t) => t.nombre.toLocaleLowerCase().includes(buscar) && (!$("#preciosEditados").checked || t.editada || t.textoEditado)).map((t) => {
     const f = borradoresPrecio.get(t.id) || t.tarifa;
     const campos = preciosPanel.esAdmin ? `<div class="precio-campos">
       <label><span class="rotulo">Tipo</span><select data-campo="tipo">${Object.entries(TIPOS_PRECIO).map(([k, v]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
       <div class="precio-valor"><label><span class="rotulo" data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
       <label><span class="rotulo">Tabla</span><select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
-      </div><label><span class="rotulo">Unidad</span><input data-campo="unidad" placeholder="Por firma (opcional)" maxlength="30" value="${esc(f.unidad)}"></label><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><div class="precio-acciones"><button class="btn" disabled data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div></div>` : `<div class="precio-consulta"><span>${esc(TIPOS_PRECIO[f.tipo])}</span><span>${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) + " %" : f.valor ?? "—")}</span><span>${esc(f.unidad || "—")}</span><output>${esc(finalPrecio(t, tarifasEnPantalla()))}</output><span>Solo lectura</span></div>`;
-    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila" data-tramite="${esc(t.id)}"><div class="precio-nombre"><h3>${esc(t.nombre)}</h3><small>${t.editada ? `Editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Valor oficial"}</small><span class="precio-pendiente" hidden>Cambios sin guardar</span></div>${campos}</article>`;
+      </div><label><span class="rotulo">Unidad</span><input data-campo="unidad" placeholder="Ej.: por firma" maxlength="30" value="${esc(f.unidad)}"></label><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><div class="precio-acciones"><button class="btn" disabled data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div></div>` : `<div class="precio-consulta"><span>${esc(TIPOS_PRECIO[f.tipo])}</span><span>${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) + " %" : f.valor ?? "—")}</span><span>${esc(f.unidad || "—")}</span><output>${esc(finalPrecio(t, tarifasEnPantalla()))}</output><span>Solo lectura</span></div>`;
+    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila${editandoTexto === t.id ? " precio-fila--editando" : ""}" data-tramite="${esc(t.id)}"><div class="precio-nombre"><div class="precio-titulo"><h3>${esc(t.nombre)}</h3>${preciosPanel.esAdmin ? `<button class="lapiz" type="button" data-texto="abrir" aria-expanded="${editandoTexto === t.id}" aria-label="Editar el texto de ${esc(t.nombre)}" title="Editar nombre, descripción y requisitos">${LAPIZ}</button>` : ""}</div><small>${t.editada ? `Precio editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Precio oficial"}</small>${t.textoEditado ? `<small class="texto-estado">Texto editado por ${esc(t.textoPor)} el ${esc(fechaLegible(t.textoEn))}</small>` : ""}<span class="precio-pendiente" hidden>Cambios sin guardar</span></div>${campos}${editandoTexto === t.id ? editorTexto(t) : ""}</article>`;
   }).join("") || "<p>No hay trámites con ese nombre.</p>";
   if (!$("#preciosLista .precio-fila")) $("#preciosLista").insertAdjacentHTML("beforeend", "<p>No hay trámites con estos filtros.</p>");
   document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
@@ -432,6 +453,7 @@ function actualizarPrecio(fila) {
   fila.querySelector('[data-campo="tabla"]').disabled = p.tipo !== "cuantia";
   // Solo se muestra lo que aplica al tipo elegido, y el valor dice si son % del SBU o dólares.
   fila.querySelector('[data-campo="tabla"]').closest("label").hidden = p.tipo !== "cuantia";
+  fila.querySelector('[data-campo="valor"]').closest("label").hidden = !["pct", "fija"].includes(p.tipo);
   fila.querySelector("[data-etiqueta-valor]").textContent = ETIQUETA_VALOR[p.tipo] || "Valor";
   const original = preciosPanel.tramites.find(t => t.id === fila.dataset.tramite).tarifa;
   const cambiado = p.tipo !== original.tipo || p.unidad !== (original.unidad || "") || (["pct", "fija"].includes(p.tipo) && Math.abs(p.valor - Number(original.valor)) > 1e-10) || (p.tipo === "cuantia" && p.tabla !== original.tabla);
@@ -441,6 +463,41 @@ function actualizarPrecio(fila) {
   if (cambiado) borradoresPrecio.set(fila.dataset.tramite, p); else borradoresPrecio.delete(fila.dataset.tramite);
   fila.querySelector("output").textContent = finalPrecio({ tarifa: p }, tarifasEnPantalla());
 }
+$("#preciosV").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-texto]");
+  if (!b || !preciosPanel?.esAdmin) return;
+  const id = b.closest(".precio-fila").dataset.tramite;
+  if (b.dataset.texto === "abrir") { editandoTexto = editandoTexto === id ? null : id; pintarPrecios(); if (editandoTexto) $("#tx-nombre")?.focus(); return; }
+  if (b.dataset.texto === "cerrar") { editandoTexto = null; borradoresTexto.delete(id); return pintarPrecios(); }
+  if (b.dataset.texto === "restaurar") {
+    if (!confirm("¿Volver al texto de la hoja de Google para este trámite?")) return;
+    b.disabled = true;
+    try {
+      await api("POST", { accion: "restaurarTexto", tramiteId: id });
+      editandoTexto = null; borradoresTexto.delete(id);
+      $("#preciosMensaje").textContent = "Listo. El trámite vuelve a mostrar el texto de la hoja (en la web en 1 minuto y en Sofía en hasta 5).";
+      await cargarPreciosPanel();
+    } catch (err) { $("#preciosMensaje").textContent = err.message; b.disabled = false; }
+  }
+});
+$("#preciosV").addEventListener("input", (e) => {
+  const form = e.target.closest("[data-texto-form]");
+  if (form) borradoresTexto.set(form.closest(".precio-fila").dataset.tramite, textoDeForm(form));
+});
+$("#preciosV").addEventListener("submit", async (e) => {
+  const form = e.target.closest("[data-texto-form]");
+  if (!form) return;
+  e.preventDefault();
+  const id = form.closest(".precio-fila").dataset.tramite, x = textoDeForm(form), boton = form.querySelector('[type="submit"]');
+  if (x.nombre.trim().length < 3) { $("#preciosMensaje").textContent = "El nombre debe tener al menos 3 caracteres."; return $("#tx-nombre").focus(); }
+  boton.disabled = true;
+  try {
+    await api("POST", { accion: "guardarTexto", tramiteId: id, nombre: x.nombre, desc: x.desc, req: lineas(x.req), pasos: lineas(x.pasos), nota: x.nota });
+    editandoTexto = null; borradoresTexto.delete(id);
+    $("#preciosMensaje").textContent = "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5.";
+    await cargarPreciosPanel();
+  } catch (err) { $("#preciosMensaje").textContent = err.message; boton.disabled = false; }
+});
 $("#preciosEditados").addEventListener("change", pintarPrecios);
 $("#preciosBuscar").addEventListener("input", pintarPrecios);
 $("#preciosV").addEventListener("input", (e) => {

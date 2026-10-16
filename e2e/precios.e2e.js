@@ -10,7 +10,7 @@ async function preparar(page, esAdmin, editada = {}, extra = {}) {
   } : [] }));
   await page.route("**/api/panel", async (r) => { pedidos.push(r.request().postDataJSON()); await r.fulfill({ json: { ok: true } }); });
   await page.goto("/panel/");
-  await page.getByRole("button", { name: "Precios", exact: true }).click();
+  await page.getByRole("button", { name: "Trámites", exact: true }).click();
   return pedidos;
 }
 
@@ -123,4 +123,29 @@ test("precios: avisa que una conversación ya abierta con Sofía puede seguir ci
   await expect(fila.locator('[data-campo="valor"]')).toHaveValue("10");
   await fila.locator('[data-campo="valor"]').fill("12");
   await expect(guardar).toBeDisabled();
+});
+
+test("trámites: con el lápiz se edita el texto y se envía cada requisito y paso por separado @movil", async ({ page }) => {
+  const pedidos = await preparar(page, true, { desc: "Autoriza a otra persona.", req: ["Minuta"], pasos: ["Firma"], nota: "" });
+  const fila = page.locator(".precio-fila");
+  await fila.getByRole("button", { name: "Editar el texto de Poder general" }).click();
+  const editor = page.locator(".texto-editor");
+  await expect(editor.getByLabel("Nombre")).toHaveValue("Poder general");
+  await editor.getByLabel("Nombre").fill("Poder general o especial");
+  await editor.getByLabel("Requisitos").fill("Minuta firmada por un abogado\n\nCédula del poderdante");
+  await page.getByRole("button", { name: "Guardar texto" }).click();
+  await expect.poll(() => pedidos.length).toBe(1);
+  expect(pedidos[0]).toMatchObject({ accion: "guardarTexto", tramiteId: "poder", nombre: "Poder general o especial", req: ["Minuta firmada por un abogado", "Cédula del poderdante"], pasos: ["Firma"] });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("el panel muestra una pantalla de carga hasta saber qué vista abrir", async ({ page }) => {
+  let soltar;
+  await page.route("**/api/panel-config", async (r) => { await new Promise((ok) => { soltar = ok; }); await r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: true } }); });
+  await page.goto("/panel/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#cargando")).toBeVisible();
+  await expect.poll(() => typeof soltar).toBe("function");
+  soltar();
+  await expect(page.locator("#vEntrar")).toBeVisible();
+  await expect(page.locator("#cargando")).toBeHidden();
 });
