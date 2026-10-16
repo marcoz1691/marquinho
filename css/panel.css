@@ -7,6 +7,10 @@ header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var
 header img{width:34px;height:34px}header b{font-weight:600}header .sp{flex:1}
 header button{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 14px}
 [hidden]{display:none!important}
+/* «Ver como»: vista previa del panel con otro perfil (solo administradores). Se oculta junto con las pestañas al salir. */
+.ver-como{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.8);white-space:nowrap}.ver-como select{background:var(--deep);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:5px 10px;font:inherit;max-width:150px}#tabs[hidden]~.ver-como{display:none}
+.vista-previa{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:10px 18px;background:color-mix(in srgb,var(--gold) 14%,var(--bg));border-bottom:1px solid color-mix(in srgb,var(--gold) 40%,transparent);font-size:14px}.vista-previa p{margin:0;flex:1 1 240px;min-width:0}.vista-previa .btn{padding:6px 14px}header:has(#tabs[hidden])+.vista-previa{display:none}
+@media (max-width:600px){.ver-como>span{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0)}#perfilSesion:has(+.ver-como:not([hidden])){display:none}.vista-previa{padding:10px 12px}}
 .acceso{min-height:calc(100vh - 54px);display:grid;place-items:center;padding:32px 16px}
 .auth{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px;display:grid;gap:16px;box-shadow:0 18px 40px -20px rgba(10,59,46,.25)}
 .auth__sello{width:56px;height:56px}
@@ -153,3 +157,77 @@ button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px soli
 #equipoInvitar { max-width: 460px; }
 #equipoInvitar input, #equipoInvitar select, .equipo-acciones select { width: 100%; max-width: 100%; }
 #perfilSesion { white-space: nowrap; }
+
+/* ===== Sistema común del panel: un solo ancho, controles de la misma altura y botones alineados ===== */
+:root{--alto-control:44px;--alto-boton:40px;--alto-chico:34px}
+/* Pantalla de carga: se ve desde el primer instante, en vez de una página en blanco */
+.cargando{min-height:calc(100vh - 54px);display:grid;place-content:center;justify-items:center;gap:14px;color:var(--muted);font-size:14px}
+.cargando img{width:56px;height:56px;animation:latido-panel 1.4s ease-in-out infinite}
+@keyframes latido-panel{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.cargando img{animation:none}}
+/* Campos */
+input:not([type=checkbox]):not([type=radio]),select{min-height:var(--alto-control);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font:inherit;font-size:15px}
+textarea{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font:inherit;font-size:15px;line-height:1.45;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 20%,transparent)}
+/* Botones: misma altura, texto centrado y sin cortes */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--alto-boton);padding:0 18px;line-height:1.2;white-space:nowrap}
+.ficha .acc button,.ag-cita .acc button,.precio-acciones button{min-height:var(--alto-chico);padding:0 14px;font-size:13px}
+.ag-top button,.ag-top input{min-height:var(--alto-boton)}
+/* Todas las pestañas con el mismo ancho y los mismos márgenes */
+#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV{height:calc(100vh - 54px);overflow:auto;max-width:none;margin:0;padding:28px max(20px,calc((100% - 1100px) / 2)) 56px}
+.ag-top,.ag-lista,.ag-resumen,.ag-config{max-width:none}
+#preciosV h2,#funcionesV h2,#metricasV h2,#equipoV h2{font-size:22px;margin:0 0 12px}
+#preciosV .intro{margin:0 0 4px;color:var(--muted);max-width:80ch}
+/* Encabezado en el celular: las pestañas en una sola fila que se desliza */
+@media(max-width:600px){
+  header .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:4px}
+  header .tabs::-webkit-scrollbar{display:none}
+  header .tabs button{flex:none}
+  #agendaV,#preciosV,#funcionesV,#metricasV,#equipoV{height:auto;overflow:visible;padding:20px 16px 40px}
+}
+/* Equipo: datos a la izquierda, perfil y baja a la derecha, alineados por abajo */
+.equipo-miembro{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 24px;padding:18px 0}
+.equipo-miembro h3{margin:0 0 2px;font-size:16px}
+.equipo-miembro p{margin:0;color:var(--muted);font-size:14px}
+.equipo-acciones{display:flex;align-items:flex-end;justify-content:flex-end;gap:12px}
+.equipo-acciones label{font-size:13px;font-weight:600}
+.equipo-acciones select{width:200px}
+.equipo-acciones .btn{min-height:var(--alto-control)}
+#equipoV h3{font-size:17px}
+#equipoInvitar{display:grid;gap:16px;max-width:480px;margin-top:8px;padding:20px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+#equipoInvitar .btn{justify-self:start}
+@media(max-width:600px){.equipo-miembro{grid-template-columns:1fr}.equipo-acciones{justify-content:flex-start;flex-wrap:wrap}.equipo-acciones label{flex:1 1 180px}.equipo-acciones select{width:100%}}
+/* Métricas: período y fecha de inicio como el resto de campos */
+#metricasV label[for=metricasPeriodo]{display:block;margin:0 0 6px;font-size:14px;font-weight:600}
+#metricasPeriodo{width:240px;max-width:100%}
+#metricasV #inicioPilotoForm{display:flex;flex-wrap:wrap;align-items:end;gap:8px 12px;max-width:520px}
+#metricasV #inicioPilotoForm label{flex-basis:100%;font-size:14px;font-weight:600}
+#metricasV #inicioPilotoForm .btn{width:auto}
+/* Trámites y precios: lápiz junto al nombre y editor de texto debajo de la fila */
+.precio-titulo{display:flex;align-items:center;gap:6px}
+.precio-titulo h3{margin:0}
+.lapiz{flex:none;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:none;color:var(--acc)}
+.lapiz:hover,.lapiz[aria-expanded=true]{background:var(--soft)}
+.texto-estado{color:var(--acc)!important;font-weight:600}
+.precio-acciones{display:flex;flex-direction:column;gap:6px}
+.precio-acciones button{width:100%}
+.precio-campos input,.precio-campos select{min-height:var(--alto-boton)}
+.precio-fila--editando{border-color:var(--acc)}
+.texto-editor{grid-column:1/-1;display:grid;gap:14px;margin-top:6px;padding-top:16px;border-top:1px solid var(--line)}
+.texto-editor .campo label{font-size:13px}
+.texto-columnas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.texto-acciones{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:700px){.texto-columnas{grid-template-columns:1fr}}
+.precio-titulo{display:block}
+.precio-titulo h3{display:inline}
+.lapiz{display:inline-grid;vertical-align:-9px;margin-left:2px}
+#preciosLista{--precio-columnas:minmax(200px,2fr) minmax(165px,1.2fr) minmax(110px,1fr) minmax(110px,1fr) minmax(110px,1fr) 170px}
+.precio-campos input,.precio-campos select{font-size:14px;padding:8px 10px}
+.precios-cabecera{top:-28px}
+/* «Ver como» en el encabezado: control compacto sobre el fondo oscuro y sin repetir el perfil al lado */
+header .ver-como select{min-height:34px;padding:4px 28px 4px 12px;background-color:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-size:14px}
+header .ver-como select option{color:#1C2620;background:#fff}
+#perfilSesion:has(+.ver-como:not([hidden])){display:none}
+/* Con el aviso de vista previa visible, las conversaciones restan su alto para que la caja de respuesta siga a la vista */
+body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:calc(100vh - 54px - 61px)}
+@media(max-width:600px){body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:auto}}

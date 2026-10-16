@@ -7,10 +7,16 @@
 <title>Panel Notaría 41</title>
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../css/panel.css">
+<!-- Se piden desde el inicio, en paralelo, en vez de uno tras otro cuando el código los necesita. -->
+<link rel="modulepreload" href="panel.js">
+<link rel="modulepreload" href="../js/nucleo.js">
+<link rel="preload" href="/api/panel-config" as="fetch" crossorigin="anonymous">
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Precios</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Trámites</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
+
+<div class="cargando" id="cargando" role="status"><img src="../assets/logo/logo-notaria41-verde.svg" alt=""><span>Cargando el panel…</span></div>
 
 <section class="acceso" id="acceso" hidden>
   <!-- Entrar -->
@@ -120,8 +126,8 @@
 </section>
 
 <section id="preciosV" hidden>
-  <h2>Precios</h2>
-  <p>Los valores finales incluyen IVA. Los documentos habilitantes se cobran aparte. Los cambios se ven en la web en 1 minuto y en Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.</p>
+  <h2>Trámites y precios</h2>
+  <p class="intro">Con el lápiz cambias el nombre, la descripción, los requisitos y los pasos de un trámite. Los valores finales incluyen IVA y los documentos habilitantes se cobran aparte. Los cambios se ven en la web en 1 minuto y en Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando lo anterior.</p>
   <div id="preciosAjustes" class="precios-top"></div>
   <div class="precios-filtros"><label for="preciosBuscar">Buscar trámite<input id="preciosBuscar" type="search"></label><label class="solo-editados"><input id="preciosEditados" type="checkbox"> Solo editados</label></div>
   <p id="preciosMensaje" role="status" aria-live="polite"></p>

@@ -6,6 +6,7 @@ import { minutos } from "../../js/nucleo.js";
 import { textoVisible, PREFIJO_PERSONAL } from "./mensajes.js";
 import { Aviso } from "./errores.js";
 import { esHabilitante } from "../../js/nucleo.js";
+import { textoValido, textosDeAjustes } from "../../js/precios.js";
 
 const VENTANA_MS = 24 * 60 * 60 * 1000;
 const ESTADOS_CITA = ["confirmada", "rechazada", "atendida"];
@@ -179,13 +180,27 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       return {ok:true, ...await this.citasConfig()};
     },
     async precios() {
-      const C = await contenido({ oficial: true }), filas = await almacen.precios(), ajustes = await almacen.ajustes();
+      const C = await contenido({ oficial: true });
+      const [filas, ajustes, detalles] = await Promise.all([almacen.precios(), almacen.ajustes(), almacen.ajustesConDetalle()]);
+      const textos = textosDeAjustes(ajustes);
       return { tarifas: { ...C.tarifas, ...ajustes }, sbuEditado: ajustes.sbu !== undefined || ajustes.anio !== undefined, sbuOficial: C.tarifas.sbu, anioOficial: C.tarifas.anio, tramites: C.data.tramites.map((t) => {
         const p = filas.find((p) => p.tramiteId === t.id);
-        return { ...t, tarifa: p ? { tipo: p.tipo, valor: p.valor, unidad: p.unidad, tabla: p.tabla } : t.tarifa,
-          editada: !!p, actualizadoPor: p?.actualizadoPor || "", actualizadoEn: p?.actualizadoEn || "" };
+        // El texto editado se muestra en lugar del de la hoja; «oficial» guarda el de la hoja para poder volver a él.
+        const texto = Object.hasOwn(textos, t.id) ? textoValido(textos[t.id]) : null, d = texto && detalles.find((x) => x.clave === "tramite." + t.id);
+        const oficial = { nombre: t.nombre, desc: t.desc || "", req: t.req || [], pasos: t.pasos || [], nota: t.nota || "" };
+        return { ...t, ...(texto || {}), oficial, tarifa: p ? { tipo: p.tipo, valor: p.valor, unidad: p.unidad, tabla: p.tabla } : t.tarifa,
+          editada: !!p, actualizadoPor: p?.actualizadoPor || "", actualizadoEn: p?.actualizadoEn || "",
+          textoEditado: !!texto, textoPor: d?.actualizadoPor || "", textoEn: d?.actualizadoEn || "" };
       }) };
     },
+    // Nombre, descripción, requisitos, pasos y nota de un trámite: se ven en la web y en Sofía sobre lo que dice la hoja.
+    async guardarTexto(b, por) {
+      await tramitePrecio(b.tramiteId);
+      const texto = textoValido(b);
+      if (!texto) throw new Aviso("Revisa el texto: el nombre debe tener entre 3 y 120 caracteres, la descripción y la nota hasta 500, y cada requisito o paso hasta 300 (máximo 25 por lista).");
+      await almacen.guardarAjuste("tramite." + b.tramiteId, JSON.stringify(texto), por);
+    },
+    async restaurarTexto(id) { await tramitePrecio(id); await almacen.restaurarAjuste("tramite." + id); },
     async guardarPrecio(p, por) {
       const C = await tramitePrecio(p.tramiteId);
       if (!["pct", "fija", "cuantia", "consultar"].includes(p.tipo)) throw new Aviso("Tipo de precio inválido.");
