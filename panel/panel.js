@@ -28,6 +28,7 @@ const traducir = (m) => TRADUCCION[m] || (/rate limit/i.test(m) ? "Hiciste demas
 async function api(metodo, params) {
   const { data: { session } } = await sb.auth.getSession();
   const opts = { method: metodo, headers: { Authorization: "Bearer " + (session?.access_token || ""), "Content-Type": "application/json" } };
+  if (verComo) opts.headers["X-Ver-Como"] = verComo;
   let url = "/api/panel";
   if (metodo === "GET") url += "?" + new URLSearchParams(params); else opts.body = JSON.stringify(params);
   const r = await fetch(url, opts), data = await r.json();
@@ -36,6 +37,37 @@ async function api(metodo, params) {
   if (!r.ok) throw new Error(data.error);
   return data;
 }
+
+/* ---------- Ver como: el administrador revisa el panel con otro perfil ---------- */
+// Es una vista previa de su propia sesión: el servidor calcula los permisos con ese perfil y rechaza todo cambio.
+const VER_COMO = "panel.verComo";
+let verComo = (() => { try { return sessionStorage.getItem(VER_COMO) || ""; } catch { return ""; } })();
+function guardarVerComo(rol) {
+  verComo = ["notario", "personal"].includes(rol) ? rol : "";
+  try { if (verComo) sessionStorage.setItem(VER_COMO, verComo); else sessionStorage.removeItem(VER_COMO); } catch {}
+}
+const selectorVerComo = Object.assign(document.createElement("label"), { className: "ver-como", hidden: true,
+  innerHTML: '<span>Ver como</span><select id="verComo"><option value="">Administrador</option><option value="notario">Notario</option><option value="personal">Personal</option></select>' });
+const avisoVerComo = Object.assign(document.createElement("div"), { className: "vista-previa", id: "vistaPrevia", hidden: true,
+  innerHTML: '<p role="status"></p><button type="button" class="btn btn--line">Volver a Administrador</button>' });
+$("#perfilSesion").after(selectorVerComo);
+$("header").after(avisoVerComo);
+// Con la respuesta de «yo»: el selector solo aparece si la cuenta es de administrador. Si el servidor no aceptó la vista
+// previa (la cuenta ya no es administradora), se olvida.
+function pintarVerComo(yo) {
+  if (!yo.vistaPrevia) guardarVerComo("");
+  selectorVerComo.hidden = !yo.vistaPrevia && yo.rol !== "admin";
+  $("#verComo").value = verComo;
+  avisoVerComo.hidden = !verComo;
+  avisoVerComo.querySelector("p").textContent = verComo ? `Estás viendo el panel como ${perfiles[verComo]}. Es solo una vista previa: no se guardan cambios.` : "";
+}
+async function cambiarVerComo(rol) {
+  guardarVerComo(rol);
+  try { await mostrarApp(); } catch (e) { console.warn("No se pudo cambiar la vista:", e.message); }
+}
+$("#verComo").addEventListener("change", (e) => cambiarVerComo(e.target.value));
+avisoVerComo.querySelector("button").addEventListener("click", () => cambiarVerComo(""));
+document.querySelectorAll("#salir, #salirSinPermiso, [data-salir]").forEach((b) => b.addEventListener("click", () => guardarVerComo("")));
 
 // Solo una pantalla visible a la vez.
 function vista(id) {
@@ -110,6 +142,7 @@ async function mostrarApp() {
     // El perfil y las conversaciones se piden a la vez: el panel aparece completo de una sola vez.
     const [yo] = await Promise.all([api("GET", { accion: "yo" }), cargarLista()]);
     rolSesion = yo.rol;
+    pintarVerComo(yo);
     $("#perfilSesion").textContent = perfiles[rolSesion] || "";
     $("#perfilSesion").hidden = false;
     $("[data-tab=funcionesV]").hidden = rolSesion !== "admin";

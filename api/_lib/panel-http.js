@@ -1,14 +1,26 @@
 // API HTTP del panel del personal. Exige un token de Supabase Auth de una persona registrada en la tabla "personal",
 // con el correo confirmado y, si está activada, la verificación en dos pasos (aal2).
+import { AsyncLocalStorage } from "node:async_hooks";
 import { Aviso } from "./errores.js";
 
 const HORA = 3600 * 1000;
 const GENERICO = "No se pudo completar la acción. Intenta de nuevo en unos segundos.";
 const SOLO_EDITORES_TRAMITES = "Solo el notario o un administrador puede editar los trámites.";
+// «Ver como»: un administrador revisa el panel con el perfil de notario o de personal (cabecera X-Ver-Como). Solo baja
+// permisos, nunca los sube, y mientras dura no se guarda nada: todo POST se rechaza. La auditoría sigue con su correo real.
+const VISTAS = ["notario", "personal"];
+const EN_VISTA_PREVIA = "Estás en vista previa: vuelve a Administrador para guardar cambios.";
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDescargas = 60, ahora = () => Date.now(), avisar = async () => {} }) {
   const mfaRegistrada = new Set();
+  // El perfil con el que se calculan los permisos de la petición en curso: el de la vista previa, si la hay, o el real.
+  const vista = new AsyncLocalStorage();
+  const rolDe = async (email) => vista.getStore() || auth.rolDe(email);
+  async function verComo(request, email) {
+    const v = String(request.headers.get("x-ver-como") || "").toLowerCase();
+    return VISTAS.includes(v) && (await auth.rolDe(email)) === "admin" ? v : null;
+  }
   async function autorizar(request) {
     const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
     const usuario = token ? await auth.usuarioDeToken(token) : null;
@@ -28,7 +40,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
         await avisar(`Se activó la verificación en dos pasos de ${email} en el panel. Si no fue esa persona, avisa de inmediato al administrador.`).catch(() => {});
       }
     }
-    return { email };
+    return { email, verComo: await verComo(request, email) };
   }
   // Las lecturas de datos personales y todas las acciones quedan en la auditoría, también si fallan.
   async function ejecutar(accion, objetivo, email, fn, auditar, estricta = false) {
@@ -51,7 +63,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
   }
 
   async function exigir(email, roles, mensaje) {
-    const rol = await auth.rolDe(email);
+    const rol = await rolDe(email);
     if (!roles.includes(rol)) throw Object.assign(new Aviso(mensaje), { status: 403 });
     return rol;
   }
@@ -70,12 +82,12 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     return { ...await fn(), esAdmin: true, rol };
   }
   async function editable(email, datos) {
-    const rol = await auth.rolDe(email);
+    const rol = await rolDe(email);
     return { ...datos, rol, esAdmin: ["admin", "notario"].includes(rol) };
   }
   const lecturas = {
-    yo: { fn: (q, email) => panel.yo(email) },
-    equipo: { auditar: true, fn: (q, email) => panel.equipo(email) },
+    yo: { fn: async (q, email) => ({ ...await panel.yo(email), ...(vista.getStore() && { rol: vista.getStore(), vistaPrevia: true }) }) },
+    equipo: { auditar: true, fn: async (q, email) => { const rol = await exigir(email, ["admin", "notario"], "No tienes permiso para cambiar este perfil."); return { ...await panel.equipo(email), rol }; } },
     funciones: { fn: (q, email) => pilotoAdmin(email, () => panel.funciones(), true) },
     metricas: { auditar: true, fn: (q, email) => pilotoAdmin(email, () => panel.metricas(q.get("desde") ?? undefined, q.get("hasta") ?? undefined)) },
     citasConfig: { fn: async (q,email) => editable(email, await panel.citasConfig()) },
@@ -125,10 +137,11 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     async GET(request) {
       const a = await autorizar(request); if (a.no) return a.no;
       const q = new URL(request.url).searchParams, accion = q.get("accion"), l = Object.hasOwn(lecturas, accion) && lecturas[accion];
-      return l ? ejecutar(accion, accion === "buscarTicket" ? q.get("codigo") : q.get("id"), a.email, () => l.fn(q, a.email), l.auditar, l.estricta) : json({ error: "Acción desconocida" }, 400);
+      return l ? vista.run(a.verComo, () => ejecutar(accion, accion === "buscarTicket" ? q.get("codigo") : q.get("id"), a.email, () => l.fn(q, a.email), l.auditar, l.estricta)) : json({ error: "Acción desconocida" }, 400);
     },
     async POST(request) {
       const a = await autorizar(request); if (a.no) return a.no;
+      if (a.verComo) return json({ error: EN_VISTA_PREVIA }, 403);
       let b; try { b = await request.json(); } catch { return json({ error: "JSON inválido" }, 400); }
       const accion = b?.accion, fn = typeof accion === "string" && Object.hasOwn(acciones, accion) && acciones[accion];
       return fn ? ejecutar(accion, (accion === "guardarFuncion" ? "funcion." + b.id : "") || b.email || b.tramiteId || b.id || b.fecha || (accion === "guardarCupo" ? "citas.porHora" : "") || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : ""), a.email, () => fn(b, a.email, request), true) : json({ error: "Acción desconocida" }, 400);
