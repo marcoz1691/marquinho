@@ -224,3 +224,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0;border
 #preciosLista{--precio-columnas:minmax(200px,2fr) minmax(165px,1.2fr) minmax(110px,1fr) minmax(110px,1fr) minmax(110px,1fr) 170px}
 .precio-campos input,.precio-campos select{font-size:14px;padding:8px 10px}
 .precios-cabecera{top:-28px}
+/* «Ver como» en el encabezado: control compacto sobre el fondo oscuro y sin repetir el perfil al lado */
+header .ver-como select{min-height:34px;padding:4px 28px 4px 12px;background-color:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-size:14px}
+header .ver-como select option{color:#1C2620;background:#fff}
+#perfilSesion:has(+.ver-como:not([hidden])){display:none}
+/* Con el aviso de vista previa visible, las conversaciones restan su alto para que la caja de respuesta siga a la vista */
+body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:calc(100vh - 54px - 61px)}
+@media(max-width:600px){body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:auto}}
