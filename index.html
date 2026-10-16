@@ -15,7 +15,7 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/logo/icono-512.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<script src="js/tema.js"></script>
 <link rel="stylesheet" href="assets/fonts/archivo.css">
 <link rel="stylesheet" href="assets/fonts/phosphor.css">
 <link rel="stylesheet" href="css/styles.css">
@@ -27,7 +27,6 @@
   <div class="nav__in">
     <a class="nav__brand" href="#inicio"><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt=""><img class="brand--dark" src="assets/logo/logo-notaria41-blanco.svg" alt=""><span class="brand__txt"><b id="brandName">Dr. Dobri Albornoz Donoso</b><small id="brandSub">Notaría 41 · Quito</small></span></a>
     <nav class="nav__links" id="menu" aria-label="Principal">
-      <a href="#servicios">Servicios</a>
       <a href="#tramites">Trámites</a>
       <a href="#calculadora">Tarifas</a>
       <a href="#whatsapp">WhatsApp</a>
@@ -35,6 +34,7 @@
       <a href="#contacto">Contacto</a>
       <a class="nav__agenda" data-funcion="agenda" href="cita.html">Agenda tu cita</a>
     </nav>
+    <button class="icon-btn" id="tema" type="button" aria-label="Cambiar a tema oscuro" aria-pressed="false"><i class="ph ph-moon" aria-hidden="true"></i></button>
     <button class="icon-btn nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu" type="button"><i class="ph ph-list" aria-hidden="true"></i></button>
   </div>
 </header>
@@ -50,55 +50,44 @@
       <div class="hero__grid">
         <div class="hero__copy">
           <p class="eyebrow" id="heroNotario">Notario Cuadragésimo Primero del Cantón Quito</p>
-          <h1 id="heroTitle">Dr. Dobri Miguel Albornoz Donoso</h1>
-          <p class="lema" id="heroLema">Fe pública al servicio de la comunidad.</p>
+          <h1 id="heroTitle"><span class="palabra" style="--i:0"><span>Dr.</span></span> <span class="palabra" style="--i:1"><span>Dobri</span></span> <span class="palabra" style="--i:2"><span>Miguel</span></span> <span class="palabra" style="--i:3"><span>Albornoz</span></span> <span class="palabra" style="--i:4"><span>Donoso</span></span></h1>
+          <div class="lema"><p id="heroLema">Fe pública al servicio de la comunidad.</p><p class="lema__rota" id="heroRota" aria-hidden="true"></p></div>
           <div class="cta">
             <a class="btn btn--primary" href="#tramites">Ver trámites</a>
             <a class="btn" data-funcion="agenda" href="cita.html">Agenda tu cita</a>
           </div>
         </div>
         <div class="hero__seal">
-          <picture>
-            <source srcset="assets/logo/logo-notaria41-blanco.svg" media="(prefers-color-scheme: dark)">
-            <img class="seal" src="assets/logo/logo-notaria41.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
-          </picture>
+          <div class="sello">
+            <img class="seal tema-claro" src="assets/logo/logo-notaria41.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
+            <img class="seal tema-oscuro" src="assets/logo/logo-notaria41-blanco.svg" alt="Sello de la Notaría 41 de Quito" width="420" height="420">
+            <svg class="sello__trazo" viewBox="0 0 339 340" aria-hidden="true" focusable="false"><circle cx="169.5" cy="170" r="169" pathLength="1" transform="rotate(-90 169.5 170)"/></svg>
+            <span class="sello__brillo" aria-hidden="true"></span>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="statement" data-scene>
+  <section class="statement" id="tramites" data-scene>
     <div class="statement__pin">
-      <p class="words" id="words">Cada trámite, explicado. Cada requisito, a la vista. Cada costo, antes de firmar.</p>
+      <h2 class="words" id="words">Cada trámite explicado y cada requisito a la vista, para que llegues con todo listo.</h2>
     </div>
-  </section>
-
-  <section class="section svc" id="servicios">
-    <div class="svc__in">
-      <header class="svc__head">
-        <p class="kicker reveal">Servicios</p>
-        <h2 class="reveal">En qué podemos ayudarte.</h2>
-        <p class="svc__intro reveal">Atendemos a personas, familias y empresas. Elige un área para ver sus trámites, requisitos y costos.</p>
-        <a class="link reveal" href="#tramites">Ver todos los trámites <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
-      </header>
-      <div class="svc__list" id="categorias"></div>
+    <div class="catalogo">
+      <div class="tr__head">
+        <p class="kicker reveal">Catálogo de trámites</p>
+        <label class="find reveal">
+          <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+          <input id="buscar" type="search" placeholder="Buscar trámite" aria-label="Buscar trámite" autocomplete="off">
+        </label>
+      </div>
+      <div class="tabs" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+      <div class="tl" id="tramitesUi">
+        <ul class="tl__lista" id="lista" aria-label="Trámites"></ul>
+        <article class="tp" id="detalleTramite" aria-live="polite"></article>
+      </div>
+      <p class="empty" id="vacio" hidden>No encontramos ese trámite. Escríbenos y te ayudamos.</p>
     </div>
-  </section>
-
-  <section class="section section--alt" id="tramites">
-    <div class="tr__head">
-      <h2 class="reveal">Encuentra tu trámite.</h2>
-      <label class="find reveal">
-        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
-        <input id="buscar" type="search" placeholder="Buscar trámite" aria-label="Buscar trámite" autocomplete="off">
-      </label>
-    </div>
-    <div class="tabs" id="chips" role="group" aria-label="Filtrar por categoría"></div>
-    <div class="tl" id="tramitesUi">
-      <ul class="tl__lista" id="lista" aria-label="Trámites"></ul>
-      <article class="tp" id="detalleTramite" aria-live="polite"></article>
-    </div>
-    <p class="empty" id="vacio" hidden>No encontramos ese trámite. Escríbenos y te ayudamos.</p>
   </section>
 
   <section class="section" id="calculadora">
@@ -106,6 +95,23 @@
       <div class="calc__intro">
         <h2 class="reveal">Calcula tu costo.</h2>
         <p class="sub reveal">Tarifas oficiales <span id="anioTarifa">2026</span> del Consejo de la Judicatura, sobre el Salario Básico Unificado de <span id="sbuTxt"></span>, más IVA.</p>
+        <figure class="firma reveal" aria-hidden="true">
+          <svg viewBox="0 0 320 380" focusable="false">
+            <rect class="firma__hoja" x="16" y="10" width="288" height="360" rx="8"/>
+            <path class="firma__renglon" style="--d:0" pathLength="1" d="M52 62h188"/>
+            <path class="firma__renglon" style="--d:1" pathLength="1" d="M52 92h216"/>
+            <path class="firma__renglon" style="--d:2" pathLength="1" d="M52 122h200"/>
+            <path class="firma__renglon" style="--d:3" pathLength="1" d="M52 152h216"/>
+            <path class="firma__renglon" style="--d:4" pathLength="1" d="M52 182h132"/>
+            <path class="firma__renglon firma__linea" style="--d:5" pathLength="1" d="M52 300h150"/>
+            <path class="firma__trazo" pathLength="1" d="M58 288c8-34 20-52 28-40s-14 44-4 42 20-52 33-44-9 40 4 37 17-33 27-27 3 24 16 20 21-24 33-18 8 14 20 10"/>
+            <g class="firma__sello">
+              <circle cx="246" cy="282" r="38"/>
+              <circle cx="246" cy="282" r="29"/>
+              <text x="246" y="291" text-anchor="middle">41</text>
+            </g>
+          </svg>
+        </figure>
       </div>
       <form class="calc reveal" id="calc">
         <div class="calc__fields">
@@ -113,10 +119,10 @@
             <select id="calcTramite"></select>
           </label>
           <label id="calcMontoWrap" hidden>Valor del contrato o avalúo (USD)
-            <input id="calcMonto" type="text" inputmode="decimal" placeholder="Ej.: 85000" autocomplete="off">
+            <input id="calcMonto" type="text" inputmode="decimal" maxlength="15" placeholder="Ej.: 85000" autocomplete="off">
           </label>
           <label id="calcQtyWrap">Cantidad <span id="calcUnit"></span>
-            <input id="calcQty" type="number" min="1" value="1" inputmode="numeric">
+            <input id="calcQty" type="text" inputmode="numeric" maxlength="4" value="1" autocomplete="off">
           </label>
           <fieldset class="calc__hab">
             <legend>Documentos habilitantes <span>(opcional)</span></legend>
@@ -139,39 +145,41 @@
   </section>
 
   <section class="section section--alt" id="whatsapp" aria-labelledby="waTitulo">
-    <div class="wa-flujo">
-      <header class="wa-cabecera">
-        <p class="kicker">Con Sofía, nuestro asistente</p>
-        <h2 id="waTitulo">Prepara tu trámite por WhatsApp, de principio a fin.</h2>
-        <p class="sub">Empieza con un mensaje. Te acompañamos hasta tu visita; la firma siempre es presencial en la notaría.</p>
-        <a class="btn btn--primary wa-inicio" id="waInicio" href="https://wa.me/593996530276?text=Hola%2C%20quiero%20hacer%20un%20tr%C3%A1mite" target="_blank" rel="noopener">Escribir por WhatsApp</a>
-        <p class="wa-contacto"><strong id="waNumero">+593 99 653 0276</strong><br>Atención humana: <span id="waHorario">Lunes a viernes, de 08:00 a 17:00</span> (hora de Quito).</p>
-        <p>La ayuda por WhatsApp es gratis; el trámite tiene su tarifa. Sofía responde al instante, las 24 horas.</p>
+    <div class="wa">
+      <header class="wa__cab">
+        <p class="kicker reveal">Con Sofía, nuestro asistente</p>
+        <h2 class="reveal" id="waTitulo">Prepara tu trámite por WhatsApp.</h2>
+        <p class="sub reveal">Empieza con un mensaje y llega a la notaría con todo listo. La ayuda es gratis; el trámite tiene su tarifa. La firma siempre es presencial.</p>
+        <div class="wa__acciones reveal">
+          <a class="btn btn--primary wa-inicio" id="waInicio" href="https://wa.me/593996530276?text=Hola%2C%20quiero%20hacer%20un%20tr%C3%A1mite" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>Escribir por WhatsApp</a>
+          <p class="wa-contacto"><strong id="waNumero">+593 99 653 0276</strong><span>En la notaría: <span id="waHorario">Lunes a viernes, de 08:00 a 17:00</span>. Sofía responde las 24 horas.</span></p>
+        </div>
       </header>
-      <div class="wa-contenido">
-        <ol class="wa-pasos" aria-label="Pasos para preparar tu trámite">
-          <li><h3>Escribe qué trámite necesitas</h3><p>Envía «Hola, quiero hacer un trámite» y cuéntanos qué necesitas. Sofía te orienta, aunque aún no sepas cómo se llama tu trámite.</p></li>
-          <li><h3>Recibe los requisitos y el costo</h3><p>Sofía te indica qué documentos necesitas y cuánto cuesta tu trámite, antes de que vengas.</p></li>
-          <li data-funcion="documentos"><h3>Envía fotos de tus documentos</h3><p>Envía fotos legibles por WhatsApp. Una persona de la notaría revisa tus documentos y te confirma si están completos o qué debes corregir.</p></li>
-          <li><h3>Elige el día y la hora</h3><p>Escoge entre los horarios disponibles. Recibes los datos de tu cita y un ticket de 4 dígitos: guárdalo para tu visita.</p></li>
-          <li><h3>Recibe tu recordatorio</h3><p>El día anterior a tu cita te llega un mensaje por WhatsApp para recordar el día, la hora y lo que debes llevar.</p></li>
-          <li><h3>Ven a la notaría y firma</h3><p>Trae tu cédula, los documentos originales de tu trámite y tu ticket. El personal verifica todo y te acompaña en la firma presencial.</p></li>
-        </ol>
-        <aside class="wa-ejemplo" aria-labelledby="waEjemploTitulo">
-          <h3 id="waEjemploTitulo">Así puede ser tu conversación</h3>
-          <p class="note">Ejemplo ilustrativo. Los requisitos y el costo dependen de tu trámite.</p>
-          <div class="wa-burbujas">
-            <p class="wa-burbuja wa-burbuja--tu"><b>Tú</b>Hola, quiero hacer un trámite.</p>
-            <p class="wa-burbuja"><b>Sofía</b>¡Hola! ¿Qué trámite necesitas?</p>
-            <p class="wa-burbuja wa-burbuja--tu"><b>Tú</b>Quiero dar un poder. ¿Qué debo llevar y cuánto cuesta?</p>
-            <p class="wa-burbuja" id="waEjemploRequisitos"><b>Sofía</b>Para un poder de persona natural necesitas la minuta firmada por un abogado, tu cédula y certificado de votación, y una copia de la cédula del apoderado. Te confirmo el costo según tu caso. Envía fotos para la revisión previa.</p>
-            <p class="wa-burbuja wa-burbuja--tu"><b>Tú</b>Ya recibí la confirmación de mis documentos. Elijo el lunes a las 09:00.</p>
-            <p class="wa-burbuja"><b>Sofía</b>Tu cita es el lunes a las 09:00. Tu ticket es 4821. Te enviaremos un recordatorio el día anterior. Trae tu cédula y tus documentos originales.</p>
+      <ol class="wa-pasos" aria-label="Pasos para preparar tu trámite">
+        <li class="reveal"><span aria-hidden="true">1</span><h3>Escribe</h3><p>Cuéntale a Sofía qué necesitas, aunque no sepas cómo se llama tu trámite. Te indica los requisitos y el costo antes de que vengas.</p></li>
+        <li class="reveal"><span aria-hidden="true">2</span><h3>Prepara</h3><p data-funcion="documentos">Envía fotos de tus documentos: una persona de la notaría los revisa y te confirma si están completos.</p><p>Elige el día y la hora, y recibe tu ticket de 4 dígitos. El día anterior te recordamos la cita.</p></li>
+        <li class="reveal"><span aria-hidden="true">3</span><h3>Firma</h3><p>Ven con tu cédula, los documentos originales y tu ticket. El personal verifica todo y te acompaña en la firma.</p></li>
+      </ol>
+      <aside class="wa-ejemplo" aria-labelledby="waEjemploTitulo">
+        <div class="wa-tel">
+          <div class="wa-tel__in">
+            <header class="wa-tel__cab">
+              <img class="tema-claro" src="assets/logo/logo-notaria41-verde.svg" alt="" width="34" height="34">
+              <img class="tema-oscuro" src="assets/logo/logo-notaria41-blanco.svg" alt="" width="34" height="34">
+              <div><b id="waEjemploTitulo">Sofía · Notaría 41</b><small>En línea</small></div>
+            </header>
+            <div class="wa-burbujas" id="waBurbujas">
+              <p class="wa-burbuja wa-burbuja--tu" style="--n:0"><b>Tú</b>Hola, quiero dar un poder. ¿Qué debo llevar y cuánto cuesta?</p>
+              <p class="wa-burbuja" id="waEjemploRequisitos" style="--n:1"><b>Sofía</b>Para un poder de persona natural necesitas la minuta firmada por un abogado, tu cédula y certificado de votación, y una copia de la cédula del apoderado. Envía fotos para la revisión previa.</p>
+              <p class="wa-burbuja wa-burbuja--tu" style="--n:2"><b>Tú</b>Listo, ya enviaré las fotos. Elijo el lunes a las 09:00.</p>
+              <p class="wa-burbuja" style="--n:3"><b>Sofía</b>Tu cita es el lunes a las 09:00. Tu ticket es 4821. Te recordaremos el día anterior.</p>
+            </div>
           </div>
-        </aside>
-      </div>
+        </div>
+        <p class="note">Ejemplo ilustrativo. Los requisitos y el costo dependen de tu trámite.</p>
+      </aside>
       <div class="wa-cierre">
-        <p>Tus datos se tratan según nuestro <a href="privacidad.html">aviso de privacidad</a>. Sofía te ayuda a preparar el trámite; la firma siempre se realiza presencialmente en la notaría.</p>
+        <p>Tus datos se tratan según nuestro <a href="privacidad.html">aviso de privacidad</a>.</p>
         <p>¿Prefieres no chatear? <a class="btn" data-funcion="agenda" href="cita.html">Agenda tu cita aquí</a></p>
       </div>
     </div>
@@ -214,12 +222,13 @@
 
 <footer class="foot">
   <div class="foot__in">
-    <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="56" height="56">
-    <div>
+    <div class="foot__marca">
+      <img class="tema-claro" src="assets/logo/logo-notaria41-verde.svg" alt="" width="64" height="64">
+      <img class="tema-oscuro" src="assets/logo/logo-notaria41-blanco.svg" alt="" width="64" height="64">
       <p id="footTxt"></p>
-      <p>Las tarifas y requisitos son referenciales y pueden variar según la normativa del Consejo de la Judicatura. Confirma con la notaría.</p>
     </div>
-    <nav class="foot__links" aria-label="Legal"><a href="privacidad.html">Aviso de privacidad</a></nav>
+    <p class="foot__aviso">Las tarifas y requisitos son referenciales y pueden variar según la normativa del Consejo de la Judicatura. Confirma con la notaría.</p>
+    <nav class="foot__links" aria-label="Legal"><a href="privacidad.html">Aviso de privacidad</a><a href="#inicio">Volver arriba</a></nav>
   </div>
 </footer>
 

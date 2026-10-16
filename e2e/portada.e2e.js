@@ -51,12 +51,24 @@ test.describe("Contacto y datos de la notaría", () => {
     expect(boton.y + boton.height).toBeLessThanOrEqual(844);
   });
 
-  test("CF-99 en pantalla ancha el nombre del notario va a la izquierda y el sello a la derecha", async ({ page }) => {
+  test("CF-99 en pantalla ancha la portada va centrada: el nombre arriba y el sello debajo, todo en la primera pantalla", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await abrirPortada(page);
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
     const nombre = await page.locator("#heroTitle").boundingBox();
-    const sello = await page.locator(".hero__seal").boundingBox();
-    expect(nombre.x + nombre.width).toBeLessThanOrEqual(sello.x);
+    const sello = await page.locator(".hero__seal .sello").boundingBox();
+    expect(nombre.y + nombre.height).toBeLessThanOrEqual(sello.y);
+    expect(Math.abs(nombre.x + nombre.width / 2 - 640)).toBeLessThanOrEqual(2);
+    expect(Math.abs(sello.x + sello.width / 2 - 640)).toBeLessThanOrEqual(2);
+    expect(sello.y + sello.height).toBeLessThanOrEqual(800);
+  });
+
+  test("la frase de la portada rota una sola vez y termina en el lema", async ({ page }) => {
+    await abrirPortada(page);
+    await expect(page.locator("#heroRota")).toHaveText(/\S/);
+    await expect(page.locator("#heroRota")).toBeEmpty({ timeout: 8000 });
+    await expect(page.locator("#heroLema")).not.toHaveClass(/fuera/);
+    await expect(page.locator("#heroRota")).toHaveAttribute("aria-hidden", "true");
   });
 
   test("CF-71 teléfonos y correo son enlaces que se pueden pulsar", async ({ page }) => {
@@ -172,7 +184,7 @@ test.describe("Carga de datos", () => {
     page.on("request", (r) => pedidos.push(r.url()));
     await abrirPortada(page);
     expect(pedidos.some((u) => u.includes("docs.google.com"))).toBe(false);
-    await expect(page.locator("#categorias .svc__row")).toHaveCount(datos.categorias.length);
+    await expect(page.locator("#chips .tab")).toHaveCount(datos.categorias.length + 1);
   });
 
   test("CF-87 la portada carga sin errores de JavaScript", async ({ page }) => {
@@ -186,7 +198,7 @@ test.describe("Carga de datos", () => {
 test.describe("Navegación", () => {
   test("CF-90 cada enlace del menú lleva a su sección", async ({ page }) => {
     await abrirPortada(page);
-    for (const id of ["servicios", "tramites", "calculadora", "faq", "contacto"]) {
+    for (const id of ["tramites", "calculadora", "faq", "contacto"]) {
       await page.locator(`#menu a[href="#${id}"]`).click();
       await expect(page.locator("#" + id)).toBeInViewport();
     }
@@ -290,14 +302,14 @@ test.describe("Páginas secundarias", () => {
 
 
 test.describe("Flujo de WhatsApp y agenda", () => {
-  test("muestra el inicio, los seis pasos y la alternativa sin chat", async ({ page }) => {
+  test("muestra el inicio, los tres pasos y la alternativa sin chat", async ({ page }) => {
     await abrirPortada(page);
     const seccion = page.locator("#whatsapp");
     const boton = seccion.getByRole("link", { name: "Escribir por WhatsApp", exact: true });
     await expect(boton).toHaveAttribute("href", "https://wa.me/593996530276?text=" + encodeURIComponent("Hola, quiero hacer un trámite"));
     await expect(seccion.locator("#waNumero")).toHaveText("+593 99 653 0276");
     await expect(seccion.locator("#waHorario")).toHaveText(notaria.horario.texto);
-    await expect(seccion.locator(".wa-pasos > li")).toHaveCount(6);
+    await expect(seccion.locator(".wa-pasos > li")).toHaveCount(3);
     for (const paso of await seccion.locator(".wa-pasos > li").all()) await expect(paso).toBeVisible();
     await expect(seccion.getByRole("link", { name: "Agenda tu cita aquí", exact: true })).toHaveAttribute("href", "cita.html");
     await expect(seccion.getByRole("link", { name: "aviso de privacidad", exact: true })).toHaveAttribute("href", "privacidad.html");
@@ -335,8 +347,29 @@ test("con «Reducir movimiento» las animaciones quedan solo como desvanecidos, 
   await page.locator("#words").scrollIntoViewIfNeeded();
   await page.evaluate(() => scrollBy(0, innerHeight * 0.6));
   await expect.poll(() => page.locator("#words span.on").count()).toBeGreaterThan(0);
-  await page.locator("#categorias").scrollIntoViewIfNeeded();
-  const bloque = page.locator("#categorias .reveal.in").first();
+  await page.locator("#tramitesUi").scrollIntoViewIfNeeded();
+  const bloque = page.locator("#tramitesUi .reveal.in, #lista .tl__item").first();
   await expect(bloque).toBeVisible();
   expect(await bloque.evaluate((e) => getComputedStyle(e).transform)).toBe("none");
+});
+
+test("el botón de tema cambia a oscuro y la elección se recuerda al recargar", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await abrirPortada(page);
+  await expect(page.locator("#tema")).toHaveAttribute("aria-label", "Cambiar a tema oscuro");
+  await page.locator("#tema").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("#tema")).toHaveAttribute("aria-label", "Cambiar a tema claro");
+});
+
+test("el botón del chat se aparta mientras la calculadora pasa por la esquina inferior y vuelve después @movil", async ({ page }) => {
+  await abrirPortada(page);
+  const lanzador = page.locator("#chatAbrir");
+  await expect(lanzador).toBeVisible();
+  await page.evaluate(() => { const r = document.querySelector("#calc").getBoundingClientRect(); scrollTo(0, r.bottom + scrollY - innerHeight + 60); });
+  await expect(lanzador).toBeHidden();
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect(lanzador).toBeVisible();
 });

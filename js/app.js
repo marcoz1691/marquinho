@@ -61,14 +61,6 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   /* ---------- Render ---------- */
 
-  function renderCategorias() {
-    $("#categorias").innerHTML = state.data.categorias.map(function (c) {
-      var n = state.data.tramites.filter(function (t) { return t.cat === c.id; }).length;
-      return '<button class="svc__row reveal" type="button" data-cat="' + esc(c.id) + '"><span class="svc__name">' + esc(c.nombre) +
-        '</span><span class="svc__desc">' + esc(c.resumen) + '</span><span class="svc__count">' + n + (n === 1 ? " trámite" : " trámites") + '</span><span class="svc__arr" aria-hidden="true">→</span></button>';
-    }).join("");
-  }
-
   function renderChips() {
     var items = [{ id: "destacados", nombre: "Más pedidos" }].concat(state.data.categorias);
     $("#chips").innerHTML = items.map(function (c) {
@@ -107,8 +99,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   function sofia(t) {
     if (state.funciones.chatWeb === false) return "";
     var n = state.notaria.asistente || "Sofía";
-    return '<div class="tp__sofia"><p><strong>¿Tu caso es distinto?</strong> Cuéntaselo a ' + esc(n) + ' y te dice qué requisitos y costo aplican a tu situación.</p>' +
-      '<button class="act act--sofia" type="button" data-sofia="' + esc(t.nombre) + '"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Preguntarle a ' + esc(n) + '</button></div>';
+    return '<p class="tp__sofia"><button class="act act--sofia" type="button" data-sofia="' + esc(t.nombre) + '"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>¿Tu caso es distinto? Pregúntale a ' + esc(n) + '</button></p>';
   }
 
   // Lista compacta (izquierda) + panel del trámite elegido (derecha).
@@ -127,7 +118,11 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
         '</span><span class="tl__precio">' + esc(precio(t)) + '</span></button></li>';
     }).join("");
     var t = state.data.tramites.find(function (x) { return x.id === state.sel; });
-    $("#detalleTramite").innerHTML = t ? panel(t) : "";
+    var det = $("#detalleTramite");
+    // El detalle entra con «panel-reveal» solo cuando cambia el trámite, no al volver a pintar el mismo.
+    det.classList.toggle("tp--nuevo", !!t && det.dataset.id !== t.id);
+    det.dataset.id = t ? t.id : "";
+    det.innerHTML = t ? panel(t) : "";
   }
 
   // En la computadora las respuestas siempre están a la vista; en el celular, en acordeón.
@@ -179,7 +174,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       var n = esc(h.nombre.charAt(0).toLowerCase() + h.nombre.slice(1));
       return '<div class="hab" data-hab="' + esc(h.id) + '"><p class="hab__txt"><span class="hab__nombre">' + esc(h.nombre) + '</span><span class="hab__precio">' + esc(precioTexto(tramite(h.tramite), T)) + "</span></p>" +
         '<div class="hab__step"><button class="hab__btn" type="button" data-menos aria-label="Quitar una hoja de ' + n + '"><span aria-hidden="true">−</span></button>' +
-        '<input class="hab__n" type="number" min="0" max="200" step="1" value="0" inputmode="numeric" aria-label="Hojas de ' + n + '">' +
+        '<input class="hab__n" type="text" inputmode="numeric" maxlength="3" value="0" autocomplete="off" aria-label="Hojas de ' + n + '">' +
         '<button class="hab__btn" type="button" data-mas aria-label="Agregar una hoja de ' + n + '"><span aria-hidden="true">+</span></button></div></div>';
     }).join("");
     var acotar = function (v) { var n = Math.floor(Number(v)); return isFinite(n) ? Math.min(200, Math.max(0, n)) : 0; };
@@ -212,7 +207,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       $("#rHabWrap").hidden = !c.habilitantes.length;
       $("#rHab").textContent = money(c.habilitantesBase);
       if (c.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
-      else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); $("#rTotal").textContent = money(c.total); }
+      else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); cifras($("#rTotal"), money(c.total)); }
       $("#calcNote").textContent = note;
       $("#calcAviso").textContent = c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : esHabilitante(t.id) ? "" : AVISO_HABILITANTES;
     }
@@ -223,9 +218,18 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       input.value = acotar(acotar(input.value) + (b.hasAttribute("data-mas") ? 1 : -1));
       calc();
     });
-    habs.addEventListener("input", calc);
+    // Solo cifras: Safari y Firefox dejan escribir letras incluso en type="number", así que se filtra al escribir o pegar.
+    var limpiar = function (el, noPermitido) {
+      var v = el.value, limpio = v.replace(noPermitido, "");
+      if (limpio === v) return;
+      var pos = Math.max(0, (el.selectionStart || 0) - (v.length - limpio.length));
+      el.value = limpio;
+      try { el.setSelectionRange(pos, pos); } catch (e) {}
+    };
+    habs.addEventListener("input", function (e) { if (e.target.matches("input")) limpiar(e.target, /[^\d-]/g); calc(); });
     habs.addEventListener("change", function (e) { if (e.target.matches("input")) { e.target.value = acotar(e.target.value); calc(); } });
-    sel.addEventListener("change", calc); $("#calcQty").addEventListener("input", calc); $("#calcMonto").addEventListener("input", calc);
+    sel.addEventListener("change", calc); $("#calcQty").addEventListener("input", function () { limpiar(this, /[^\d-]/g); calc(); });
+    $("#calcMonto").addEventListener("input", function () { limpiar(this, /[^\d,.]/g); calc(); });
     $("#calc").addEventListener("submit", function (e) { e.preventDefault(); });
     setupCalc.elegir = function (id) {
       sel.value = id;
@@ -251,7 +255,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var corto = N.notarioCorto || N.notario || N.nombre;
     $("#brandName").textContent = corto;
     $("#heroNotario").textContent = N.cargo || N.nombre;
-    $("#heroTitle").textContent = N.notario || N.nombre;
+    tituloPortada(N.notario || N.nombre);
     if (N.eslogan) $("#heroLema").textContent = N.eslogan;
     document.title = corto + " · " + N.nombre;
     rows += "<div><h3>Dirección</h3><p>" + esc(N.direccion) + "</p></div>";
@@ -361,11 +365,6 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       else window.open(wa(texto, ""), "_blank", "noopener");
     });
 
-    $("#categorias").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-cat]"); if (!b) return;
-      state.cat = b.dataset.cat; state.q = ""; $("#buscar").value = ""; state.sel = null; renderChips(); renderLista();
-      $("#tramites").scrollIntoView({ behavior: "smooth" });
-    });
 
     // Enlace directo: notaria/#t-compraventa muestra ese trámite en su categoría.
     var abrirHash = function () {
@@ -378,6 +377,46 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     abrirHash();
   }
 
+  // «number-pop-in»: solo saltan las cifras que cambiaron, contando desde la derecha.
+  function cifras(el, texto) {
+    var antes = el.textContent;
+    if (antes === texto) return;
+    var n = texto.length, m = antes.length, k = 0;
+    el.innerHTML = texto.split("").map(function (ch, i) {
+      var cambia = antes.charAt(m - n + i) !== ch || m - n + i < 0;
+      return cambia ? '<span class="cifra" style="--i:' + (k++) + '">' + esc(ch) + "</span>" : esc(ch);
+    }).join("");
+  }
+
+  /* ---------- Portada ---------- */
+
+  // El nombre del notario se parte en palabras para que cada una suba desde su máscara.
+  function tituloPortada(t) {
+    var h = $("#heroTitle"), limpio = String(t || "").trim();
+    if (!limpio || h.textContent.replace(/\s+/g, " ").trim() === limpio) return;
+    h.innerHTML = limpio.split(/\s+/).map(function (w, i) { return '<span class="palabra" style="--i:' + i + '"><span>' + esc(w) + "</span></span>"; }).join(" ");
+  }
+
+  // Las frases pasan una sola vez y la portada termina en el lema, que es el texto que leen los lectores de pantalla.
+  function rotarLema() {
+    var fija = $("#heroLema"), rota = $("#heroRota");
+    if (!fija || !rota) return;
+    var frases = ["Poderes.", "Escrituras.", "Herencias.", "Declaraciones."], i = 0;
+    function entrar(el) { el.classList.remove("fuera"); el.classList.add("antes"); void el.offsetWidth; el.classList.remove("antes"); }
+    rota.textContent = frases[0];
+    fija.classList.add("fuera");
+    function paso() {
+      i++;
+      rota.classList.add("fuera");
+      setTimeout(function () {
+        if (i < frases.length) { rota.textContent = frases[i]; entrar(rota); setTimeout(paso, 1000); }
+        else { rota.textContent = ""; entrar(fija); }
+      }, 300);
+    }
+    setTimeout(paso, 1300);
+  }
+  rotarLema();
+
   /* ---------- Escenas de scroll ---------- */
 
   // Escenas fijas: cada [data-scene] recibe --p (0 a 1) según cuánto se ha recorrido.
@@ -386,7 +425,9 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var list = [].slice.call(document.querySelectorAll("[data-scene]"));
     var words = $("#words"), spans = [];
     if (words) {
-      words.innerHTML = words.textContent.trim().split(/\s+/).map(function (w) { return "<span>" + esc(w) + "</span> "; }).join("");
+      // Cada oración empieza en su propia línea.
+      var palabras = words.textContent.trim().split(/\s+/);
+      words.innerHTML = palabras.map(function (w, i) { return "<span>" + esc(w) + "</span>" + (/[.!?]$/.test(w) && i < palabras.length - 1 ? "<br>" : " "); }).join("");
       spans = [].slice.call(words.children);
     }
     var ticking = false;
@@ -397,28 +438,62 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
         var p = run > 0 ? Math.min(1, Math.max(0, -r.top / run)) : 0;
         el.style.setProperty("--p", p.toFixed(4));
         if (el.contains(words)) {
-          var lit = Math.round((p * 1.25 - .1) * spans.length);
+          // La frase se ilumina mientras sube desde el 85 % al 35 % de la pantalla.
+          var w = words.getBoundingClientRect();
+          var lit = Math.round(Math.min(1, Math.max(0, (innerHeight * .85 - w.top) / (innerHeight * .5))) * spans.length);
           spans.forEach(function (s, i) { s.classList.toggle("on", i < lit); });
         }
 
       });
     }
-    window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
-    window.addEventListener("resize", frame);
+    // El botón flotante del chat se aparta mientras la parte baja de la calculadora pasa por su esquina, para no tapar cifras ni avisos.
+    var calc = $("#calc");
+    function lanzador() {
+      if (!calc) return;
+      var r = calc.getBoundingClientRect();
+      document.body.classList.toggle("lanzador-aparte", r.top < innerHeight - 90 && r.bottom > innerHeight - 110);
+    }
+    window.addEventListener("scroll", function () { lanzador(); if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
+    window.addEventListener("resize", function () { lanzador(); frame(); });
+    lanzador();
     frame();
   }
 
   function observe() {
     var els = document.querySelectorAll(".reveal:not(.in)");
-    // Las filas de servicios aparecen escalonadas.
-    [].forEach.call($("#categorias").children, function (c, i) { c.style.setProperty("--i", i); });
     if (!("IntersectionObserver" in window)) { els.forEach(function (e) { e.classList.add("in"); }); return; }
     var io = new IntersectionObserver(function (en) { en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }); }, { threshold: .12 });
     els.forEach(function (e) { io.observe(e); });
+    // La conversación de ejemplo se escribe sola, burbuja a burbuja, al entrar en pantalla.
+    var burbujas = $("#waBurbujas");
+    if (burbujas && !burbujas.hasAttribute("data-secuencia") && matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+      burbujas.setAttribute("data-secuencia", "");
+      var ob = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { burbujas.classList.add("en-vivo"); ob.disconnect(); } }, { threshold: .3 });
+      ob.observe(burbujas);
+    }
   }
 
   function setupUI() {
     var nav = $("#nav"), menu = $("#menu"), burger = $("#burger");
+    // Tema claro u oscuro: la elección se guarda; sin elección, manda el sistema (js/tema.js la aplica antes de pintar).
+    var temaBtn = $("#tema"), sistemaOscuro = matchMedia("(prefers-color-scheme: dark)");
+    var temaActual = function () { return document.documentElement.getAttribute("data-theme") || (sistemaOscuro.matches ? "dark" : "light"); };
+    var pintarTema = function () {
+      var oscuro = temaActual() === "dark";
+      temaBtn.setAttribute("aria-pressed", String(oscuro));
+      temaBtn.setAttribute("aria-label", oscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+      temaBtn.innerHTML = '<i class="ph ' + (oscuro ? "ph-sun" : "ph-moon") + '" aria-hidden="true"></i>';
+    };
+    if (temaBtn) {
+      pintarTema();
+      temaBtn.addEventListener("click", function () {
+        var nuevo = temaActual() === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nuevo);
+        try { localStorage.setItem("n41-tema", nuevo); } catch (e) {}
+        pintarTema();
+      });
+      sistemaOscuro.addEventListener("change", pintarTema);
+    }
     window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", window.scrollY > 8); }, { passive: true });
     // El menú marca la sección que se está viendo.
     if ("IntersectionObserver" in window) {
@@ -446,7 +521,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   cargar().then(cargarPrecios).then(async function (r) {
     await funcionesLista;
     state.data = r.data; state.tarifas = r.tarifas; state.notaria = r.notaria;
-    renderAvisos(); renderCategorias(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
+    renderAvisos(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();
   }).catch(function (e) {
     document.body.insertAdjacentHTML("afterbegin", '<p style="padding:16px;text-align:center">No se pudieron cargar los datos. Abre el sitio desde un servidor web (no file://). ' + esc(e.message) + "</p>");
     document.querySelectorAll(".reveal").forEach(function (x) { x.classList.add("in"); });

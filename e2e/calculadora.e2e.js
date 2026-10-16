@@ -25,6 +25,15 @@ test.describe("Calculadora de tarifas", () => {
     await expect(page.locator("#calcTramite optgroup").first()).toHaveAttribute("label", "Poderes");
   });
 
+  test("el total se ve en una sola línea y con su tamaño grande aunque las cifras salten al cambiar", async ({ page }) => {
+    await page.selectOption("#calcTramite", "poder-natural");
+    await resultado(page, "$66,52");
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    const m = await page.locator("#rTotal").evaluate((el) => ({ alto: el.getBoundingClientRect().height, letra: parseFloat(getComputedStyle(el).fontSize), cifra: el.querySelector(".cifra") && getComputedStyle(el.querySelector(".cifra")).fontSize }));
+    expect(m.alto).toBeLessThan(m.letra * 1.6);
+    if (m.cifra) expect(parseFloat(m.cifra)).toBe(m.letra);
+  });
+
   test("CF-52 calcula una tarifa porcentual del SBU con IVA", async ({ page }) => {
     await page.selectOption("#calcTramite", "poder-natural");
     await resultado(page, "$66,52", "$57,84", "$8,68");
@@ -138,6 +147,21 @@ test.describe("Calculadora de tarifas", () => {
     await expect(page.locator("#calcNote")).toHaveText("Cada otorgante adicional suma 3% del SBU.");
   });
 
+  test("CF-158 el monto, la cantidad y las hojas no aceptan letras", async ({ page }) => {
+    await page.selectOption("#calcTramite", "compraventa");
+    await page.locator("#calcMonto").pressSequentially("8a5b0x00");
+    await expect(page.locator("#calcMonto")).toHaveValue("85000");
+    await resultado(page, "$443,44");
+    await page.selectOption("#calcTramite", "salida-pais");
+    await page.fill("#calcQty", "");
+    await page.locator("#calcQty").pressSequentially("3abc");
+    await expect(page.locator("#calcQty")).toHaveValue("3");
+    const hojas = page.locator('[data-hab="copias"] input');
+    await hojas.fill("");
+    await hojas.pressSequentially("2xyz");
+    await expect(hojas).toHaveValue("2");
+  });
+
   test.describe("Documentos habilitantes", () => {
     const hab = (page, id) => page.locator(`[data-hab="${id}"]`);
     const mas = (page, id) => hab(page, id).locator("[data-mas]");
@@ -163,7 +187,7 @@ test.describe("Calculadora de tarifas", () => {
       await resultado(page, "$70,64", "$57,84", "$9,22");
       await expect(page.locator("#rHabWrap")).toBeVisible();
       await expect(page.locator("#rHab")).toHaveText("$3,58");
-      await expect(page.locator("#calc .calc__total span")).toHaveText("Total estimado");
+      await expect(page.locator("#calc .calc__total > span")).toHaveText("Total estimado");
     });
 
     test("CF-69 agregar una materialización actualiza el total", async ({ page }) => {

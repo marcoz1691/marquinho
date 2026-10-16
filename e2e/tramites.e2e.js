@@ -29,22 +29,6 @@ test.describe("Catálogo de trámites", () => {
     }
   });
 
-  test("CF-13 la sección Servicios muestra cada área con su número de trámites", async ({ page }) => {
-    await abrirPortada(page);
-    const filas = page.locator("#categorias .svc__row");
-    await expect(filas).toHaveCount(datos.categorias.length);
-    const poderes = datos.tramites.filter((t) => t.cat === "poderes").length;
-    await expect(filas.first().locator(".svc__count")).toHaveText(`${poderes} trámites`);
-  });
-
-  test("CF-14 elegir un área en Servicios lleva a Trámites filtrado por esa área", async ({ page }) => {
-    await abrirPortada(page);
-    await page.locator("#categorias .svc__row", { hasText: "Herencias y testamentos" }).click();
-    await expect(pestana(page, "Herencias y testamentos")).toHaveAttribute("aria-pressed", "true");
-    await expect(items(page)).toHaveCount(datos.tramites.filter((t) => t.cat === "herencias").length);
-    await expect(page.locator("#tramites")).toBeInViewport();
-  });
-
   test("CF-15 al elegir un trámite se muestra su detalle y se actualiza la URL", async ({ page }) => {
     await abrirPortada(page);
     await items(page).filter({ hasText: tramite("divorcio").nombre }).click();
