@@ -1,34 +1,35 @@
 :root{
-  /* Paleta Notaría 41: verde esmeralda + oro miel sobre blanco hueso */
+  /* Dirección Apple (tema «apple» de better-design) con el verde esmeralda de la notaría como único acento */
   --esm-900:#0A3B2E; --esm-700:#0E6B4F; --esm-100:#E6F2EC; --miel-500:#D4A24C; --miel-300:#E2C27A; --miel-text:#87631F;
-  --bg:#FBFAF7; --bg-alt:#F3F1EA; --card:#fff; --fg:#1C2620; --muted:#5A6660; --line:#E4E1D8;
-  --accent:var(--esm-700); --accent-fg:#fff; --accent-soft:var(--esm-100); --gold:var(--miel-500); --gold-text:var(--miel-text);
+  --bg:#FFFFFF; --bg-alt:#F5F5F7; --card:#fff; --fg:#1D1D1F; --muted:#6E6E73; --line:#D2D2D7;
+  --accent:var(--esm-700); --accent-fg:#fff; --accent-soft:var(--esm-100); --gold:var(--miel-500); --gold-text:var(--esm-700);
   --deep:var(--esm-900); --on-deep:#fff; --on-deep-muted:#B9CFC5;
-  --radius:8px; --r-card:8px; --r-input:6px; --max:1120px; --ease:cubic-bezier(.32,.72,0,1); --r-panel:14px;
-  --sombra:0 0 0 1px var(--line);
-  /* Esmeralda claro para los hovers, degradado del inicio y superficies del teléfono de ejemplo, por tema */
+  /* Botones en píldora, tarjetas de 18 px y campos de 12 px */
+  --radius:980px; --r-card:18px; --r-input:12px; --max:1080px; --ease:cubic-bezier(.25,.1,.25,1); --r-panel:28px;
+  --sombra:none;
   --hover:#12855E;
-  --hero-fondo:radial-gradient(40% 50% at 78% 52%,rgba(18,133,94,.14),transparent 72%),linear-gradient(155deg,#FBFAF7 0%,#F2F6F2 42%,#DDEDE4 78%,#C9E3D5 100%);
-  --hero-fondo-movil:radial-gradient(60% 34% at 50% 76%,rgba(18,133,94,.14),transparent 72%),linear-gradient(170deg,#FBFAF7 0%,#F2F6F2 45%,#DDEDE4 82%,#C9E3D5 100%);
-  --burbuja:rgba(10,59,46,.06); --vidrio-a:rgba(10,59,46,.07); --vidrio-b:rgba(10,59,46,.02); --vidrio-borde:rgba(10,59,46,.12); --vidrio-sombra:0 50px 90px -50px rgba(10,59,46,.45);
-  /* Una sola familia (Archivo) y una escala única para toda la página */
+  /* Inicio plano, de blanco a gris Apple */
+  --hero-fondo:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 55%,#F5F5F7 100%);
+  --hero-fondo-movil:var(--hero-fondo);
+  --burbuja:#E9E9EB; --vidrio-a:#fff; --vidrio-b:#fff; --vidrio-borde:rgba(0,0,0,.06); --vidrio-sombra:0 30px 60px -30px rgba(0,0,0,.25);
+  /* Tipografía del sistema (SF Pro en Apple); Archivo en el resto */
   --serif:var(--font);
   --mono:var(--font);
-  --t-display:clamp(44px,min(6.2vw,10vh),80px);
-  --t-h2:clamp(34px,4.4vw,54px);
-  --t-h3:clamp(21px,1.9vw,25px);
-  --t-lead:clamp(18px,1.5vw,20px);
+  --t-display:clamp(44px,min(5.6vw,9vh),76px);
+  --t-h2:clamp(32px,4.2vw,56px);
+  --t-h3:clamp(20px,1.7vw,24px);
+  --t-lead:clamp(19px,1.6vw,21px);
   --t-body:17px;
   --t-small:14px;
-  --t-label:12px;
-  --font:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --t-label:14px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue","Archivo","Segoe UI",Roboto,Arial,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0B1712; --bg-alt:#0F1F18; --card:#13261E; --fg:#EEF2EE; --muted:#9FB2A8; --line:#22372D;
-  --accent:#5FD3A2; --accent-fg:#0B1712; --accent-soft:#163428; --gold:var(--miel-300); --gold-text:var(--miel-300); --deep:#07130E; --hover:#5FD3A2; --hero-fondo:radial-gradient(40% 50% at 78% 52%,rgba(95,211,162,.2),transparent 72%),linear-gradient(155deg,#0B1712 0%,#0E2419 42%,#164A37 78%,#226B50 100%); --hero-fondo-movil:radial-gradient(60% 34% at 50% 76%,rgba(95,211,162,.2),transparent 72%),linear-gradient(170deg,#0B1712 0%,#0E2419 45%,#164A37 82%,#226B50 100%); --burbuja:rgba(255,255,255,.06); --vidrio-a:rgba(255,255,255,.09); --vidrio-b:rgba(255,255,255,.02); --vidrio-borde:rgba(255,255,255,.12); --vidrio-sombra:0 50px 90px -50px rgba(0,0,0,.9); color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0B1712; --bg-alt:#0F1F18; --card:#13261E; --fg:#EEF2EE; --muted:#9FB2A8; --line:#22372D;
-  --accent:#5FD3A2; --accent-fg:#0B1712; --accent-soft:#163428; --gold:var(--miel-300); --gold-text:var(--miel-300); --deep:#07130E; --hover:#5FD3A2; --hero-fondo:radial-gradient(40% 50% at 78% 52%,rgba(95,211,162,.2),transparent 72%),linear-gradient(155deg,#0B1712 0%,#0E2419 42%,#164A37 78%,#226B50 100%); --hero-fondo-movil:radial-gradient(60% 34% at 50% 76%,rgba(95,211,162,.2),transparent 72%),linear-gradient(170deg,#0B1712 0%,#0E2419 45%,#164A37 82%,#226B50 100%); --burbuja:rgba(255,255,255,.06); --vidrio-a:rgba(255,255,255,.09); --vidrio-b:rgba(255,255,255,.02); --vidrio-borde:rgba(255,255,255,.12); --vidrio-sombra:0 50px 90px -50px rgba(0,0,0,.9); color-scheme:dark}
+  --bg:#000; --bg-alt:#161617; --card:#1D1D1F; --fg:#F5F5F7; --muted:#A1A1A6; --line:#424245;
+  --accent:#5FD3A2; --accent-fg:#06140E; --accent-soft:#12291F; --gold:var(--miel-300); --gold-text:#5FD3A2; --deep:#000; --hover:#7FE0B6; --hero-fondo:linear-gradient(180deg,#000 0%,#000 55%,#161617 100%); --burbuja:#2C2C2E; --vidrio-a:#1D1D1F; --vidrio-b:#1D1D1F; --vidrio-borde:rgba(255,255,255,.08); --vidrio-sombra:0 30px 60px -30px rgba(0,0,0,.9); color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000; --bg-alt:#161617; --card:#1D1D1F; --fg:#F5F5F7; --muted:#A1A1A6; --line:#424245;
+  --accent:#5FD3A2; --accent-fg:#06140E; --accent-soft:#12291F; --gold:var(--miel-300); --gold-text:#5FD3A2; --deep:#000; --hover:#7FE0B6; --hero-fondo:linear-gradient(180deg,#000 0%,#000 55%,#161617 100%); --burbuja:#2C2C2E; --vidrio-a:#1D1D1F; --vidrio-b:#1D1D1F; --vidrio-borde:rgba(255,255,255,.08); --vidrio-sombra:0 30px 60px -30px rgba(0,0,0,.9); color-scheme:dark}
 
 *{box-sizing:border-box}
 /* El atributo hidden siempre oculta, aunque el componente defina su propio display */
@@ -580,3 +581,97 @@ h2,.sub{text-align:left}
   .firma__sello{opacity:.85;transform:rotate(-8deg);animation:none!important}
 }
 @media (max-width:860px){.firma{max-width:220px;margin-top:24px}}
+
+/* ===== Dirección Apple (tema «apple» de better-design) =====
+   Superficies planas en blanco y gris #F5F5F7, sin bordes ni sombras en las tarjetas,
+   botones en píldora, títulos semibold con tracking negativo y etiquetas sin mayúsculas. */
+body{line-height:1.47;letter-spacing:-.011em}
+h1,h2,h3,.words,.svc__name,.faq__item h3,.tp__nombre,.calc__total strong,.wa-pasos h3{font-weight:600}
+h1,.no-encontrada h1,.legal h1{line-height:1.05;letter-spacing:-.028em}
+h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
+.words{line-height:1.1;letter-spacing:-.022em}
+.words span{opacity:.22}
+.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out span,.tp__precio span,.calc__hab legend{letter-spacing:-.005em;text-transform:none}
+.kicker{font-size:17px;color:var(--accent)}
+.tp__cat,.contact__info h3{color:var(--muted)}
+.calc label{font-weight:500}
+.calc__hab legend{font-size:var(--t-label);color:var(--fg)}
+.calc__hab legend span{letter-spacing:0;color:var(--muted)}
+
+/* Barra superior: enlaces pequeños y «Agenda tu cita» como píldora */
+.nav__links{font-size:13.5px}
+.nav__links a{opacity:.8}
+@media (min-width:861px){
+  .nav__links .nav__agenda{background:var(--accent);color:var(--accent-fg);padding:6px 14px;border-radius:var(--radius);font-weight:500;margin-top:-6px;margin-bottom:-6px}
+  .nav__links .nav__agenda:hover{background:var(--hover);color:var(--accent-fg)}
+  .nav__links .nav__agenda::after{display:none}
+}
+
+/* Botones */
+.btn{padding:12px 24px;border-radius:var(--radius);font-weight:400;letter-spacing:-.01em;border:1px solid transparent;transition:background .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease)}
+.btn:not(.btn--primary){color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.btn:not(.btn--primary):hover{background:var(--accent-soft)}
+.btn:active,.act:active{transform:scale(.99)}
+
+/* Inicio */
+.hero__pin::after{display:none}
+.eyebrow{color:var(--accent);border-bottom:0;padding-bottom:0;margin-bottom:14px;font-size:clamp(17px,1.5vw,21px);font-weight:600}
+.hero h1{font-weight:600;letter-spacing:-.03em}
+.lema{font-weight:400;color:var(--muted)}
+.statement{box-shadow:0 -24px 60px -48px rgba(0,0,0,.35)}
+
+/* Catálogo: buscador gris redondeado, filtros en píldora y filas redondeadas */
+.find{width:min(340px,100%);padding:10px 14px;border:0;border-radius:var(--r-input);background:var(--bg-alt)}
+.find:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.tabs{gap:8px;padding:2px 0 20px}
+.tab{padding:8px 16px;border-radius:var(--radius);background:var(--bg-alt);color:var(--fg);font-size:14px;transition:background .3s var(--ease),color .3s var(--ease)}
+.tab::after{display:none}
+.tab[aria-pressed="true"],.tab[aria-pressed="true"]:hover{background:var(--fg);color:var(--bg);font-weight:500}
+.tl__lista{border-top:0;display:grid;gap:2px}
+.tl__item{border-bottom:0;border-radius:var(--r-input);padding:13px 16px}
+.tl__item[aria-current="true"]{background:var(--bg-alt)}
+.tl__item[aria-current="true"]::before{display:none}
+.tp{background:var(--bg-alt);border-radius:var(--r-card);box-shadow:none}
+.tp__nombre{letter-spacing:-.02em}
+.tp__precio strong{color:var(--accent)}
+.check input{border-radius:50%}
+.nota{border-left:0;border-radius:var(--r-input);background:var(--card)}
+.act{background:var(--card);border-color:transparent}
+.act:hover{border-color:var(--hover)}
+.act--wa{background:var(--accent);border-color:var(--accent)}
+@media screen and (max-width:860px){.tp__cerrar{background:color-mix(in srgb,var(--fg) 8%,transparent)}}
+
+/* Calculadora: tarjeta gris con campos blancos */
+.calc{background:var(--bg-alt);border-radius:var(--r-panel);box-shadow:none}
+.calc select,.calc input{background:var(--card);border-color:var(--line)}
+.hab__btn{border-radius:50%;background:var(--card)}
+.calc__out{border-top-color:var(--line)}
+
+/* Sofía: teléfono blanco con burbujas al estilo Mensajes */
+.wa-tel{padding:0;border-radius:var(--r-panel);background:var(--card);box-shadow:inset 0 0 0 1px var(--vidrio-borde),var(--vidrio-sombra)}
+.wa-tel__in{border-radius:var(--r-panel);background:var(--card);box-shadow:none}
+.wa-burbuja{border-radius:18px 18px 18px 6px}
+.wa-burbuja b{font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted)}
+.wa-burbuja--tu{background:var(--accent);color:var(--accent-fg);border-radius:18px 18px 6px 18px}
+.wa-burbuja--tu b{color:inherit;opacity:.75}
+.wa-pasos li>span{font-size:15px;font-weight:600;letter-spacing:0;color:var(--accent)}
+
+/* Contacto, avisos y pie */
+.contact__map{box-shadow:none}
+.social a{background:var(--card);border-color:transparent}
+.aviso{background:var(--bg-alt);color:var(--fg);border-bottom:1px solid var(--line)}
+.aviso__x:hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
+.foot{background:var(--bg-alt);font-size:12.5px}
+.foot .foot__in{border-top-color:var(--line)}
+
+/* Chat web */
+.chat-lanzador{font-weight:500;box-shadow:0 10px 30px -12px rgba(0,0,0,.35)}
+.chat{border-color:transparent;box-shadow:0 0 0 1px var(--vidrio-borde),0 30px 80px -20px rgba(0,0,0,.35)}
+.chat__mensajes,.chat__sugerencias{background:var(--card)}
+.chat__msg{border-radius:18px}
+.chat__msg--asistente{background:var(--bg-alt);border:0;border-bottom-left-radius:6px}
+.chat__form textarea{border-radius:20px;padding:11px 16px}
+
+/* Apariciones: solo desvanecido y un desplazamiento corto, sin desenfoque */
+.reveal{transform:translateY(20px);filter:none}
+@media (prefers-reduced-motion:reduce){.reveal{transform:none}.btn:active,.act:active{transform:none}}
