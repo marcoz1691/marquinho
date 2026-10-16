@@ -27,7 +27,10 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     async guardarAjuste(clave, valor, por) { ok(await db.from("ajustes").upsert({ clave, valor: String(valor), actualizado_por: por, actualizado_en: new Date().toISOString() })); },
     async rolDe(email) { return ok(await db.from("personal").select("rol").eq("email", String(email || "").toLowerCase()).maybeSingle())?.rol || null; },
     async esAdmin(email) { return await this.rolDe(email) === "admin"; },
-    async equipo() { return ok(await db.from("personal").select("email,nombre,rol,mfa_en,creado").order("nombre")).map(({ mfa_en, ...p }) => ({ ...p, dosPasos: mfa_en != null })); },
+    async equipo() { return ok(await db.from("personal").select("email,nombre,rol,mfa_en,creado,atiende_citas,horario,ausencias").order("nombre")).map(({ mfa_en, atiende_citas, horario, ausencias, ...p }) => ({ ...p, atiendeCitas: atiende_citas ?? true, horario: horario ?? null, ausencias: ausencias ?? [], dosPasos: mfa_en != null })); },
+    async matriceros() { return ok(await db.from("personal").select("email,nombre,atiende_citas,horario,ausencias").eq("atiende_citas", true)).map(p => ({ email: p.email, nombre: p.nombre, atiendeCitas: p.atiende_citas, horario: p.horario ?? null, ausencias: p.ausencias ?? [] })); },
+    async guardarHorario(email, { atiendeCitas, horario }) { ok(await db.from("personal").update({ atiende_citas: atiendeCitas, horario }).eq("email", email)); },
+    async guardarAusencias(email, ausencias) { ok(await db.from("personal").update({ ausencias }).eq("email", email)); },
     async agregarMiembro(p) { const { error } = await db.from("personal").insert(p); if (error) throw Object.assign(new Error(error.message), { code: error.code }); },
     async quitarMiembro(email) { ok(await db.from("personal").delete().eq("email", email)); },
     async cambiarRol(email, rol) { ok(await db.from("personal").update({ rol }).eq("email", email)); },
@@ -147,7 +150,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       for (let intento = 0; intento < 8; intento++) {
         const codigo = String(1000 + Math.floor(Math.random() * 9000));
         const resultado = await db.from("solicitudes_cita").insert({ conversacion_id: c.conversacionId, tramite_id: c.tramiteId || null, fecha: c.fecha, hora: c.hora,
-          codigo, nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id, codigo").single();
+          codigo, asignada_a: c.asignadaA || "", nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id, codigo").single();
         if (resultado.error?.code === "23505") continue;
         const r = ok(resultado);
         return { id: r.id, codigo: r.codigo };

@@ -107,6 +107,7 @@ async function mostrarApp() {
   try {
     const yo = await api("GET", { accion: "yo" });
     rolSesion = yo.rol;
+    $("#ausenciasPersona").innerHTML = ""; $("#ausenciasPersonaCampo").hidden = true;
     $("#perfilSesion").textContent = perfiles[rolSesion] || "";
     $("#perfilSesion").hidden = false;
     $("[data-tab=funcionesV]").hidden = rolSesion !== "admin";
@@ -228,7 +229,7 @@ function pestana(id) {
   if (id === "preciosV") cargarPreciosPanel();
   $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV";
   document.querySelectorAll("#tabs [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === id));
-  if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); cargarCitasConfig(); }
+  if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); cargarCitasConfig(); cargarAusencias(); }
 }
 $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) pestana(b.dataset.tab); });
 
@@ -260,13 +261,15 @@ function pintarAgenda() {
   const a = agendaPanel;
   const estados = { total: "Total", pendiente: "Pendientes", confirmada: "Confirmadas", atendida: "Atendidas", rechazada: "Canceladas" };
   $("#agResumen").innerHTML = Object.entries(estados).map(([k,v]) => `<button class="btn btn--line ${k === "pendiente" ? "ag-pendientes" : ""}" data-filtro-ag="${k}" aria-pressed="${filtroAgenda === k}">${v} <b>${k === "total" ? a.citas.length : a.citas.filter(x => k === "rechazada" ? ["rechazada", "cancelada"].includes(x.estado) : x.estado === k).length}</b></button>`).join("");
-  const personas = a.personal.map((p) => p.nombre || p.email);
-  const opcionesDe = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
-    .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
+  const opcionesDe = actual => {
+    const personas = a.personal.map(p => ({ valor: p.email || p.nombre, nombre: p.nombre || p.email }));
+    if (actual && !personas.some(p => p.valor === actual)) personas.push({ valor: actual, nombre: actual });
+    return '<option value="">Sin asignar</option>' + personas.map(p => `<option value="${esc(p.valor)}"${p.valor === actual ? " selected" : ""}>${esc(p.nombre)}</option>`).join("");
+  };
   const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
   $("#agLista").innerHTML = a.citas.filter(x => filtroAgenda === "total" || (filtroAgenda === "rechazada" ? ["rechazada", "cancelada"].includes(x.estado) : x.estado === filtroAgenda)).map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
       <span class="ag-hora">${esc(x.hora)}${x.codigo ? `<small>Ticket ${esc(x.codigo)}</small>` : ""}</span>
-      <div class="ag-cliente"><b>${esc(x.nombre)}</b><div class="ag-etiquetas">${ESTADO[x.estado] || '<span class="tag">Cancelada</span>'}${canalEtiqueta(x) ? `<span class="tag tag--canal">${canalEtiqueta(x)}</span>` : ""}</div><small>${[esc(x.tramite), telefonoCita(x), esc(x.nota)].filter(Boolean).join(" · ")}</small></div>
+      <div class="ag-cliente"><b>${esc(x.nombre)}</b>${x.asignadaNombre ? `<small>Matricero: ${esc(x.asignadaNombre)}</small>` : ""}<div class="ag-etiquetas">${ESTADO[x.estado] || '<span class="tag">Cancelada</span>'}${canalEtiqueta(x) ? `<span class="tag tag--canal">${canalEtiqueta(x)}</span>` : ""}</div><small>${[esc(x.tramite), telefonoCita(x), esc(x.nota)].filter(Boolean).join(" · ")}</small></div>
       ${["rechazada", "cancelada"].includes(x.estado) ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}
       <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Rechazar</button>` : ""}
         ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Atendida</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Cancelar</button>` : ""}
@@ -280,7 +283,7 @@ async function cargarCitasConfig() {
 function pintarCitasConfig(c) {
   $("#agConfig").hidden = !c.esAdmin;
   if (!c.esAdmin) return;
-  $("#agConfigContenido").innerHTML = `<form id="agCupo" class="config-fila"><label>Citas por hora<input name="porHora" type="number" min="1" max="20" required value="${esc(c.porHora)}"></label><button class="btn">Guardar</button><small>Valor oficial: ${esc(c.porHoraOficial)}</small></form>
+  $("#agConfigContenido").innerHTML = `<p>${c.modoHorarios === "matriceros" ? "Las horas disponibles se calculan con los horarios de los matriceros; el cupo por hora ya no se usa" : "Todavía no hay horarios cargados: se usa el cupo fijo por hora. Carga los horarios en Equipo."}</p><form id="agDuracion" class="config-fila"><label>Duración de cada cita (minutos)<input name="minutos" type="number" min="30" max="240" step="30" required value="${esc(c.duracionMin || 90)}"></label><button class="btn">Guardar duración</button></form><form id="agCupo" class="config-fila"><label>Citas por hora<input name="porHora" type="number" min="1" max="20" required value="${esc(c.porHora)}"></label><button class="btn">Guardar</button><small>Valor oficial: ${esc(c.porHoraOficial)}</small></form>
     <ul class="bloqueos">${c.bloqueos.map(b => `<li><span>${esc(b.fecha)} · ${esc(b.hora || "Día completo")} · ${esc(b.motivo)}${b.fijo ? " · Feriado fijo" : ""}</span>${b.fijo ? "" : `<button class="btn btn--line" data-quitar-fecha="${esc(b.fecha)}" data-quitar-hora="${esc(b.hora || "")}">Quitar</button>`}</li>`).join("") || "<li>No hay bloqueos próximos.</li>"}</ul>
     <form id="agBloqueo" class="config-fila"><label>Fecha del bloqueo<input name="fecha" type="date" min="${hoyQuito()}" required></label><label>Hora (opcional)<select name="hora"><option value="">Día completo</option>${Array.from({length:24},(_,h) => `${String(h).padStart(2,"0")}:00`).map(h => `<option>${h}</option>`).join("")}</select></label><label>Motivo<input name="motivo" maxlength="80"></label><button class="btn">Agregar bloqueo</button></form>`;
 }
@@ -290,7 +293,7 @@ async function guardarCitasConfig(pedido) {
 }
 $("#agConfig").addEventListener("submit", e => {
   e.preventDefault(); const datos = Object.fromEntries(new FormData(e.target));
-  guardarCitasConfig(e.target.id === "agCupo" ? { accion: "guardarCupo", porHora: Number(datos.porHora) } : { accion: "agregarBloqueo", ...datos, hora: datos.hora || null });
+  guardarCitasConfig(e.target.id === "agDuracion" ? { accion: "guardarDuracionCita", minutos: Number(datos.minutos) } : e.target.id === "agCupo" ? { accion: "guardarCupo", porHora: Number(datos.porHora) } : { accion: "agregarBloqueo", ...datos, hora: datos.hora || null });
 });
 $("#agConfig").addEventListener("click", e => {
   const b = e.target.closest("[data-quitar-fecha]");
@@ -318,7 +321,7 @@ $("#agLimpiar").addEventListener("click", () => {
 $("#agFecha").addEventListener("change", () => cargarAgenda());
 $("#agendaV").addEventListener("change", async (e) => {
   const s = e.target.closest("[data-asignar]"); if (!s) return;
-  try { await api("POST", { accion: "asignarCita", id: s.dataset.asignar, persona: s.value }); s.blur(); } catch (err) { alert(err.message); }
+  try { const d = await api("POST", { accion: "asignarCita", id: s.dataset.asignar, persona: s.value }); $("#agAsignacionMensaje").textContent = d.aviso || "Asignación guardada."; await cargarAgenda(); $("#agLista").querySelectorAll("[data-asignar]").forEach(n => { if (n.dataset.asignar === s.dataset.asignar) n.focus(); }); } catch (err) { $("#agAsignacionMensaje").textContent = err.message; }
 });
 $("#agendaV").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b) return;
@@ -595,7 +598,7 @@ function pintarEquipo(d) {
   $("#equipoLista").innerHTML = d.miembros.map(p => {
     const propio = p.email === d.yo, ultimo = p.rol === "admin" && admins === 1;
     const quitar = !propio && !ultimo && (d.rol === "admin" || p.rol === "personal");
-    return `<article class="equipo-miembro"><div><h3>${esc(p.nombre)}</h3><p>${esc(p.email)}</p><p>${esc(perfiles[p.rol] || p.rol)} · ${p.dosPasos ? "Dos pasos activos" : "Pendiente de configurar"}</p></div><div class="equipo-acciones">${d.rol === "admin" ? `<label>Perfil de ${esc(p.nombre)}<select data-equipo-rol="${esc(p.email)}"${propio || ultimo ? " disabled" : ""}>${opcionesPerfil(p.rol)}</select></label>` : ""}${quitar ? `<button type="button" class="btn btn--warn" data-equipo-quitar="${esc(p.email)}">Dar de baja</button>` : ""}</div></article>`;
+    return `<article class="equipo-miembro"><div><h3>${esc(p.nombre)}</h3><p>${esc(p.email)}</p><p>${esc(perfiles[p.rol] || p.rol)} · ${p.dosPasos ? "Dos pasos activos" : "Pendiente de configurar"}</p></div><div class="equipo-acciones"><p>${esc(resumenHorario(p.horario))}</p><label><input type="checkbox" data-atiende="${esc(p.email)}"${p.atiendeCitas !== false ? " checked" : ""}> Atiende citas</label><button type="button" class="btn btn--line" data-horario="${esc(p.email)}">Horario</button>${d.rol === "admin" ? `<label>Perfil de ${esc(p.nombre)}<select data-equipo-rol="${esc(p.email)}"${propio || ultimo ? " disabled" : ""}>${opcionesPerfil(p.rol)}</select></label>` : ""}${quitar ? `<button type="button" class="btn btn--warn" data-equipo-quitar="${esc(p.email)}">Dar de baja</button>` : ""}</div></article>`;
   }).join("");
 }
 async function cargarEquipo() {
@@ -628,4 +631,107 @@ $("#equipoLista").addEventListener("change", async e => {
   s.disabled = true;
   try { pintarEquipo(await api("POST", { accion: "cambiarRol", email: s.dataset.equipoRol, rol: s.value })); $("#equipoMensaje").textContent = "Perfil guardado."; }
   catch (e) { pintarEquipo(equipoPanel); $("#equipoMensaje").textContent = e.message; }
+});
+
+const diasHorario = [[1,"Lunes"],[2,"Martes"],[3,"Miércoles"],[4,"Jueves"],[5,"Viernes"],[6,"Sábado"],[0,"Domingo"]];
+let horarioPersona = null;
+function resumenHorario(h) {
+  if (h == null) return "Sin horario cargado";
+  // Agrupa los días seguidos con las mismas horas: «Lun a jue 08:00–12:00 / 14:00–17:00 · Vie 08:00–13:00».
+  const grupos = [];
+  for (const [d, nombre] of diasHorario) {
+    const tramos = h[d] || [];
+    if (!tramos.length) continue;
+    const horas = tramos.map(t => t.join("–")).join(" / "), ultimo = grupos.at(-1);
+    if (ultimo && ultimo.horas === horas && ultimo.siguiente === d) { ultimo.hasta = nombre; ultimo.siguiente = diasHorario[diasHorario.findIndex(([x]) => x === d) + 1]?.[0]; }
+    else grupos.push({ desde: nombre, hasta: nombre, horas, siguiente: diasHorario[diasHorario.findIndex(([x]) => x === d) + 1]?.[0] });
+  }
+  return grupos.map(g => (g.desde === g.hasta ? g.desde.slice(0, 3) : g.desde.slice(0, 3) + " a " + g.hasta.slice(0, 3)) + " " + g.horas).join(" · ") || "No trabaja ningún día";
+}
+function pintarHorario(h) {
+  $("#horarioDias").innerHTML = diasHorario.map(([d,n]) => `<fieldset data-dia-horario="${d}"><legend>${n}</legend><label><input type="checkbox" data-trabaja${h[d]?.length ? " checked" : ""}> Trabaja</label><div data-tramos>${(h[d]?.length ? h[d] : [["08:00","17:00"]]).map((t,i) => tramoHorario(t,n,i,!h[d]?.length)).join("")}</div><button type="button" class="btn btn--line" data-agregar-tramo${!h[d]?.length ? " disabled" : ""}>+ Agregar otro tramo</button></fieldset>`).join("");
+}
+function tramoHorario(t, dia, i, disabled = false) {
+  return `<div class="horario-tramo"><label>Desde <span class="sr-only">${esc(dia)} tramo ${i+1}</span><input type="time" data-desde step="1800" value="${esc(t[0])}" required${disabled ? " disabled" : ""}></label><label>Hasta <span class="sr-only">${esc(dia)} tramo ${i+1}</span><input type="time" data-hasta step="1800" value="${esc(t[1])}" required${disabled ? " disabled" : ""}></label><button type="button" class="btn btn--line" data-quitar-tramo${disabled ? " disabled" : ""}>Quitar tramo <span class="sr-only">${esc(dia)} ${i+1}</span></button></div>`;
+}
+function leerHorario() {
+  return Object.fromEntries([...$("#horarioDias").querySelectorAll("fieldset")].map(f => [f.dataset.diaHorario, f.querySelector("[data-trabaja]").checked ? [...f.querySelectorAll(".horario-tramo")].map(t => [t.querySelector("[data-desde]").value,t.querySelector("[data-hasta]").value]) : []]));
+}
+$("#equipoLista").addEventListener("click", e => {
+  const b = e.target.closest("[data-horario]"); if (!b) return;
+  horarioPersona = equipoPanel.miembros.find(p => p.email === b.dataset.horario);
+  $("#horarioTitulo").textContent = "Horario de " + horarioPersona.nombre;
+  $("#horarioAtiende").checked = horarioPersona.atiendeCitas !== false;
+  $("#horarioMensaje").textContent = ""; pintarHorario(horarioPersona.horario || {}); $("#horarioDialogo").showModal();
+});
+$("#equipoLista").addEventListener("change", async e => {
+  const c = e.target.closest("[data-atiende]"); if (!c) return;
+  const p = equipoPanel.miembros.find(p => p.email === c.dataset.atiende);
+  if (p.horario == null) { const activo = c.checked; c.checked = p.atiendeCitas !== false; $("#equipoLista").querySelectorAll("[data-horario]").forEach(b => { if (b.dataset.horario === p.email) b.click(); }); $("#horarioAtiende").checked = activo; return; }
+  c.disabled = true;
+  try { pintarEquipo(await api("POST", { accion: "guardarHorario", email: p.email, atiendeCitas: c.checked, horario: p.horario })); $("#equipoMensaje").textContent = "Horario guardado"; }
+  catch (err) { c.checked = p.atiendeCitas !== false; c.disabled = false; $("#equipoMensaje").textContent = err.message; }
+});
+$("#horarioDias").addEventListener("change", e => {
+  if (!e.target.matches("[data-trabaja]")) return;
+  const f = e.target.closest("fieldset"); f.querySelectorAll("input[type=time],button").forEach(c => c.disabled = !e.target.checked);
+});
+$("#horarioDias").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return; const f = b.closest("fieldset"), lista = f.querySelector("[data-tramos]");
+  if (b.hasAttribute("data-agregar-tramo") && lista.children.length < 3) lista.insertAdjacentHTML("beforeend", tramoHorario(["14:00","17:00"],f.querySelector("legend").textContent,lista.children.length));
+  if (b.hasAttribute("data-quitar-tramo")) { b.closest(".horario-tramo").remove(); if (!lista.children.length) { f.querySelector("[data-trabaja]").checked = false; pintarHorario(leerHorario()); } }
+  f.querySelector("[data-agregar-tramo]").disabled = lista.children.length >= 3 || !f.querySelector("[data-trabaja]").checked;
+});
+$("#horarioCopiar").addEventListener("click", () => { const h = leerHorario(); pintarHorario(Object.fromEntries(diasHorario.map(([d]) => [d,h[1]]))); });
+$("#horarioCerrar").addEventListener("click", () => $("#horarioDialogo").close());
+$("#horarioDialogo").addEventListener("close", () => {
+  $("#equipoLista").querySelectorAll("[data-horario]").forEach(b => { if (b.dataset.horario === horarioPersona?.email) b.focus(); });
+});
+$("#horarioForm").addEventListener("submit", async e => {
+  e.preventDefault(); const b = e.submitter; b.disabled = true;
+  try { pintarEquipo(await api("POST", { accion: "guardarHorario", email: horarioPersona.email, atiendeCitas: $("#horarioAtiende").checked, horario: leerHorario() })); $("#horarioMensaje").textContent = "Horario guardado"; $("#equipoMensaje").textContent = "Horario guardado"; }
+  catch (err) { $("#horarioMensaje").textContent = err.message; } finally { b.disabled = false; }
+});
+let ausenciasDatos = null, turnoAusencias = 0;
+async function cargarAusencias(email) {
+  const turno = ++turnoAusencias;
+  ausenciasDatos = null;
+  $("#ausenciasForm").querySelectorAll("input,button").forEach(c => c.disabled = true);
+  $("#ausenciasLista").innerHTML = "<li>Cargando ausencias…</li>";
+  $("#ausenciasMensaje").textContent = "";
+  try {
+    const d = await api("GET", { accion: "misAusencias", ...(email ? { email } : {}) });
+    if (turno !== turnoAusencias) return;
+    ausenciasDatos = d; pintarAusencias();
+    $("#ausenciasForm").querySelectorAll("input,button").forEach(c => c.disabled = false);
+    if (["admin","notario"].includes(rolSesion) && !$("#ausenciasPersona").options.length) {
+      const equipo = await api("GET", { accion: "equipo" });
+      $("#ausenciasPersona").innerHTML = equipo.miembros.map(p => `<option value="${esc(p.email)}"${p.email === d.email ? " selected" : ""}>${esc(p.nombre)}</option>`).join(""); $("#ausenciasPersonaCampo").hidden = false;
+    }
+  } catch (err) { $("#ausenciasMensaje").textContent = err.message; }
+}
+function pintarAusencias() {
+  $("#ausenciasLista").innerHTML = ausenciasDatos.ausencias.map((a,i) => `<li><span>${esc(a.desde)} – ${esc(a.hasta)} · ${esc(a.motivo)}</span><button type="button" class="btn btn--line" data-quitar-ausencia="${i}" aria-label="Quitar ausencia del ${esc(a.desde)} al ${esc(a.hasta)}">Quitar</button></li>`).join("") || "<li>No tienes ausencias próximas.</li>";
+  $("#ausenciaDesde").min = hoyQuito(); $("#ausenciaHasta").min = hoyQuito();
+}
+async function guardarAusencias(ausencias) {
+  const persona = ausenciasDatos, selector = $("#ausenciasPersona");
+  selector.disabled = true;
+  try {
+    const d = await api("POST", { accion: "guardarAusencias", email: persona.email, ausencias });
+    if (ausenciasDatos !== persona) return;
+    persona.ausencias = d.ausencias; pintarAusencias(); $("#ausenciasMensaje").textContent = "Ausencias guardadas.";
+  } finally { selector.disabled = false; }
+}
+$("#ausenciasPersona").addEventListener("change", e => cargarAusencias(e.target.value));
+$("#ausenciasForm").addEventListener("submit", async e => {
+  e.preventDefault(); if (!ausenciasDatos) return;
+  const b = e.submitter; b.disabled = true;
+  try { await guardarAusencias([...ausenciasDatos.ausencias, Object.fromEntries(new FormData(e.target))]); e.target.reset(); }
+  catch (err) { $("#ausenciasMensaje").textContent = err.message; } finally { b.disabled = false; }
+});
+$("#ausenciasLista").addEventListener("click", async e => {
+  const b = e.target.closest("[data-quitar-ausencia]"); if (!b) return; b.disabled = true;
+  try { await guardarAusencias(ausenciasDatos.ausencias.filter((_,i) => i !== Number(b.dataset.quitarAusencia))); }
+  catch (err) { b.disabled = false; $("#ausenciasMensaje").textContent = err.message; }
 });

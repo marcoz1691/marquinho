@@ -68,6 +68,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
   }
   const lecturas = {
     yo: { fn: (q, email) => panel.yo(email) },
+    misAusencias: { auditar: true, fn: (q, email) => panel.misAusencias(q.get("email"), email) },
     equipo: { auditar: true, fn: (q, email) => panel.equipo(email) },
     funciones: { fn: (q, email) => pilotoAdmin(email, () => panel.funciones(), true) },
     metricas: { auditar: true, fn: (q, email) => pilotoAdmin(email, () => panel.metricas(q.get("desde") ?? undefined, q.get("hasta") ?? undefined)) },
@@ -92,6 +93,9 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
       catch { throw new Aviso("No se pudo determinar la dirección del panel para la invitación."); }
       return panel.invitarMiembro(b, email, redirectTo);
     },
+    guardarHorario: (b, email) => panel.guardarHorario(b, email),
+    guardarAusencias: (b, email) => panel.guardarAusencias(b, email),
+    guardarDuracionCita: async (b, email) => editable(email, await panel.guardarDuracionCita(b, email)),
     quitarMiembro: (b, email) => panel.quitarMiembro(b, email),
     cambiarRol: (b, email) => panel.cambiarRol(b, email),
     guardarFuncion: (b, email) => pilotoAdmin(email, () => panel.guardarFuncion(b, email), true),
@@ -116,7 +120,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     async GET(request) {
       const a = await autorizar(request); if (a.no) return a.no;
       const q = new URL(request.url).searchParams, accion = q.get("accion"), l = Object.hasOwn(lecturas, accion) && lecturas[accion];
-      return l ? ejecutar(accion, accion === "buscarTicket" ? q.get("codigo") : q.get("id"), a.email, () => l.fn(q, a.email), l.auditar, l.estricta) : json({ error: "Acción desconocida" }, 400);
+      return l ? ejecutar(accion, accion === "buscarTicket" ? q.get("codigo") : q.get("email") || (accion === "misAusencias" ? a.email : q.get("id")), a.email, () => l.fn(q, a.email), l.auditar, l.estricta) : json({ error: "Acción desconocida" }, 400);
     },
     async POST(request) {
       const a = await autorizar(request); if (a.no) return a.no;

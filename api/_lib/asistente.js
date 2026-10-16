@@ -3,7 +3,7 @@
 import { leerAjustes, leerFunciones } from "./funciones.js";
 import { registrar, canalDeTelefono } from "./metricas.js";
 import { construirResumen } from "./resumen.js";
-import { reglasCitas, horasLibres, celular } from "./citas.js";
+import { elegirMatricero, reglasCitas, horasLibres, celular } from "./citas.js";
 import { tipoArchivo } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
@@ -234,10 +234,11 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
           const a = activas[0], ta = tramite(a.tramiteId);
           return error(`El cliente ya tiene una cita ${a.estado}${ta ? " para " + ta.nombre : ""} el ${a.fecha} a las ${a.hora}. Pregúntale si quiere cambiarla por esta; si dice que sí, vuelve a usar solicitar_cita con reprogramar: true.`);
         }
-        // Cupo por hora: cuentan las citas pendientes y confirmadas que empiezan en esa misma hora.
-        // Sofía acepta cualquier minuto (09:15): basta con que su hora del reloj tenga cupo y no esté bloqueada. Que no haya pasado ya se revisó arriba.
+        // Con horarios, exige el intervalo completo y un inicio disponible.
+        // En el respaldo conserva los minutos intermedios y el cupo por hora de la agenda anterior.
         const excluirIds = activas.map((a) => a.id), inicioDia = new Date(i.fecha + "T00:00:00-05:00");
-        const conCupo = (await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: inicioDia, excluirIds })).some((h) => h.slice(0, 2) === hora.slice(0, 2));
+        const modoHorarios = (await almacen.matriceros()).some(p => p.horario !== null);
+        const conCupo = (await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: inicioDia, excluirIds })).some((h) => modoHorarios ? h === hora : h.slice(0, 2) === hora.slice(0, 2));
         const libres = conCupo ? [] : await horasLibres({ almacen, C, ajustes, fecha: i.fecha, ahora: ctx.t, excluirIds });
         if (!conCupo) return error(`No hay cupo a esa hora ese día. ${libres.length ? "Horas libres ese día: " + libres.join(", ") + "." : "Ese día ya no quedan horas libres: ofrece otro día."}`);
         // En la web el celular no está verificado: la cita queda pendiente para que nadie llene la agenda ni reciba mensajes que no pidió.
@@ -245,7 +246,9 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         // El recordatorio sale a las 17:00 del día anterior.
         const manana = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(new Date(ctx.t.getTime() + 864e5));
         const recordatorio = i.fecha > manana || (i.fecha === manana && enQuito(ctx.t).min < 17 * 60);
-        const nueva = await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre, nota: corto(i.nota, 200),
+        const asignadaA = await elegirMatricero({ almacen, C, ajustes, fecha: i.fecha, hora, ahora: ctx.t, excluirIds });
+        if (modoHorarios && !asignadaA) return error("Esa hora acaba de ocuparse. Ofrece otra hora libre.");
+        const nueva = await almacen.crearSolicitudCita({ asignadaA: asignadaA || "", conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre, nota: corto(i.nota, 200),
           estado: confirmada ? "confirmada" : "pendiente", ...(contacto ? { contacto } : {}) });
         await registrar(almacen, "cita.creada." + canalDeTelefono(conv.telefono), 1, ctx.t);
         if (Array.isArray(ctx.eventos)) ctx.eventos.push({ tipo: "cita", resumen: construirResumen({ ...nueva, fecha: i.fecha, hora, nombre, tramiteId: t?.id || null,

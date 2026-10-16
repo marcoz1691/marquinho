@@ -1,7 +1,7 @@
 import { errorWeb } from "./funciones.js";
 import { registrar } from "./metricas.js";
 import { createHash } from "node:crypto";
-import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
+import { celular, fechaQuito, fechaValida, sumarDias, elegirMatricero, horasLibres, diasDisponibles } from "./citas.js";
 import { construirResumen } from "./resumen.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 const HORA = 3600e3,
@@ -118,6 +118,11 @@ export function crearManejadorCita({
         nota: (b.nota || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim(),
         estado: tramite?.revision ? "pendiente" : "confirmada"
       };
+      if (!(await horasLibres({ almacen, C, ajustes, fecha: b.fecha, ahora: t })).includes(b.hora))
+        return json({ error: "Esa hora acaba de ocuparse. Elige otra.", dias: await disponibilidad(C, ajustes, t) }, 409);
+      cita.asignadaA = await elegirMatricero({ almacen, C, ajustes, fecha: b.fecha, hora: b.hora, ahora: t }) || "";
+      if (!cita.asignadaA && (await almacen.matriceros()).some(p => p.horario !== null))
+        return json({ error: "Esa hora acaba de ocuparse. Elige otra.", dias: await disponibilidad(C, ajustes, t) }, 409);
       const nueva = await almacen.crearSolicitudCita(cita);
       await registrar(almacen, "cita.creada.formulario", 1, t);
       if (cita.estado === "pendiente")

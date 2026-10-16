@@ -53,11 +53,13 @@ async function agendaSimulada(page, admin = true, fallaConfig = false) {
   const pedidos = [];
   await page.route("**/vendor/supabase-js-*.js", r => r.fulfill({ contentType: "text/javascript", body: 'window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:"test"}}})}})};' }));
   await page.route("**/api/panel-config", r => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
-  const config = { esAdmin: admin, porHora: 2, porHoraOficial: 2, bloqueos: [{ fecha: "2099-12-25", hora: null, motivo: "Feriado", fijo: true }, { fecha: "2099-12-24", hora: "09:00", motivo: "Reunión" }] };
+  const config = { duracionMin: 90, modoHorarios: "cupoFijo", esAdmin: admin, porHora: 2, porHoraOficial: 2, bloqueos: [{ fecha: "2099-12-25", hora: null, motivo: "Feriado", fijo: true }, { fecha: "2099-12-24", hora: "09:00", motivo: "Reunión" }] };
   const citas = ["pendiente", "confirmada", "atendida", "rechazada"].map((estado,i) => ({ id: `c${i}`, codigo: `482${i}`, fecha: "2026-10-12", hora: "09:00", nombre: `Cliente ${i}`, tramite: "", estado, telefono: "593999999991", canal: i === 0 ? "formulario" : i === 1 ? "web" : "whatsapp", conversacionId: `conv${i}` }));
   await page.route("**/api/panel?**", r => {
     const accion = new URL(r.request().url()).searchParams.get("accion");
     if (accion === "yo") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", rol: admin ? "admin" : "personal" } });
+    if (accion === "misAusencias") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", ausencias: [], puedeEditar: true } });
+    if (accion === "equipo") return r.fulfill({ json: { miembros: [{ email: "yo@test.ec", nombre: "Yo", rol: "admin" }] } });
     if (accion === "citasConfig" && fallaConfig) return r.fulfill({ status: 404, json: { error: "No disponible" } });
     return r.fulfill({ json: accion === "agenda" ? { fecha: "2026-10-12", citas, personal: [{ nombre: "Ana" }] } : accion === "citasConfig" ? config : accion === "detalle" ? { conversacion: { nombre: "Cliente 0" }, citas: [citas[0]], documentos: [], mensajes: [], puedeResponder: false } : [] });
   });
@@ -92,7 +94,7 @@ test("agenda: cupos y bloqueos solo para administradores", async ({ page }) => {
   const pedidos = await agendaSimulada(page);
   await expect(page.locator("#agConfig")).toBeVisible();
   await page.getByText("Cupos y bloqueos", { exact: true }).click();
-  await expect(page.locator(".bloqueos button")).toHaveCount(1);
+  await expect(page.locator("#agConfig .bloqueos button")).toHaveCount(1);
   await page.getByLabel("Citas por hora", { exact: true }).fill("3");
   await page.locator("#agCupo").getByRole("button", { name: "Guardar", exact: true }).click();
   await expect.poll(() => pedidos.length).toBe(1);
@@ -100,7 +102,7 @@ test("agenda: cupos y bloqueos solo para administradores", async ({ page }) => {
   // Al guardar, la sección se vuelve a dibujar: espera a que termine antes de llenar el bloqueo.
   await expect(page.locator("#agConfigMensaje")).toHaveText("Guardado.");
   await page.getByLabel("Fecha del bloqueo").fill("2099-12-20");
-  await page.getByLabel("Motivo", { exact: true }).fill("Mantenimiento");
+  await page.locator("#agBloqueo").getByLabel("Motivo", { exact: true }).fill("Mantenimiento");
   await page.getByRole("button", { name: "Agregar bloqueo", exact: true }).click();
   await expect.poll(() => pedidos.length).toBe(2);
   expect(pedidos[1]).toEqual({ accion: "agregarBloqueo", fecha: "2099-12-20", hora: null, motivo: "Mantenimiento" });

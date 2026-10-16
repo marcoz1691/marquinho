@@ -207,3 +207,9 @@ grant execute on function sumar_metrica(date, text, bigint) to service_role;
 alter table personal drop constraint if exists personal_rol_check;
 alter table personal add constraint personal_rol_check check (rol in ('admin','notario','personal'));
 alter table personal add column if not exists creado timestamptz not null default now();
+
+-- 2026-10-12: horarios de los matriceros.
+alter table personal add column if not exists atiende_citas boolean not null default true;
+alter table personal add column if not exists horario jsonb;
+alter table personal add column if not exists ausencias jsonb not null default '[]'::jsonb;
+-- Sin políticas públicas: acceso únicamente desde el servidor con service role.

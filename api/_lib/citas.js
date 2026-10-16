@@ -19,38 +19,68 @@ export function reglasCitas(C, ajustes = {}) {
   return {
     porHora: Number.isInteger(valor) && valor >= 1 && valor <= 20 ? valor : oficial,
     porHoraOficial: oficial,
+    duracionMin: duracionValida(Number(ajustes["citas.duracionMin"])) ? Number(ajustes["citas.duracionMin"]) : 90,
     bloqueos: [...(C.notaria.citas?.feriados || []).map((fecha) => ({ fecha, hora: null, motivo: "Feriado", fijo: true })), ...extras],
     horario: C.notaria.horario
   };
 }
-function disponibles({ C, ajustes, fecha, ahora = new Date(), excluirIds = [] }, citas) {
+export const duracionValida = n => Number.isInteger(n) && n >= 30 && n <= 240 && n % 30 === 0;
+export const seCruzan = (a, b, duracion) => minutos(a) < minutos(b) + duracion && minutos(b) < minutos(a) + duracion;
+function candidatos(personas, citas, fecha, hora, duracion) {
+  const inicio = minutos(hora), dia = new Date(fecha + "T12:00:00Z").getUTCDay();
+  const libres = personas.filter(p => p.atiendeCitas && p.horario?.[dia]?.some(([a,b]) => minutos(a) <= inicio && minutos(b) >= inicio + duracion) &&
+    !p.ausencias.some(a => a.desde <= fecha && a.hasta >= fecha) &&
+    !citas.some(c => c.asignadaA === p.email && seCruzan(c.hora, hora, duracion)));
+  // Una cita sin matricero, o con un nombre escrito a mano que no es el correo de nadie del equipo (citas de antes de los horarios), ocupa a un matricero cualquiera.
+  const sinMatricero = c => !personas.some(p => p.email === c.asignadaA);
+  return libres.length > citas.filter(c => sinMatricero(c) && seCruzan(c.hora, hora, duracion)).length ? libres : [];
+}
+function disponibles({ C, ajustes, fecha, ahora = new Date(), excluirIds = [] }, citas, personas) {
   if (!fechaValida(fecha)) return [];
-  const { porHora, bloqueos, horario: H } = reglasCitas(C, ajustes);
+  const { porHora, duracionMin, bloqueos, horario: H } = reglasCitas(C, ajustes);
   const hoy = fechaQuito(ahora);
   if (fecha < hoy || !H.dias.includes(new Date(fecha + "T12:00:00Z").getUTCDay()) || bloqueos.some((b) => b.fecha === fecha && b.hora === null)) return [];
   const ocupadas = citas.filter((c) => ["pendiente", "confirmada"].includes(c.estado) && !excluirIds.includes(c.id));
+  const modoHorarios = personas.some(p => p.atiendeCitas && p.horario !== null);
   const libres = [];
   for (let m = minutos(H.abre); m < minutos(H.cierra); m += 30) {
     const hora = String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
     if (new Date(fecha + "T" + hora + ":00-05:00") <= ahora) continue;
-    if (bloqueos.some((b) => b.fecha === fecha && b.hora?.slice(0, 2) === hora.slice(0, 2))) continue;
-    if (ocupadas.filter((c) => c.hora.slice(0, 2) === hora.slice(0, 2)).length < porHora) libres.push(hora);
+    // Con horarios de matriceros la cita dura duracionMin: no se ofrece si cruza una hora bloqueada (una hora bloqueada cubre HH:00–HH:59).
+    const bloqueada = modoHorarios
+      ? bloqueos.some((b) => b.fecha === fecha && b.hora && m < minutos(b.hora.slice(0, 2) + ":00") + 60 && minutos(b.hora.slice(0, 2) + ":00") < m + duracionMin)
+      : bloqueos.some((b) => b.fecha === fecha && b.hora?.slice(0, 2) === hora.slice(0, 2));
+    if (bloqueada) continue;
+    if (modoHorarios ? m + duracionMin <= minutos(H.cierra) && candidatos(personas, ocupadas, fecha, hora, duracionMin).length > 0 : ocupadas.filter((c) => c.hora.slice(0, 2) === hora.slice(0, 2)).length < porHora) libres.push(hora);
   }
   return libres;
 }
 export async function horasLibres(opciones) {
-  return disponibles(opciones, await opciones.almacen.agenda(opciones.fecha));
+  const [ajustes, personas, citas] = await Promise.all([opciones.ajustes ?? opciones.almacen.ajustes(), opciones.almacen.matriceros(), opciones.almacen.agenda(opciones.fecha)]);
+  return disponibles({ ...opciones, ajustes }, citas, personas);
 }
 export async function diasDisponibles({ almacen, C, ajustes, desde, dias = 30, ahora = new Date() }) {
-  const citas = await almacen.citasEntre(desde, sumarDias(desde, dias - 1)),
-    salida = [];
+  const [config, personas, citas] = await Promise.all([ajustes ?? almacen.ajustes(), almacen.matriceros(), almacen.citasEntre(desde, sumarDias(desde, dias - 1))]);
+  const salida = [];
   for (let n = 0; n < dias; n++) {
     const fecha = sumarDias(desde, n),
       horas = disponibles(
-        { C, ajustes, fecha, ahora },
-        citas.filter((c) => c.fecha === fecha)
+        { C, ajustes: config, fecha, ahora },
+        citas.filter((c) => c.fecha === fecha), personas
       );
     if (horas.length) salida.push({ fecha, horas });
   }
   return salida;
+}
+
+export async function elegirMatricero(opciones) {
+  const { almacen, fecha, hora, excluirIds = [] } = opciones;
+  const [ajustes, personas, todas] = await Promise.all([opciones.ajustes ?? almacen.ajustes(), almacen.matriceros(), almacen.agenda(fecha)]);
+  if (!personas.some(p => p.atiendeCitas && p.horario !== null)) return null;
+  if (!disponibles({ ...opciones, ajustes }, todas, personas).includes(hora)) return null;
+  const citas = todas.filter(c => ["pendiente", "confirmada"].includes(c.estado) && !excluirIds.includes(c.id));
+  const carga = p => citas.filter(c => c.asignadaA === p.email);
+  const primera = p => Math.min(...carga(p).map(c => minutos(c.hora)), 1440);
+  return candidatos(personas, citas, fecha, hora, reglasCitas(opciones.C, ajustes).duracionMin)
+    .sort((a,b) => carga(a).length - carga(b).length || primera(b) - primera(a) || a.email.localeCompare(b.email))[0]?.email || null;
 }
