@@ -7,6 +7,10 @@ header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var
 header img{width:34px;height:34px}header b{font-weight:600}header .sp{flex:1}
 header button{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 14px}
 [hidden]{display:none!important}
+/* «Ver como»: vista previa del panel con otro perfil (solo administradores). Se oculta junto con las pestañas al salir. */
+.ver-como{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.8);white-space:nowrap}.ver-como select{background:var(--deep);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:5px 10px;font:inherit;max-width:150px}#tabs[hidden]~.ver-como{display:none}
+.vista-previa{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:10px 18px;background:color-mix(in srgb,var(--gold) 14%,var(--bg));border-bottom:1px solid color-mix(in srgb,var(--gold) 40%,transparent);font-size:14px}.vista-previa p{margin:0;flex:1 1 240px;min-width:0}.vista-previa .btn{padding:6px 14px}header:has(#tabs[hidden])+.vista-previa{display:none}
+@media (max-width:600px){.ver-como>span{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0)}#perfilSesion:has(+.ver-como:not([hidden])){display:none}.vista-previa{padding:10px 12px}}
 .acceso{min-height:calc(100vh - 54px);display:grid;place-items:center;padding:32px 16px}
 .auth{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px;display:grid;gap:16px;box-shadow:0 18px 40px -20px rgba(10,59,46,.25)}
 .auth__sello{width:56px;height:56px}
