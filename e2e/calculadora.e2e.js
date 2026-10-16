@@ -178,7 +178,7 @@ test.describe("Calculadora de tarifas", () => {
       await resultado(page, "$70,64", "$57,84", "$9,22");
       await expect(page.locator("#rHabWrap")).toBeVisible();
       await expect(page.locator("#rHab")).toHaveText("$3,58");
-      await expect(page.locator("#calc .calc__total span")).toHaveText("Total estimado");
+      await expect(page.locator("#calc .calc__total > span")).toHaveText("Total estimado");
     });
 
     test("CF-69 agregar una materialización actualiza el total", async ({ page }) => {

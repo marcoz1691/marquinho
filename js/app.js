@@ -118,7 +118,11 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
         '</span><span class="tl__precio">' + esc(precio(t)) + '</span></button></li>';
     }).join("");
     var t = state.data.tramites.find(function (x) { return x.id === state.sel; });
-    $("#detalleTramite").innerHTML = t ? panel(t) : "";
+    var det = $("#detalleTramite");
+    // El detalle entra con «panel-reveal» solo cuando cambia el trámite, no al volver a pintar el mismo.
+    det.classList.toggle("tp--nuevo", !!t && det.dataset.id !== t.id);
+    det.dataset.id = t ? t.id : "";
+    det.innerHTML = t ? panel(t) : "";
   }
 
   // En la computadora las respuestas siempre están a la vista; en el celular, en acordeón.
@@ -203,7 +207,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       $("#rHabWrap").hidden = !c.habilitantes.length;
       $("#rHab").textContent = money(c.habilitantesBase);
       if (c.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
-      else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); $("#rTotal").textContent = money(c.total); }
+      else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); cifras($("#rTotal"), money(c.total)); }
       $("#calcNote").textContent = note;
       $("#calcAviso").textContent = c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : esHabilitante(t.id) ? "" : AVISO_HABILITANTES;
     }
@@ -371,6 +375,17 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     };
     window.addEventListener("hashchange", abrirHash);
     abrirHash();
+  }
+
+  // «number-pop-in»: solo saltan las cifras que cambiaron, contando desde la derecha.
+  function cifras(el, texto) {
+    var antes = el.textContent;
+    if (antes === texto) return;
+    var n = texto.length, m = antes.length, k = 0;
+    el.innerHTML = texto.split("").map(function (ch, i) {
+      var cambia = antes.charAt(m - n + i) !== ch || m - n + i < 0;
+      return cambia ? '<span class="cifra" style="--i:' + (k++) + '">' + esc(ch) + "</span>" : esc(ch);
+    }).join("");
   }
 
   /* ---------- Portada ---------- */

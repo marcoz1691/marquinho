@@ -707,3 +707,38 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
   .sello__trazo,.sello__brillo{display:none}
 }
 @media print{.sello__trazo,.sello__brillo{display:none}}
+
+/* ===== Más piezas Apple de better-design ===== */
+/* Detalle del trámite: «panel-reveal» (sube, se aclara y se enfoca) al elegir otro trámite */
+@media (min-width:861px){
+  .tp--nuevo>*{animation:panel-entra .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--n,0) * 40ms)}
+  .tp--nuevo>:nth-child(2){--n:1}.tp--nuevo>:nth-child(3){--n:2}.tp--nuevo>:nth-child(4){--n:3}.tp--nuevo>:nth-child(n+5){--n:4}
+}
+@keyframes panel-entra{from{opacity:0;transform:translateY(16px);filter:blur(2px)}}
+/* Total de la calculadora: «number-pop-in», cada cifra nueva salta con un pequeño rebote */
+.cifra{display:inline-block;animation:cifra-entra .5s cubic-bezier(.34,1.45,.64,1) both;animation-delay:calc(var(--i,0) * 50ms)}
+@keyframes cifra-entra{from{opacity:0;transform:translateY(8px);filter:blur(2px)}}
+/* Pasos de Sofía como «steps»: círculos numerados unidos por una línea */
+.wa-pasos{border-top:0}
+.wa-pasos li{position:relative;padding:0 0 36px;border-bottom:0}
+.wa-pasos li:last-child{padding-bottom:0}
+.wa-pasos li>span{width:36px;height:36px;padding:0;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1.5px var(--accent);background:var(--card)}
+.wa-pasos h3{padding-top:5px}
+.wa-pasos li:not(:last-child)::before{content:"";position:absolute;left:17px;top:44px;bottom:8px;width:2px;border-radius:2px;background:color-mix(in srgb,var(--accent) 28%,transparent);transform-origin:top}
+@media (prefers-reduced-motion:no-preference){
+  .wa-pasos li:not(:last-child)::before{transform:scaleY(0);transition:transform .8s var(--ease) .5s}
+  .wa-pasos li.in::before{transform:none}
+}
+/* Preguntas frecuentes en tarjetas grises (en pantalla ancha) */
+@media (min-width:861px){
+  .faq{border-top:0;padding-top:0;gap:16px}
+  .faq__item{background:var(--bg-alt);border-radius:var(--r-card);padding:28px 28px 30px}
+}
+/* Contacto: datos en tarjeta blanca con la sombra mínima de Apple */
+.contact__info{background:var(--card);border-radius:var(--r-card);padding:clamp(24px,3vw,36px);box-shadow:2px 4px 12px rgba(0,0,0,.08)}
+.contact__map{box-shadow:2px 4px 12px rgba(0,0,0,.08)}
+@media (prefers-reduced-motion:reduce){
+  .tp--nuevo>*,.cifra{animation-name:aparecer}
+}
+/* El teléfono de ejemplo ya no se queda fijo: al bajar tapaba el cierre de la sección */
+.wa-ejemplo{position:static}
