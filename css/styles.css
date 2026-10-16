@@ -82,19 +82,18 @@ a:hover{text-decoration:underline}
   background:var(--hero-fondo)}
 .hero__pin::after{content:"";position:absolute;left:20px;right:20px;bottom:0;max-width:var(--max);margin:0 auto;height:1px;background:var(--line)}
 .hero__copy{transform:translateY(calc(var(--p) * -8vh));opacity:calc(1 - var(--p) * 1.15);filter:blur(calc(var(--p) * 6px))}
-.hero__grid{width:100%;max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(24px,5vw,72px);align-items:center}
+.hero__grid{width:100%;max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:1fr;text-align:center;justify-items:center;gap:clamp(18px,3.5svh,36px)}
 .hero__copy>*{animation:in-up .6s var(--ease) both}
 .hero__copy>:nth-child(1){animation-delay:.15s}.hero__copy>:nth-child(2){animation-delay:.25s}.hero__copy>:nth-child(3){animation-delay:.38s}.hero__copy>:nth-child(4){animation-delay:.5s}
 .hero__seal{display:grid;place-items:center}
-.seal{width:min(100%,clamp(220px,min(34vw,52vh),440px));height:auto;display:block;
-  transform:translateY(calc(var(--p) * -4vh)) scale(calc(1 - var(--p) * .12));opacity:calc(1 - var(--p) * .9);animation:in-seal 1s var(--ease) .2s both}
-@keyframes in-seal{from{opacity:0;transform:translateY(8px)}}
+.sello{position:relative;transform:translateY(calc(var(--p) * -4vh)) scale(calc(1 - var(--p) * .12));opacity:calc(1 - var(--p) * .9)}
+.seal{width:clamp(150px,min(30vw,30vh),300px);height:auto;display:block}
 @keyframes in-up{from{opacity:0;transform:translateY(8px)}}
 .eyebrow{color:var(--gold-text);margin:0 0 22px;padding-bottom:18px;border-bottom:1px solid color-mix(in srgb,var(--gold) 45%,transparent);display:inline-block}
 h1{font-family:var(--serif);font-size:clamp(54px,min(8vw,12vh),112px);line-height:.94;letter-spacing:-.018em;font-weight:400;margin:0;color:var(--fg)}
 /* Portada: el nombre del notario es el título; nunca se corta una palabra */
 .hero h1{font-size:clamp(44px,min(5.4vw,9vh),70px);line-height:1.02;text-wrap:balance;overflow-wrap:normal;word-break:normal;hyphens:none}
-.lema{font-size:clamp(22px,2.6vw,34px);font-weight:500;line-height:1.2;letter-spacing:-.012em;color:var(--muted);margin:clamp(12px,2.2vh,20px) 0 0;max-width:22ch;text-wrap:balance}
+.lema{font-size:clamp(22px,2.6vw,34px);font-weight:500;line-height:1.2;letter-spacing:-.012em;color:var(--muted);margin:clamp(12px,2.2vh,20px) auto 0;max-width:30ch;text-wrap:balance}
 .hero .eyebrow{text-wrap:balance}
 .cta{display:flex;gap:28px;align-items:center;margin-top:clamp(22px,4.5vh,40px);flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--radius);font-size:17px;font-weight:500;transition:background .16s var(--ease),border-color .16s var(--ease)}
@@ -291,8 +290,8 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   .reveal{transform:none;filter:none;transition:opacity .8s ease;transition-delay:calc(var(--i,0) * 90ms)}
   .btn{transition:none}
   .hero__copy,.hero__copy>*{transform:none;filter:none}
-  .seal{transform:none}
-  .seal,.hero__copy>*{animation-name:aparecer}
+  .sello{transform:none}
+  .hero__copy>*{animation-name:aparecer}
 }
 @keyframes aparecer{from{opacity:0}}
 
@@ -306,12 +305,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   .nav__links a{padding:14px 0;border-bottom:1px solid var(--line)}
   .nav__tools{margin-left:auto}
   .cols,.contact,.svc__in,.calc__wrap,.faq,.tl,.tp__cols{grid-template-columns:1fr}
-  .hero__grid{grid-template-columns:1fr;text-align:center;justify-items:center;gap:clamp(18px,3.5svh,32px)}
-  /* En pantalla angosta el nombre va primero y el sello (decorativo) debajo, más pequeño */
-  .hero__seal{justify-items:center}
   .seal{width:clamp(130px,min(44vw,24svh),230px)}
-  .hero__copy .cta{justify-content:center}
-  .hero__copy .lema{margin-left:auto;margin-right:auto}
   .hero h1{font-size:clamp(38px,11vw,56px)}
   .foot__in{grid-template-columns:1fr}
   .svc__head{position:static}
@@ -675,3 +669,41 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 /* Apariciones: solo desvanecido y un desplazamiento corto, sin desenfoque */
 .reveal{transform:translateY(20px);filter:none}
 @media (prefers-reduced-motion:reduce){.reveal{transform:none}.btn:active,.act:active{transform:none}}
+
+/* ===== Portada centrada al estilo Apple: el nombre arriba y el sello debajo, como el producto =====
+   Efectos adaptados de better-design: animate-text («mask-reveal-up»), apple-hello-effect, text-swap y metal-fx-gold. */
+.hero__copy .cta{justify-content:center}
+/* Título: cada palabra sube desde su máscara */
+.hero__copy>h1{animation:none}
+.hero h1 .palabra{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.1em;margin-bottom:-.1em}
+.hero h1 .palabra>span{display:inline-block;animation:subir .76s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(.2s + var(--i,0) * 90ms)}
+@keyframes subir{from{opacity:0;transform:translateY(100%);filter:blur(6px)}}
+/* Frase que rota una sola vez y termina en el lema */
+.lema{display:grid}
+.lema>p{grid-area:1/1;margin:0;transition:opacity .3s ease-out,transform .3s ease-out,filter .3s ease-out}
+.lema__rota{color:var(--accent)}
+.lema__rota:empty{display:none}
+.lema>p.fuera{opacity:0;transform:translateY(-8px);filter:blur(2px)}
+.lema>p.antes{opacity:0;transform:translateY(8px);filter:blur(2px);transition:none}
+/* Sello: un trazo recorre el borde mientras el sello se revela en barrido, y al final pasa un brillo miel */
+@property --barrido{syntax:"<angle>";inherits:true;initial-value:370deg}
+.sello{animation:barrer 1.5s cubic-bezier(.65,0,.35,1) .35s both}
+.sello .seal{-webkit-mask-image:conic-gradient(#000 calc(var(--barrido) - 10deg),transparent var(--barrido));mask-image:conic-gradient(#000 calc(var(--barrido) - 10deg),transparent var(--barrido))}
+@keyframes barrer{from{--barrido:0deg}to{--barrido:370deg}}
+.sello__trazo{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.sello__trazo circle{fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:trazar 1.5s cubic-bezier(.65,0,.35,1) .35s forwards,apagar .5s ease 1.85s forwards}
+@keyframes apagar{to{opacity:0}}
+.sello__brillo{position:absolute;inset:0;pointer-events:none;
+  -webkit-mask:url(../assets/logo/logo-notaria41.svg) center/contain no-repeat;mask:url(../assets/logo/logo-notaria41.svg) center/contain no-repeat;
+  background:linear-gradient(105deg,transparent 40%,rgba(246,222,160,.95) 50%,transparent 60%) 0 0/300% 100% no-repeat;background-position:100% 0;opacity:0;
+  animation:brillo 1.6s ease-in-out 2s both}
+.sello:hover .sello__brillo{animation:brillo-otra 1.6s ease-in-out both}
+@keyframes brillo{0%{opacity:1;background-position:100% 0}100%{opacity:1;background-position:0 0}}
+@keyframes brillo-otra{0%{opacity:1;background-position:100% 0}100%{opacity:1;background-position:0 0}}
+@media (prefers-reduced-motion:reduce){
+  .hero h1 .palabra>span{animation-name:aparecer}
+  .lema>p.fuera,.lema>p.antes{transform:none;filter:none}
+  .sello{animation:aparecer 1s ease .2s both}
+  .sello__trazo,.sello__brillo{display:none}
+}
+@media print{.sello__trazo,.sello__brillo{display:none}}

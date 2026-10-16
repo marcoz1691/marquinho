@@ -251,7 +251,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var corto = N.notarioCorto || N.notario || N.nombre;
     $("#brandName").textContent = corto;
     $("#heroNotario").textContent = N.cargo || N.nombre;
-    $("#heroTitle").textContent = N.notario || N.nombre;
+    tituloPortada(N.notario || N.nombre);
     if (N.eslogan) $("#heroLema").textContent = N.eslogan;
     document.title = corto + " · " + N.nombre;
     rows += "<div><h3>Dirección</h3><p>" + esc(N.direccion) + "</p></div>";
@@ -372,6 +372,35 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     window.addEventListener("hashchange", abrirHash);
     abrirHash();
   }
+
+  /* ---------- Portada ---------- */
+
+  // El nombre del notario se parte en palabras para que cada una suba desde su máscara.
+  function tituloPortada(t) {
+    var h = $("#heroTitle"), limpio = String(t || "").trim();
+    if (!limpio || h.textContent.replace(/\s+/g, " ").trim() === limpio) return;
+    h.innerHTML = limpio.split(/\s+/).map(function (w, i) { return '<span class="palabra" style="--i:' + i + '"><span>' + esc(w) + "</span></span>"; }).join(" ");
+  }
+
+  // Las frases pasan una sola vez y la portada termina en el lema, que es el texto que leen los lectores de pantalla.
+  function rotarLema() {
+    var fija = $("#heroLema"), rota = $("#heroRota");
+    if (!fija || !rota) return;
+    var frases = ["Poderes.", "Escrituras.", "Herencias.", "Declaraciones."], i = 0;
+    function entrar(el) { el.classList.remove("fuera"); el.classList.add("antes"); void el.offsetWidth; el.classList.remove("antes"); }
+    rota.textContent = frases[0];
+    fija.classList.add("fuera");
+    function paso() {
+      i++;
+      rota.classList.add("fuera");
+      setTimeout(function () {
+        if (i < frases.length) { rota.textContent = frases[i]; entrar(rota); setTimeout(paso, 1000); }
+        else { rota.textContent = ""; entrar(fija); }
+      }, 300);
+    }
+    setTimeout(paso, 1300);
+  }
+  rotarLema();
 
   /* ---------- Escenas de scroll ---------- */
 

@@ -51,12 +51,24 @@ test.describe("Contacto y datos de la notaría", () => {
     expect(boton.y + boton.height).toBeLessThanOrEqual(844);
   });
 
-  test("CF-99 en pantalla ancha el nombre del notario va a la izquierda y el sello a la derecha", async ({ page }) => {
+  test("CF-99 en pantalla ancha la portada va centrada: el nombre arriba y el sello debajo, todo en la primera pantalla", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await abrirPortada(page);
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
     const nombre = await page.locator("#heroTitle").boundingBox();
-    const sello = await page.locator(".hero__seal").boundingBox();
-    expect(nombre.x + nombre.width).toBeLessThanOrEqual(sello.x);
+    const sello = await page.locator(".hero__seal .sello").boundingBox();
+    expect(nombre.y + nombre.height).toBeLessThanOrEqual(sello.y);
+    expect(Math.abs(nombre.x + nombre.width / 2 - 640)).toBeLessThanOrEqual(2);
+    expect(Math.abs(sello.x + sello.width / 2 - 640)).toBeLessThanOrEqual(2);
+    expect(sello.y + sello.height).toBeLessThanOrEqual(800);
+  });
+
+  test("la frase de la portada rota una sola vez y termina en el lema", async ({ page }) => {
+    await abrirPortada(page);
+    await expect(page.locator("#heroRota")).toHaveText(/\S/);
+    await expect(page.locator("#heroRota")).toBeEmpty({ timeout: 8000 });
+    await expect(page.locator("#heroLema")).not.toHaveClass(/fuera/);
+    await expect(page.locator("#heroRota")).toHaveAttribute("aria-hidden", "true");
   });
 
   test("CF-71 teléfonos y correo son enlaces que se pueden pulsar", async ({ page }) => {
