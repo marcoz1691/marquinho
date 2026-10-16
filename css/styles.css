@@ -39,7 +39,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-
 /* Textura de grano muy sutil para que las superficies no se vean planas */
 h1,h2,h3{text-wrap:balance}
 /* Etiquetas: Archivo 600 en mayúsculas con tracking amplio */
-.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out span,.tp__precio span{font-family:var(--font);font-weight:600;font-size:12.5px;letter-spacing:.18em;text-transform:uppercase}
+.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span{font-family:var(--font);font-weight:600;font-size:12.5px;letter-spacing:.18em;text-transform:uppercase}
 p{text-wrap:pretty}
 .ph,.ph-fill{line-height:1;vertical-align:-.12em}
 a{color:var(--accent);text-decoration:none}
@@ -226,7 +226,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .calc select,.calc input{font:inherit;font-size:17px;padding:13px 14px;border-radius:var(--r-input);border:1px solid var(--line);background:var(--bg);color:var(--fg);width:100%;transition:border-color .2s,box-shadow .2s}
 .calc select:focus,.calc input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
 .calc__out{border-top:1px solid var(--line);padding-top:24px;display:grid;gap:14px}
-.calc__out span{display:block;font-size:13px;color:var(--muted)}
+.calc__out div>span{display:block;font-size:13px;color:var(--muted)}
 .calc__total strong{font-family:var(--serif);font-weight:400;font-size:clamp(56px,7vw,84px);line-height:.9;color:var(--accent);letter-spacing:-.01em}
 .calc__split{display:flex;flex-wrap:wrap;gap:14px 40px}
 .calc__split strong{font-family:var(--mono);font-size:18px;font-weight:500}
@@ -361,7 +361,7 @@ h2,.legal h2{font-size:var(--t-h2);line-height:1.06;letter-spacing:-.025em}
 .svc__desc,.tp__desc,.faq__item p,.contact__info p,.body p,.legal p{font-size:var(--t-body);line-height:1.6}
 .note,.hint,.estado,.foot{font-size:var(--t-small)}
 /* Etiquetas: un único estilo pequeño en mayúsculas */
-.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out span,.tp__precio span{font-size:var(--t-label);letter-spacing:.12em;font-weight:600}
+.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span{font-size:var(--t-label);letter-spacing:.12em;font-weight:600}
 /* Cifras con la misma letra, alineadas */
 .tl__precio,.tp__precio strong,.calc__split strong,.calc__total strong,.price,.contact__info a[href^="tel:"]{font-family:var(--font);font-variant-numeric:tabular-nums}
 .tl__precio{font-size:13px}
@@ -585,7 +585,7 @@ h1,.no-encontrada h1,.legal h1{line-height:1.05;letter-spacing:-.028em}
 h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 .words{line-height:1.1;letter-spacing:-.022em}
 .words span{opacity:.22}
-.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out span,.tp__precio span,.calc__hab legend{letter-spacing:-.005em;text-transform:none}
+.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span,.calc__hab legend{letter-spacing:-.005em;text-transform:none}
 .kicker{font-size:17px;color:var(--accent)}
 .tp__cat,.contact__info h3{color:var(--muted)}
 .calc label{font-weight:500}

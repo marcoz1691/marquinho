@@ -25,6 +25,15 @@ test.describe("Calculadora de tarifas", () => {
     await expect(page.locator("#calcTramite optgroup").first()).toHaveAttribute("label", "Poderes");
   });
 
+  test("el total se ve en una sola línea y con su tamaño grande aunque las cifras salten al cambiar", async ({ page }) => {
+    await page.selectOption("#calcTramite", "poder-natural");
+    await resultado(page, "$66,52");
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    const m = await page.locator("#rTotal").evaluate((el) => ({ alto: el.getBoundingClientRect().height, letra: parseFloat(getComputedStyle(el).fontSize), cifra: el.querySelector(".cifra") && getComputedStyle(el.querySelector(".cifra")).fontSize }));
+    expect(m.alto).toBeLessThan(m.letra * 1.6);
+    if (m.cifra) expect(parseFloat(m.cifra)).toBe(m.letra);
+  });
+
   test("CF-52 calcula una tarifa porcentual del SBU con IVA", async ({ page }) => {
     await page.selectOption("#calcTramite", "poder-natural");
     await resultado(page, "$66,52", "$57,84", "$8,68");
