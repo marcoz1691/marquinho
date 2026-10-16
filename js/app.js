@@ -425,7 +425,9 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var list = [].slice.call(document.querySelectorAll("[data-scene]"));
     var words = $("#words"), spans = [];
     if (words) {
-      words.innerHTML = words.textContent.trim().split(/\s+/).map(function (w) { return "<span>" + esc(w) + "</span> "; }).join("");
+      // Cada oración empieza en su propia línea.
+      var palabras = words.textContent.trim().split(/\s+/);
+      words.innerHTML = palabras.map(function (w, i) { return "<span>" + esc(w) + "</span>" + (/[.!?]$/.test(w) && i < palabras.length - 1 ? "<br>" : " "); }).join("");
       spans = [].slice.call(words.children);
     }
     var ticking = false;
@@ -444,8 +446,16 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
       });
     }
-    window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
-    window.addEventListener("resize", frame);
+    // El botón flotante del chat se aparta mientras la parte baja de la calculadora pasa por su esquina, para no tapar cifras ni avisos.
+    var calc = $("#calc");
+    function lanzador() {
+      if (!calc) return;
+      var r = calc.getBoundingClientRect();
+      document.body.classList.toggle("lanzador-aparte", r.top < innerHeight - 90 && r.bottom > innerHeight - 110);
+    }
+    window.addEventListener("scroll", function () { lanzador(); if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
+    window.addEventListener("resize", function () { lanzador(); frame(); });
+    lanzador();
     frame();
   }
 

@@ -363,3 +363,13 @@ test("el botón de tema cambia a oscuro y la elección se recuerda al recargar",
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("#tema")).toHaveAttribute("aria-label", "Cambiar a tema claro");
 });
+
+test("el botón del chat se aparta mientras la calculadora pasa por la esquina inferior y vuelve después @movil", async ({ page }) => {
+  await abrirPortada(page);
+  const lanzador = page.locator("#chatAbrir");
+  await expect(lanzador).toBeVisible();
+  await page.evaluate(() => { const r = document.querySelector("#calc").getBoundingClientRect(); scrollTo(0, r.bottom + scrollY - innerHeight + 60); });
+  await expect(lanzador).toBeHidden();
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect(lanzador).toBeVisible();
+});

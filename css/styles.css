@@ -742,3 +742,7 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 }
 /* El teléfono de ejemplo ya no se queda fijo: al bajar tapaba el cierre de la sección */
 .wa-ejemplo{position:static}
+/* El botón del chat se aparta mientras la calculadora pasa por la esquina inferior */
+.chat-lanzador{transition:transform .3s var(--ease),opacity .3s var(--ease),visibility 0s linear 0s}
+.lanzador-aparte .chat-lanzador{opacity:0;transform:translateY(16px);visibility:hidden;pointer-events:none;transition:transform .3s var(--ease),opacity .3s var(--ease),visibility 0s linear .3s}
+@media (prefers-reduced-motion:reduce){.lanzador-aparte .chat-lanzador{transform:none}}
