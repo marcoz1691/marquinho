@@ -232,3 +232,68 @@ header .ver-como select option{color:#1C2620;background:#fff}
 body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:calc(100vh - 54px - 61px)}
 @media(max-width:600px){body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:auto}}
 .cargando small{max-width:320px;text-align:center;font-size:12px;overflow-wrap:anywhere}
+
+/* ===== Celular: el panel como una app ===== */
+.volver,.ver-lado-btn,.cerrar-lado,.abrir-precio{display:none}
+main,#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV{height:calc(100dvh - var(--alto-cab,54px))}
+body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:calc(100dvh - var(--alto-cab,54px))}
+@media(max-width:900px){
+  /* Conversaciones: primero la lista; al tocar una, el chat a pantalla completa con la respuesta abajo */
+  main{display:block}
+  #lista{height:100%;max-height:none;border-right:0;background:var(--card)}
+  .conv-abierta #lista,body:not(.conv-abierta) #detalle{display:none}
+  #detalle{display:flex;flex-direction:column;height:100%;overflow:hidden}
+  .chat{flex:1;min-height:0}
+  .top{flex-wrap:nowrap;padding:10px 12px;gap:8px;background:var(--card)}
+  .top h2{font-size:16px;line-height:1.25;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .top .btn,.top .tag{flex:none}
+  .top #devolver{padding:0 12px;min-height:34px;font-size:13px}
+  .volver{display:grid;place-items:center;flex:none;width:36px;height:36px;margin-left:-4px;border:0;border-radius:50%;background:none;color:var(--acc);font-size:30px;line-height:1}
+  .volver:hover{background:var(--soft)}
+  .ver-lado-btn{display:inline-flex;min-height:34px;padding:0 12px;font-size:13px}
+  #mensajes{padding:14px 12px}
+  .m{max-width:88%}
+  form.resp{padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--card)}
+  form.resp textarea{font-size:16px}
+  .aviso-web{margin:10px 12px calc(10px + env(safe-area-inset-bottom))}
+  /* Citas y documentos: una hoja que sube desde abajo */
+  .lado{display:none}
+  .ver-lado .lado{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:60;max-height:78dvh;overflow:auto;border:0;border-radius:20px 20px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -20px 50px -20px rgba(0,0,0,.45)}
+  .cerrar-lado{display:inline-flex;justify-self:end;min-height:34px;padding:0 14px;font-size:13px}
+  .ficha .acc{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}
+  .ficha .acc button{min-height:40px}
+}
+@media(max-width:600px){
+  /* Encabezado compacto: el selector «Ver como» sin cortar y las pestañas con un borde que avisa que se deslizan */
+  header .ver-como select{max-width:none;width:auto;font-size:13px;padding-right:24px}
+  header button#salir{padding:6px 12px}
+  header .tabs{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding-right:24px}
+  /* Trámites: cada trámite muestra nombre y total; los campos de precio se abren con «Editar precio» */
+  .abrir-precio{display:inline-flex;margin-top:8px;min-height:36px;padding:0 14px;font-size:13px}
+  .precio-fila:not(.precio-fila--abierta):not(.precio-fila--cambiada) .precio-campos>:not(output){display:none}
+  .precio-fila{padding:14px}
+  .precios-top{padding:14px}
+  /* Métricas: dos tarjetas por fila, más compactas */
+  .metricas-tarjetas{grid-template-columns:1fr 1fr;gap:10px}
+  .metricas-tarjetas>*{padding:14px!important}
+  .metricas-tarjetas h3{font-size:14px;margin:0 0 4px}
+  .metrica-numero{font-size:24px}
+  .metricas-tarjetas p{font-size:12px}
+  /* Agenda: botones de cada cita en una fila pareja */
+  .ag-cita{padding:12px}
+}
+.metricas-tarjetas .funcion-card{margin:0}
+@media(max-width:900px){
+  .top{flex-wrap:wrap;row-gap:8px}
+  .top h2{flex:1 1 calc(100% - 52px);white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .top .btn,.top .tag{margin-left:40px}
+  .top .btn~.btn,.top .tag~.btn{margin-left:0}
+}
+@media(max-width:900px){.top .btn,.top .tag{margin-left:0}}
+@media(max-width:600px){
+  .precios-top{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .precios-top h3,.precios-top .btn,.precios-top .aviso-sbu{grid-column:1/-1}
+  .precios-top label{max-width:none}
+  .precios-top input{width:100%}
+}
+header .ver-como select{max-width:none}
