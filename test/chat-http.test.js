@@ -4,7 +4,7 @@ import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
 
 const SESION = "s_7f3a9c2e41b84d0f";
 const pedir = (body, ip = "190.152.10.20") => new Request("https://notaria41.vercel.app/api/chat", {
-  method: "POST", headers: { "Content-Type": "application/json", "x-forwarded-for": ip + ", 10.0.0.1" }, body: typeof body === "string" ? body : JSON.stringify(body)
+  method: "POST", headers: { "Content-Type": "application/json", "x-forwarded-for": ip + ", 10.0.0.1" }, body: typeof body === "string" ? body : JSON.stringify({ aceptaTerminos: true, aceptaDatos: true, ...body })
 });
 
 function preparar({ respuestas = ["¡Hola! ¿En qué te ayudo?"], limites } = {}) {
@@ -82,4 +82,21 @@ it("apaga el chat y respeta el interruptor de documentos en tarjetas", async () 
   await almacen.guardarAjuste("funcion.documentos", "0", "admin");
   asistente.atender.mockImplementation(async (m, { eventos }) => { eventos.push({ tipo: "cita", resumen: { codigo: "1234" } }); return ["ok"]; });
   expect((await (await m.POST(pedir({ sesion: SESION, texto: "hola" }))).json()).tarjetas[0].subirDocumentos).toBe(false);
+});
+
+it("sin las dos casillas no se atiende el chat; con ellas queda una sola constancia por conversación", async () => {
+  const { m, asistente, almacen } = preparar();
+  for (const falta of [{ aceptaTerminos: false }, { aceptaDatos: false }]) {
+    const r = await m.POST(pedir({ sesion: SESION, texto: "hola", ...falta }));
+    expect(r.status).toBe(400);
+    expect(await r.json()).toMatchObject({ aceptacion: true });
+  }
+  expect(asistente.atender).not.toHaveBeenCalled();
+  await m.POST(pedir({ sesion: SESION, texto: "hola" }));
+  await m.POST(pedir({ sesion: SESION, texto: "otra pregunta" }));
+  const registros = await almacen.consentimientos();
+  expect(registros).toHaveLength(1);
+  expect(registros[0]).toMatchObject({ canal: "chat-web", aviso: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), terminos: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) });
+  expect(registros[0].titular).toMatch(/^[0-9a-f]{32}$/);
+  expect(JSON.stringify(registros)).not.toContain(SESION);
 });

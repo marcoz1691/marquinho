@@ -12,7 +12,7 @@ export function htmlCita(r) {
     (r.aviso ? '<p class="cita-aviso">' + esc(r.aviso) + '</p>' : '') +
     '<div class="cita-botones"><button type="button" data-calendario>Agregar a mi calendario</button>' +
     (r.subirDocumentos ? '<button type="button" data-subir aria-expanded="false">Subir documentos</button>' : '') + '</div>' +
-    (r.subirDocumentos ? '<form class="cita-subida" hidden novalidate><label>Archivo<input type="file" name="archivo" accept="application/pdf,image/jpeg,image/png,image/webp"></label><label>Descripción<input name="descripcion" minlength="2" maxlength="120" required></label><label class="cita-consentimiento"><input type="checkbox" name="acepta"> <span>Acepto el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a></span></label><button type="submit">Enviar</button><progress hidden aria-label="Progreso del envío"></progress><p class="cita-estado" aria-live="polite"></p><ul class="cita-documentos" aria-label="Documentos enviados"></ul></form>' : '');
+    (r.subirDocumentos ? '<form class="cita-subida" hidden novalidate><label>Archivo<input type="file" name="archivo" accept="application/pdf,image/jpeg,image/png,image/webp"></label><label>Descripción<input name="descripcion" minlength="2" maxlength="120" required></label><label class="cita-consentimiento"><input type="checkbox" name="aceptaTerminos"> <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos y condiciones</a>.</span></label><label class="cita-consentimiento"><input type="checkbox" name="aceptaDatos"> <span>Autorizo el tratamiento de mis datos según el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a>, incluido su procesamiento por proveedores con servidores fuera del Ecuador.</span></label><button type="submit">Enviar</button><progress hidden aria-label="Progreso del envío"></progress><p class="cita-estado" aria-live="polite"></p><ul class="cita-documentos" aria-label="Documentos enviados"></ul></form>' : '');
 }
 const base64Archivo = (file) => new Promise((resolver, rechazar) => {
   const lector = new FileReader();
@@ -59,7 +59,8 @@ export function tarjetaCita(resumen, sesion) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (enviando || cargando) return;
-    if (!form.elements.acepta.checked) { estado.textContent = "Acepta el aviso de privacidad para enviar documentos."; return; }
+    if (!form.elements.aceptaTerminos.checked) { estado.textContent = "Acepta los términos y condiciones para enviar documentos."; form.elements.aceptaTerminos.focus(); return; }
+    if (!form.elements.aceptaDatos.checked) { estado.textContent = "Autoriza el tratamiento de tus datos para enviar documentos."; form.elements.aceptaDatos.focus(); return; }
     const archivo = form.elements.archivo.files[0], descripcion = form.elements.descripcion.value.trim();
     if (!archivo) { estado.textContent = "Elige un archivo para enviar."; return; }
     if (descripcion.length < 2 || descripcion.length > 120) { estado.textContent = "Escribe una descripción de 2 a 120 caracteres."; return; }
@@ -71,7 +72,7 @@ export function tarjetaCita(resumen, sesion) {
       if (file.size > 3 * 1024 * 1024) throw new Error("El archivo pesa más de 3 MB. Elige uno más pequeño o una foto.");
       const base64 = await base64Archivo(file);
       estado.textContent = "Enviando tu documento…";
-      const data = await pedir("/api/documentos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sesion, ticket: resumen.codigo, descripcion, nombre: file.name, base64, aceptaAviso: true }) });
+      const data = await pedir("/api/documentos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sesion, ticket: resumen.codigo, descripcion, nombre: file.name, base64, aceptaTerminos: true, aceptaDatos: true }) });
       pintarDocumentos(data.documentos); estado.textContent = "Documento enviado.";
     } catch (err) { estado.textContent = err.message; }
     finally { enviando = false; enviar.disabled = false; progreso.hidden = true; }

@@ -3,9 +3,11 @@ import { enviarChat as enviarMensaje } from "./funciones.js";
 // Página del asistente a pantalla completa (diseño tipo LibreChat).
 import { esc, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chats, chatActual, elegirChat, crearChat, agregarMensaje, borrarChat, formato } from "./chat-nucleo.js";
 import { tarjetaCita } from "./cita-tarjeta.js";
+import { montarAceptacion } from "./aceptacion.js";
 
 const $ = (s) => document.querySelector(s);
 const hilo = $("#hilo"), mensajes = $("#mensajes"), form = $("#form"), campo = $("#texto"), boton = $("#enviar");
+const aceptacion = montarAceptacion(form, "aceptacion");
 const funciones = await cargarFunciones();
 if (!funciones.sitio) location.replace("mantenimiento.html");
 function apagado() { funciones.chatWeb = false; document.querySelectorAll(".ac-lado, .ac-main, .ac-movil, #velo").forEach(el => { el.hidden = true; }); $("#asistenteApagado").hidden = false; }
@@ -72,6 +74,7 @@ function agregar(m, sesion = chat.sesion) {
 async function enviar(texto) {
   texto = texto.trim();
   if (!texto || enviando) return;
+  if (!aceptacion.puedeEnviar()) { campo.value = texto; campo.dispatchEvent(new Event("input")); return; }
   enviando = true; boton.disabled = true;
   agregar({ autor: "cliente", texto });
   const pensando = document.createElement("article");
@@ -80,6 +83,7 @@ async function enviar(texto) {
   mensajes.appendChild(pensando); abajo();
   const sesion = chat.sesion;
   const r = await enviarMensaje(sesion, texto);
+  if (r.aceptacion) aceptacion.pedirOtraVez();
   pensando.remove();
   if (r.apagada) apagado();
   if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);

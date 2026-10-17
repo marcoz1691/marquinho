@@ -32,7 +32,8 @@ async function elegirHora(page) {
 async function datos(page) {
   await page.getByLabel("Nombre completo", { exact: true }).fill("Ana Pérez");
   await page.getByLabel("Celular de Ecuador", { exact: true }).fill("0991234567");
-  await page.locator("#aceptaAviso").check();
+  await page.locator("#aceptaTerminos").check();
+  await page.locator("#aceptaDatos").check();
 }
 const noSe = (page) => page.getByRole("radio", { name: /Aún no sé cuál es/ }).check();
 
@@ -45,7 +46,7 @@ test("flujo completo: marca el trámite en la lista y entrega ticket y calendari
   await page.getByRole("button", { name: "Confirmar mi cita", exact: true }).click();
   await expect(page.getByText("Ticket 4321", { exact: true })).toBeVisible();
   await expect(page.getByText("Cédula original", { exact: true })).toBeVisible();
-  expect(pedidos[0]).toMatchObject({ tramiteId: "poder-natural", fecha: "2026-10-12", hora: "09:00", aceptaAviso: true, sitio: "" });
+  expect(pedidos[0]).toMatchObject({ tramiteId: "poder-natural", fecha: "2026-10-12", hora: "09:00", aceptaTerminos: true, aceptaDatos: true, sitio: "" });
   const descarga = page.waitForEvent("download");
   await page.getByRole("button", { name: "Agregar a mi calendario", exact: true }).click();
   expect((await descarga).suggestedFilename()).toBe("cita-4321.ics");
@@ -130,7 +131,7 @@ test("muestra errores junto a los campos", async ({ page }) => {
   await page.locator("#confirmar").click();
   await expect(page.locator("#error-nombre")).toContainText("Escribe tu nombre");
   await expect(page.locator("#error-celular")).toContainText("0991234567");
-  await expect(page.locator("#error-aceptaAviso")).toContainText("Acepta");
+  await expect(page.locator("#error-aceptaTerminos")).toContainText("Acepta");
   await expect(page.locator("#nombre")).toBeFocused();
 });
 
@@ -161,8 +162,14 @@ test("agenda solo con teclado", async ({ page }) => {
   await page.keyboard.type("Ana Pérez");
   await page.keyboard.press("Tab");
   await page.keyboard.type("0991234567");
+  // Nota, casilla de términos (y su enlace), casilla de datos (y su enlace) y el botón.
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
+  await expect(page.locator("#aceptaTerminos")).toBeFocused();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#aceptaDatos")).toBeFocused();
   await page.keyboard.press("Space");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");

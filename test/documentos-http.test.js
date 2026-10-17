@@ -1,14 +1,14 @@
+import { AVISO_PRIVACIDAD, TERMINOS } from "../js/legal.js";
 import { describe, it, expect, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { crearManejadorDocumentos } from "../api/_lib/documentos-http.js";
 import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
-import { AVISO_PRIVACIDAD } from "../api/_lib/privacidad.js";
 
 const MENSAJE_SIN_CITA = "No encuentro una cita vigente con ese ticket. Si la cambiaste, usa la tarjeta más reciente.";
 const SESION = "s_7f3a9c2e41b84d0f", OTRA = "s_otra9c2e41b84d0f";
 const AHORA = Date.parse("2026-10-08T02:00:00Z"); // En Quito aún es 7 de octubre.
 const PDF = Buffer.from("%PDF-1.7").toString("base64");
-const cuerpo = { sesion: SESION, ticket: "4821", descripcion: " Cédula del vendedor ", nombre: "cedula.pdf", base64: PDF, aceptaAviso: true };
+const cuerpo = { sesion: SESION, ticket: "4821", descripcion: " Cédula del vendedor ", nombre: "cedula.pdf", base64: PDF, aceptaTerminos: true, aceptaDatos: true };
 const pedir = (b = cuerpo, ip = "190.152.10.20") => new Request("https://notaria41.vercel.app/api/documentos", {
   method: "POST", headers: { "Content-Type": "application/json", "x-forwarded-for": ip + ", 10.0.0.1" }, body: typeof b === "string" ? b : JSON.stringify(b)
 });
@@ -29,11 +29,11 @@ describe("API de documentos web", () => {
     const { m } = await preparar();
     expect((await m.POST(pedir(b))).status).toBe(400);
   });
-  it.each([false, undefined, "true", 1])("exige consentimiento explícito: %j", async (aceptaAviso) => {
+  it.each([false, undefined, "true", 1].flatMap((v) => [{ aceptaTerminos: v }, { aceptaDatos: v }]))("exige las dos aceptaciones explícitas: %j", async (falta) => {
     const { m } = await preparar();
-    const r = await m.POST(pedir({ ...cuerpo, aceptaAviso }));
+    const r = await m.POST(pedir({ ...cuerpo, ...falta }));
     expect(r.status).toBe(400);
-    expect(await r.json()).toEqual({ error: "Acepta el aviso de privacidad para enviar documentos." });
+    expect((await r.json()).error).toBe("aceptaTerminos" in falta ? "Acepta los términos y condiciones para enviar documentos." : "Autoriza el tratamiento de tus datos para enviar documentos.");
   });
   it.each([" ", "a", "a".repeat(121), null, 42])("rechaza descripción inválida: %j", async (descripcion) => {
     const { m, almacen } = await preparar();
@@ -51,7 +51,8 @@ describe("API de documentos web", () => {
     expect(doc).toMatchObject({ conversacionId: conv.id, mime: "application/pdf", tramiteId: "poder-natural" });
     expect(doc.mediaId).toMatch(/^web-[0-9a-f-]{36}$/);
     expect(Buffer.from(doc.bytes)).toEqual(Buffer.from("%PDF-1.7"));
-    expect(await almacen.conversacionPorId(conv.id)).toMatchObject({ consentimiento: true, consentimientoEn: new Date(AHORA).toISOString(), consentimientoTexto: "Casilla del aviso de privacidad en la web (ticket 4821)", consentimientoAviso: "2026-10-07" });
+    expect(await almacen.conversacionPorId(conv.id)).toMatchObject({ consentimiento: true, consentimientoEn: new Date(AHORA).toISOString(), consentimientoTexto: "Casillas de la web: términos y tratamiento de datos (ticket 4821)", consentimientoAviso: AVISO_PRIVACIDAD });
+    expect(await almacen.consentimientos()).toEqual([expect.objectContaining({ canal: "documentos", aviso: AVISO_PRIVACIDAD, terminos: TERMINOS, creado: new Date(AHORA).toISOString() })]);
     expect(avisar).toHaveBeenCalledWith("Documento recibido en la web (ticket 4821, Ana Pérez): Cédula del vendedor. Revísalo en el panel.");
     const get = await m.GET(leer());
     expect(get.status).toBe(200);
@@ -187,7 +188,7 @@ describe("API de documentos web", () => {
   });
   it("respeta el orden: consentimiento, descripción, cuota, cita, base64", async () => {
     const { m } = await preparar({ limites: { porSesion: 0, porIp: 0 } });
-    expect((await m.POST(pedir({ ...cuerpo, aceptaAviso: false, descripcion: "", base64: "?" }))).status).toBe(400);
+    expect((await m.POST(pedir({ ...cuerpo, aceptaDatos: false, descripcion: "", base64: "?" }))).status).toBe(400);
     expect((await m.POST(pedir({ ...cuerpo, descripcion: "", base64: "?" }))).status).toBe(400);
     expect((await m.POST(pedir({ ...cuerpo, ticket: "0000", base64: "?" }))).status).toBe(429);
     const normal = await preparar();

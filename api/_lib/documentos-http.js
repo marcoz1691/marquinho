@@ -4,6 +4,7 @@ import { registrar } from "./metricas.js";
 import { createHash, randomUUID } from "node:crypto";
 import { tipoArchivo } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
+import { registrarConsentimiento } from "./consentimiento.js";
 
 // Vercel rechaza pedidos de más de 4,5 MB: 3 MB de archivo son 4 MB en base64, que caben con el resto del JSON.
 const HORA = 3600 * 1000, MAX_BYTES = 3 * 1024 * 1024;
@@ -32,7 +33,8 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       let b;
       try { b = await request.json(); } catch { return json({ error: "Solicitud inválida" }, 400); }
       if (!sesionValida(b?.sesion)) return json({ error: "Sesión inválida" }, 400);
-      if (b.aceptaAviso !== true) return json({ error: "Acepta el aviso de privacidad para enviar documentos." }, 400);
+      if (b.aceptaTerminos !== true) return json({ error: "Acepta los términos y condiciones para enviar documentos." }, 400);
+      if (b.aceptaDatos !== true) return json({ error: "Autoriza el tratamiento de tus datos para enviar documentos." }, 400);
       // Una sola línea y sin caracteres de control: la descripción llega tal cual al aviso del personal.
       const descripcion = typeof b.descripcion === "string" ? b.descripcion.replace(/[\s\u0000-\u001f\u007f]+/g, " ").trim() : "";
       if (descripcion.length < 2 || descripcion.length > 120) return json({ error: "Describe el documento con entre 2 y 120 caracteres." }, 400);
@@ -63,8 +65,9 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       await registrar(almacen, "doc.recibido.web", 1, t);
       if (!conv.consentimiento) await almacen.actualizarConversacion(conv.id, {
         consentimiento: true, consentimientoEn: new Date(t).toISOString(),
-        consentimientoTexto: `Casilla del aviso de privacidad en la web (ticket ${b.ticket})`, consentimientoAviso: AVISO_PRIVACIDAD
+        consentimientoTexto: `Casillas de la web: términos y tratamiento de datos (ticket ${b.ticket})`, consentimientoAviso: AVISO_PRIVACIDAD
       });
+      await registrarConsentimiento(almacen, { canal: "documentos", titular: conv.telefono, texto: `Casillas al enviar un documento (ticket ${b.ticket})`, t: new Date(t) });
       await avisar(`Documento recibido en la web (ticket ${b.ticket}, ${cita.nombre || conv.nombre || ""}): ${descripcion}. Revísalo en el panel.`);
       return json({ ok: true, documentos: lista(await almacen.documentos(conv.id)) });
     },
