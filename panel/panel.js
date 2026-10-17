@@ -658,7 +658,11 @@ async function guardarMetricas(form, pedido) {
 $("#inicioPilotoForm").addEventListener("submit", e => { e.preventDefault(); guardarMetricas(e.currentTarget, { accion: "guardarInicioPiloto", fecha: $("#inicioPiloto").value || null }); });
 $("#metricasPrecios").addEventListener("submit", e => { e.preventDefault(); guardarMetricas(e.currentTarget, { accion: "guardarPreciosMetricas", ...Object.fromEntries([...new FormData(e.currentTarget)].map(([k,v]) => [k, Number(v)])) }); });
 
-const { data: { session } } = await sb.auth.getSession();
+// Si la sesión guardada no responde (pasa en algunos Safari de iPhone), se sigue sin ella: aparece el inicio de sesión.
+const sinRespuesta = (ms) => new Promise((ok) => setTimeout(() => ok({ data: { session: null }, tarde: true }), ms));
+const lectura = await Promise.race([sb.auth.getSession().catch(() => ({ data: { session: null } })), sinRespuesta(8000)]);
+const session = lectura.data?.session || null;
+if (lectura.tarde) console.warn("La sesión guardada no respondió a tiempo; se pide iniciar sesión de nuevo.");
 if (errorEnlace) {
   history.replaceState(null, "", location.pathname);
   vista("vVencido");

@@ -231,3 +231,4 @@ header .ver-como select option{color:#1C2620;background:#fff}
 /* Con el aviso de vista previa visible, las conversaciones restan su alto para que la caja de respuesta siga a la vista */
 body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:calc(100vh - 54px - 61px)}
 @media(max-width:600px){body:has(.vista-previa:not([hidden])) :is(#agendaV,#preciosV,#funcionesV,#metricasV,#equipoV){height:auto}}
+.cargando small{max-width:320px;text-align:center;font-size:12px;overflow-wrap:anywhere}

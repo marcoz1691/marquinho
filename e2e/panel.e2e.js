@@ -130,3 +130,22 @@ test("agenda: muestra celulares de Ecuador en formato local y otros números com
   await expect(lista.getByRole("link", { name: "+14155552671" })).toHaveAttribute("href", "https://wa.me/14155552671");
   await expect(lista.getByRole("link", { name: "+59322345678" })).toBeVisible();
 });
+
+test("si la sesión guardada no responde (Safari de iPhone), aparece el inicio de sesión en vez de quedarse cargando", async ({ page }) => {
+  await page.clock.install();
+  await page.route("**/vendor/supabase-js-*.js", (r) => r.fulfill({ contentType: "text/javascript", body: "window.supabase={createClient:()=>({auth:{getSession:()=>new Promise(()=>{})}})};" }));
+  await page.route("**/api/panel-config", (r) => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: true } }));
+  await page.goto("/panel/");
+  await expect(page.locator("#cargando")).toBeVisible();
+  await page.clock.runFor(9000);
+  await expect(page.locator("#vEntrar")).toBeVisible();
+  await expect(page.locator("#cargando")).toBeHidden();
+});
+
+test("si el código del panel no se descarga, la pantalla de carga lo explica y ofrece reintentar", async ({ page }) => {
+  await page.route("**/panel/panel.js", (r) => r.abort());
+  await page.goto("/panel/");
+  await expect(page.locator("#cargando")).toContainText("No pudimos abrir el panel.");
+  await expect(page.locator("#cargando small")).toContainText("panel.js");
+  await expect(page.locator("#cargando").getByRole("button", { name: "Volver a intentar" })).toBeVisible();
+});
