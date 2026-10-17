@@ -1,38 +1,48 @@
-const mercado = 595;
-const participacion = document.querySelector("#participacion");
-const precio = document.querySelector("#precio");
-const participacionValor = document.querySelector("#participacionValor");
-const clientes = document.querySelector("#clientes");
-const ingreso = document.querySelector("#ingreso");
-const lectura = document.querySelector("#lectura");
+const botonesPeriodo = [...document.querySelectorAll("[data-periodo]")];
+const planes = [...document.querySelectorAll(".plan[data-mensual]")];
 
-const dineroCorto = valor => {
-  if (valor >= 1_000_000) return `$${(valor / 1_000_000).toLocaleString("es-EC", { maximumFractionDigits: 2 })} millones`;
-  return `$${Math.round(valor / 1_000).toLocaleString("es-EC")} mil`;
-};
-
-function actualizarModelo() {
-  const cuota = Number(participacion.value);
-  const mensual = Math.max(0, Number(precio.value) || 0);
-  const cantidad = Math.round(mercado * cuota / 100);
-  participacionValor.value = `${cuota} %`;
-  participacionValor.textContent = `${cuota} %`;
-  clientes.textContent = cantidad.toLocaleString("es-EC");
-  ingreso.textContent = dineroCorto(cantidad * mensual * 12);
-  lectura.textContent = `Con ${cuota} % del mercado ecuatoriano.`;
+function mostrarPeriodo(periodo) {
+  botonesPeriodo.forEach(boton => boton.setAttribute("aria-pressed", String(boton.dataset.periodo === periodo)));
+  planes.forEach(plan => {
+    const mensual = Number(plan.dataset.mensual);
+    const precio = plan.querySelector(".plan__precio strong");
+    const factura = plan.querySelector(".plan__factura");
+    if (periodo === "anual") {
+      precio.textContent = Math.round(mensual * 10 / 12);
+      factura.textContent = `Equivale a USD ${mensual * 10} al año · activación incluida`;
+    } else {
+      precio.textContent = mensual;
+      factura.textContent = "Facturación mensual";
+    }
+  });
 }
 
-participacion.addEventListener("input", actualizarModelo);
-precio.addEventListener("input", actualizarModelo);
-document.querySelector("#imprimir").addEventListener("click", () => window.print());
+botonesPeriodo.forEach(boton => boton.addEventListener("click", () => mostrarPeriodo(boton.dataset.periodo)));
 
-const observador = new IntersectionObserver(entradas => {
-  entradas.forEach(entrada => {
-    if (!entrada.isIntersecting) return;
-    entrada.target.classList.add("visible");
-    observador.unobserve(entrada.target);
-  });
-}, { threshold: .12 });
+const compartir = document.querySelector("#compartir");
+compartir.addEventListener("click", async () => {
+  const datos = { title: document.title, text: "Conoce Sofía, atención digital para notarías.", url: location.href };
+  try {
+    if (navigator.share) await navigator.share(datos);
+    else {
+      await navigator.clipboard.writeText(location.href);
+      compartir.innerHTML = '<i class="ph ph-check" aria-hidden="true"></i> Enlace copiado';
+      setTimeout(() => compartir.innerHTML = '<i class="ph ph-share-network" aria-hidden="true"></i> Compartir propuesta', 2200);
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") compartir.textContent = "Copia el enlace del navegador";
+  }
+});
 
-document.querySelectorAll(".revelar").forEach(elemento => observador.observe(elemento));
-actualizarModelo();
+if ("IntersectionObserver" in window) {
+  const observador = new IntersectionObserver(entradas => {
+    entradas.forEach(entrada => {
+      if (!entrada.isIntersecting) return;
+      entrada.target.classList.add("visible");
+      observador.unobserve(entrada.target);
+    });
+  }, { threshold: .1 });
+  document.querySelectorAll(".revelar").forEach(elemento => observador.observe(elemento));
+} else document.querySelectorAll(".revelar").forEach(elemento => elemento.classList.add("visible"));
+
+mostrarPeriodo("mensual");
