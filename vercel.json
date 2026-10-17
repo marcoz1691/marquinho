@@ -46,9 +46,22 @@
       "schedule": "0 8 * * *"
     }
   ],
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "sofia-prefirma.vercel.app"
+        }
+      ],
+      "destination": "/propuesta",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/propuesta",
       "has": [
         {
           "type": "host",
