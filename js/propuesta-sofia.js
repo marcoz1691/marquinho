@@ -21,7 +21,7 @@ botonesPeriodo.forEach(boton => boton.addEventListener("click", () => mostrarPer
 
 const compartir = document.querySelector("#compartir");
 compartir.addEventListener("click", async () => {
-  const datos = { title: document.title, text: "Conoce Sofía, atención digital para notarías.", url: location.href };
+  const datos = { title: document.title, text: "Conoce Sofía PreFirma, coordinación inteligente para notarías.", url: location.href };
   try {
     if (navigator.share) await navigator.share(datos);
     else {
