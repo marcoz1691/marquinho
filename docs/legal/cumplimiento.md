@@ -30,6 +30,11 @@ Estado al 16 de octubre de 2026. Este documento lo debe revisar el notario o su 
 
 ## Pendientes del notario (no se resuelven con código)
 
+Borradores listos para revisar y firmar:
+
+- [Designación del delegado de protección de datos](designacion-delegado.md).
+- [Inventario de transferencias internacionales y registro de actividades de tratamiento](transferencias-internacionales.md), base para la inscripción en la SPDP.
+
 1. **Revisar y aprobar los textos** de privacidad, términos, cookies y reembolsos. En especial la política de reembolsos: describe un procedimiento general que debe coincidir con la práctica de la notaría.
 2. **Delegado de protección de datos (art. 48 de la LOPDP).** Es obligatorio, entre otros casos, en el tratamiento que hace el sector público. Las notarías son órganos auxiliares de la Función Judicial, así que es probable que la notaría deba **designar un delegado y registrarlo ante la SPDP** (Resolución SPDP-SPD-2025-0028-R). Hay que confirmarlo con el asesor legal. Cuando exista, agregar su nombre y contacto en el aviso de privacidad.
 3. **Transferencias internacionales.** Los proveedores (Meta, Anthropic, Supabase, Vercel y Google) procesan datos fuera del Ecuador. La Resolución SPDP-SPD-2026-0004-R exige **inscribir las transferencias internacionales en el Registro Nacional de Protección de Datos** y da un plazo para notificar las que ya existían. Hay que hacer esa inscripción y confirmar que estén aceptados los acuerdos de tratamiento de datos de cada proveedor:
@@ -42,5 +47,5 @@ Estado al 16 de octubre de 2026. Este documento lo debe revisar el notario o su 
 
 ## Antes de publicar
 
-- Ejecutar en Supabase el bloque «2026-10-16: historial de consentimientos» de `supabase/esquema.sql`. Si no se ejecuta, el sitio sigue funcionando y guarda la evidencia en la conversación, pero el historial de 5 años no se llena.
+- ~~Ejecutar en Supabase el bloque «2026-10-16: historial de consentimientos»~~ **Hecho el 16 de octubre de 2026**: la tabla `consentimientos` ya existe en producción, con RLS activado y sin acceso público.
 - Cada vez que cambie el aviso de privacidad o los términos, subir la versión en `js/legal.js`. Así la web vuelve a pedir la aceptación y el historial distingue la versión aceptada.
