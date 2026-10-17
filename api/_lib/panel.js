@@ -82,7 +82,10 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       try { await almacen.agregarMiembro({ email, nombre, rol: b.rol }); }
       catch (e) { if (e.code === "23505") fallo("Esa persona ya está en el equipo.", 409); throw e; }
       let invitacion;
-      try { invitacion = await almacen.invitar(email, redirectTo); }
+      // El correo de invitación saluda por su nombre, dice su perfil y quién lo invitó (ver supabase/correos/).
+      const quien = (await almacen.equipo()).find((p) => p.email === por)?.nombre || "";
+      const datos = { nombre, perfil: { admin: "Administrador", notario: "Notario", personal: "Personal" }[b.rol], invito: quien };
+      try { invitacion = await almacen.invitar(email, redirectTo, datos); }
       catch { await almacen.quitarMiembro(email); fallo("No se pudo enviar la invitación. Intenta de nuevo.", 502); }
       return { ok: true, ...await this.equipo(por), ...invitacion, ...(invitacion.yaTeniaCuenta ? { aviso: "Ya tenía cuenta: puede entrar con su contraseña o usar ¿Olvidaste tu contraseña?" } : {}) };
     },

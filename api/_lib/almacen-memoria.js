@@ -31,7 +31,7 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
     async agregarMiembro(p) { if (await this.rolDe(p.email)) throw Object.assign(new Error("Duplicado"), { code: "23505" }); personal.push({ ...copia(p), creado: new Date().toISOString() }); },
     async quitarMiembro(email) { personal = personal.filter(p => p.email !== email); conMfa.delete(email); },
     async cambiarRol(email, rol) { const p = personal.find(p => p.email === email); if (p) p.rol = rol; },
-    async invitar(email, redirectTo) { invitaciones.push({ email, redirectTo }); return { yaTeniaCuenta: false }; },
+    async invitar(email, redirectTo, datos) { invitaciones.push({ email, redirectTo, ...(datos ? { datos } : {}) }); return { yaTeniaCuenta: false }; },
     async marcarProcesado(waId) {
       if (procesados.has(waId)) return false;
       procesados.add(waId);

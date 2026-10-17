@@ -272,6 +272,13 @@ it("contrato de invitación sin envío real en ambos adaptadores", async () => {
   expect(memoria.invitaciones).toEqual([{ email: "a@example.test", redirectTo: "https://sitio.ec/panel/" }]);
   expect(llamadas).toEqual([["a@example.test", { redirectTo: "https://sitio.ec/panel/" }]]);
 });
+it("la invitación lleva los datos del correo (nombre, perfil y quién invitó) a Supabase", async () => {
+  const llamadas = [];
+  const supabase = crearAlmacenSupabase({ cliente: { auth: { admin: { inviteUserByEmail: async (...args) => { llamadas.push(args); return { error: null }; } } } } });
+  const datos = { nombre: "Dobri Albornoz", perfil: "Notario", invito: "Marco" };
+  await supabase.invitar("a@example.test", "https://sitio.ec/panel/", datos);
+  expect(llamadas).toEqual([["a@example.test", { redirectTo: "https://sitio.ec/panel/", data: datos }]]);
+});
 it("Supabase reconoce cuenta Auth existente y propaga otros errores", async () => {
   for (const error of [{ code: "email_exists", message: "Existe" }, { message: "A user with this email address has already been registered" }]) {
     const a = crearAlmacenSupabase({ cliente: { auth: { admin: { inviteUserByEmail: async () => ({ error }) } } } });

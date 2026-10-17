@@ -20,7 +20,8 @@ it("invita, normaliza y audita; rechaza duplicado", async () => {
   const b = { accion: "invitarMiembro", email: " ANA@test.ec ", nombre: "Ana", rol: "personal" };
   expect((await post(b)).status).toBe(200);
   expect(await a.rolDe("ana@test.ec")).toBe("personal");
-  expect(a.invitaciones).toEqual([{ email: "ana@test.ec", redirectTo: "https://sitio.ec/panel/" }]);
+  // El correo usa estos datos para saludar por su nombre y decir su perfil y quién la invitó.
+  expect(a.invitaciones).toEqual([{ email: "ana@test.ec", redirectTo: "https://sitio.ec/panel/", datos: { nombre: "Ana", perfil: "Personal", invito: "Yo" } }]);
   expect((await post(b)).status).toBe(409);
   expect(await a.auditoria()).toContainEqual(expect.objectContaining({ accion: "invitarMiembro", ok: false }));
 });

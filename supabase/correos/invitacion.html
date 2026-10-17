@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Tu acceso al panel de la Notaría 41</title>
+<title>Tu acceso al panel de la Notaría 41 de Quito</title>
 </head>
 <body style="margin:0;padding:0;background:#F3F1EA;">
 <!-- Texto de vista previa que muestran Gmail y Outlook junto al asunto -->
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Crea tu contraseña para entrar al panel de la Notaría 41.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{ if .Data.invito }}{{ .Data.invito }} te dio acceso{{ else }}Tienes acceso{{ end }} al panel de la Notaría 41. Crea tu contraseña y empieza en 2 minutos.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3F1EA;">
   <tr><td align="center" style="padding:32px 16px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:18px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1C2620;">
@@ -17,9 +17,15 @@
         <p style="margin:12px 0 0;font-size:13px;letter-spacing:.04em;color:#5A6660;">Notaría 41 de Quito · Panel del personal</p>
       </td></tr>
       <tr><td style="padding:32px 32px 8px;">
-        <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;font-weight:600;color:#1C2620;">Te damos la bienvenida al panel</h1>
-        <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#1C2620;">Te invitaron a usar el panel de la Notaría 41 de Quito con el correo <strong>{{ .Email }}</strong>. Desde ahí atiendes las conversaciones de Sofía, confirmas citas y revisas documentos.</p>
-        <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#1C2620;">Pulsa el botón para crear tu contraseña. Después configurarás la verificación en dos pasos: ten a mano tu celular con una app como Google Authenticator para escanear un código QR.</p>
+        <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;font-weight:600;color:#1C2620;">{{ if .Data.nombre }}Hola, {{ .Data.nombre }}{{ else }}Hola{{ end }}</h1>
+        <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#1C2620;">{{ if .Data.invito }}{{ .Data.invito }} te dio{{ else }}Te dieron{{ end }} acceso al panel de la Notaría 41 de Quito{{ if .Data.perfil }} con el perfil <strong>{{ .Data.perfil }}</strong>{{ end }}. Entrarás con este correo: <strong>{{ .Email }}</strong>.</p>
+        <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#1C2620;">{{ if .Data.perfil }}{{ if eq .Data.perfil "Notario" }}Desde el panel sigues las conversaciones de Sofía con los clientes, confirmas las citas, revisas los documentos que envían, actualizas los precios y los textos de los trámites, e invitas al personal.{{ else if eq .Data.perfil "Administrador" }}Desde el panel atiendes las conversaciones y las citas, revisas documentos, actualizas trámites y precios, administras al equipo y enciendes o apagas las funciones del sitio.{{ else }}Desde el panel atiendes las conversaciones de los clientes, confirmas las citas y revisas los documentos que envían.{{ end }}{{ else }}Desde el panel se atienden las conversaciones de Sofía, las citas y los documentos de los clientes.{{ end }}</p>
+        <p style="margin:6px 0 10px;font-size:15px;font-weight:600;color:#1C2620;">Tu primer ingreso toma unos 2 minutos:</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 6px;">
+          <tr><td valign="top" style="padding:0 12px 10px 0;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;border-radius:50%;background:#E6F2EC;color:#0E6B4F;font-size:14px;font-weight:700;text-align:center;">1</span></td><td style="padding:2px 0 10px;font-size:15px;line-height:1.5;color:#1C2620;">Pulsa «Crear mi contraseña» y elige una de al menos 8 caracteres.</td></tr>
+          <tr><td valign="top" style="padding:0 12px 10px 0;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;border-radius:50%;background:#E6F2EC;color:#0E6B4F;font-size:14px;font-weight:700;text-align:center;">2</span></td><td style="padding:2px 0 10px;font-size:15px;line-height:1.5;color:#1C2620;">Instala <strong>Google Authenticator</strong> en tu celular y escanea el código QR que te mostrará el panel.</td></tr>
+          <tr><td valign="top" style="padding:0 12px 10px 0;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;border-radius:50%;background:#E6F2EC;color:#0E6B4F;font-size:14px;font-weight:700;text-align:center;">3</span></td><td style="padding:2px 0 10px;font-size:15px;line-height:1.5;color:#1C2620;">Escribe el código de 6 dígitos que aparece en la app. Desde entonces entras en <a href="https://notaria41.vercel.app/panel/" style="color:#0E6B4F;">notaria41.vercel.app/panel</a> con tu correo, tu contraseña y ese código.</td></tr>
+        </table>
       </td></tr>
       <tr><td align="center" style="padding:12px 32px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:999px;background:#0E6B4F;">

@@ -4,7 +4,7 @@ Plantillas en español para los correos que envía Supabase al personal del pane
 
 | Plantilla en Supabase | Archivo | Asunto |
 |---|---|---|
-| **Invite user** | [invitacion.html](invitacion.html) | Tu acceso al panel de la Notaría 41 |
+| **Invite user** | [invitacion.html](invitacion.html) | Tu acceso al panel de la Notaría 41 de Quito |
 | **Reset password** | [recuperar-clave.html](recuperar-clave.html) | Crea una nueva contraseña del panel de la Notaría 41 |
 
 ## Cómo cargarlas
@@ -15,6 +15,8 @@ Plantillas en español para los correos que envía Supabase al personal del pane
 4. Invita a alguien de prueba desde el panel (Equipo) y revisa que el correo llegue en español y que el botón abra el panel.
 
 Las plantillas usan las variables de Supabase `{{ .ConfirmationURL }}` (el enlace para crear la contraseña) y `{{ .Email }}` (el correo de la persona). No las borres.
+
+La invitación también usa los datos que envía el panel al invitar: `{{ .Data.nombre }}`, `{{ .Data.perfil }}` (Administrador, Notario o Personal) y `{{ .Data.invito }}` (quién invitó). Según el perfil, el correo explica qué puede hacer la persona. Si faltan (por ejemplo, en una invitación enviada desde Supabase), el texto se adapta solo.
 
 El sello se carga desde `https://notaria41.vercel.app/assets/logo/icono-512.png` (PNG: Gmail no muestra imágenes SVG). Si cambia el dominio del sitio, cámbialo también aquí.
 
