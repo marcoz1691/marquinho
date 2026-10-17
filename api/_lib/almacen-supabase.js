@@ -31,8 +31,9 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     async agregarMiembro(p) { const { error } = await db.from("personal").insert(p); if (error) throw Object.assign(new Error(error.message), { code: error.code }); },
     async quitarMiembro(email) { ok(await db.from("personal").delete().eq("email", email)); },
     async cambiarRol(email, rol) { ok(await db.from("personal").update({ rol }).eq("email", email)); },
-    async invitar(email, redirectTo) {
-      const { error } = await db.auth.admin.inviteUserByEmail(email, { redirectTo });
+    // «datos» queda en el usuario de Supabase y la plantilla del correo lo usa ({{ .Data.nombre }}, {{ .Data.perfil }}…).
+    async invitar(email, redirectTo, datos) {
+      const { error } = await db.auth.admin.inviteUserByEmail(email, { redirectTo, ...(datos ? { data: datos } : {}) });
       if (error && (["email_exists", "user_already_exists"].includes(error.code) || /already (?:been )?(?:registered|exists)/i.test(error.message))) return { yaTeniaCuenta: true };
       if (error) throw new Error(error.message);
       return { yaTeniaCuenta: false };
