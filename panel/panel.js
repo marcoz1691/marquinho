@@ -52,6 +52,11 @@ const avisoVerComo = Object.assign(document.createElement("div"), { className: "
   innerHTML: '<p role="status"></p><button type="button" class="btn btn--line">Volver a Administrador</button>' });
 $("#perfilSesion").after(selectorVerComo);
 $("header").after(avisoVerComo);
+// Alto real del encabezado y del aviso de vista previa: las vistas de pantalla completa lo restan (cambia en el celular).
+const medirCabecera = () => document.documentElement.style.setProperty("--alto-cab", ($("header").offsetHeight + (avisoVerComo.hidden ? 0 : avisoVerComo.offsetHeight)) + "px");
+if ("ResizeObserver" in window) { const ro = new ResizeObserver(medirCabecera); ro.observe($("header")); ro.observe(avisoVerComo); }
+addEventListener("resize", medirCabecera);
+medirCabecera();
 // Con la respuesta de «yo»: el selector solo aparece si la cuenta es de administrador. Si el servidor no aceptó la vista
 // previa (la cuenta ya no es administradora), se olvida.
 function pintarVerComo(yo) {
@@ -59,6 +64,7 @@ function pintarVerComo(yo) {
   selectorVerComo.hidden = !yo.vistaPrevia && yo.rol !== "admin";
   $("#verComo").value = verComo;
   avisoVerComo.hidden = !verComo;
+  medirCabecera();
   avisoVerComo.querySelector("p").textContent = verComo ? `Estás viendo el panel como ${perfiles[verComo]}. Es solo una vista previa: no se guardan cambios.` : "";
 }
 async function cambiarVerComo(rol) {
@@ -216,6 +222,10 @@ async function cargarLista() {
     <small>${esc(c.ultimo)}</small></button>`).join("") || '<p class="vacio">Aún no hay conversaciones.</p>';
 }
 $("#lista").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b) abrir(b.dataset.id); });
+$("#detalle").addEventListener("click", (e) => {
+  if (e.target.closest("[data-volver]")) { document.body.classList.remove("conv-abierta", "ver-lado"); return; }
+  if (e.target.closest("[data-lado]")) document.body.classList.toggle("ver-lado");
+});
 
 async function abrir(id, silencioso) {
   actual = id;
@@ -224,15 +234,20 @@ async function abrir(id, silencioso) {
   if (silencioso && document.activeElement && document.activeElement.id === "texto") {
     $("#mensajes").innerHTML = mensajes(d); if (abajo) $("#mensajes").scrollTop = 1e9; return;
   }
+  // En el celular la conversación ocupa la pantalla: se vuelve a la lista con «‹» y las citas y documentos salen en una hoja.
+  if (!silencioso) document.body.classList.add("conv-abierta");
+  const extras = d.citas.length + d.documentos.length;
   $("#detalle").innerHTML = `<div class="chat">
-      <div class="top"><h2>${esc(c.nombre || (d.canal === "web" ? "Visitante de la web" : "Cliente"))}${d.canal === "web" ? " · Chat web" : " · " + esc(c.telefono)}</h2>
-        ${c.derivada ? '<button class="btn btn--line" id="devolver">Devolver al asistente</button>' : '<span class="tag">Atiende el asistente</span>'}</div>
+      <div class="top"><button class="volver" type="button" data-volver aria-label="Volver a las conversaciones">‹</button><h2>${esc(c.nombre || (d.canal === "web" ? "Visitante de la web" : "Cliente"))}${d.canal === "web" ? " · Chat web" : " · " + esc(c.telefono)}</h2>
+        ${c.derivada ? '<button class="btn btn--line" id="devolver">Devolver al asistente</button>' : '<span class="tag">Atiende el asistente</span>'}
+        <button class="btn btn--line ver-lado-btn" type="button" data-lado aria-controls="lado">Citas y documentos${extras ? ` (${extras})` : ""}</button></div>
       <div id="mensajes">${mensajes(d)}</div>
       ${d.puedeResponder ? `<form class="resp" id="resp"><textarea id="texto" placeholder="Escribe tu respuesta…" required></textarea><button class="btn">Enviar</button></form>`
         : d.canal === "web" ? '<p class="aviso aviso-web">Conversación del chat de la página web: no se puede responder desde aquí. Si dejó su celular (ver citas), contáctalo por WhatsApp o teléfono.</p>'
         : '<p class="aviso aviso-web">Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp no permite escribirle desde aquí. Llámalo por teléfono.</p>'}
     </div>
-    <aside class="lado">
+    <aside class="lado" id="lado">
+      <button class="btn btn--line cerrar-lado" type="button" data-lado>Cerrar</button>
       <div><h3>Citas</h3>${d.citas.map((x) => `<div class="ficha"><b>${esc(x.tramite)}</b><span>${esc(x.fecha)} · ${esc(x.hora)}${x.codigo ? ` · Ticket ${esc(x.codigo)}` : ""} · ${esc(x.nombre)}</span>${x.contacto ? `<small>Celular: <a href="https://wa.me/${esc(x.contacto)}" target="_blank" rel="noopener">+${esc(x.contacto)}</a></small>` : ""}
         <span class="tag tag--inicio">${esc(x.estado)}</span>${x.nota ? `<small>${esc(x.nota)}</small>` : ""}
         <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button>
@@ -414,6 +429,8 @@ let preciosPanel = null;
 const borradoresPrecio = new Map();
 // Texto del trámite (nombre, descripción, requisitos, pasos y nota): un editor abierto a la vez y su borrador.
 let editandoTexto = null;
+// En el celular los campos de precio de cada trámite se abren con «Editar precio»: la lista queda corta.
+const preciosAbiertos = new Set();
 const borradoresTexto = new Map();
 const LAPIZ = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 function editorTexto(t) {
@@ -469,7 +486,7 @@ function pintarPrecios() {
       <div class="precio-valor"><label><span class="rotulo" data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
       <label><span class="rotulo">Tabla</span><select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
       </div><label><span class="rotulo">Unidad</span><input data-campo="unidad" placeholder="Ej.: por firma" maxlength="30" value="${esc(f.unidad)}"></label><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><div class="precio-acciones"><button class="btn" disabled data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div></div>` : `<div class="precio-consulta"><span>${esc(TIPOS_PRECIO[f.tipo])}</span><span>${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) + " %" : f.valor ?? "—")}</span><span>${esc(f.unidad || "—")}</span><output>${esc(finalPrecio(t, tarifasEnPantalla()))}</output><span>Solo lectura</span></div>`;
-    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila${editandoTexto === t.id ? " precio-fila--editando" : ""}" data-tramite="${esc(t.id)}"><div class="precio-nombre"><div class="precio-titulo"><h3>${esc(t.nombre)}</h3>${preciosPanel.esAdmin ? `<button class="lapiz" type="button" data-texto="abrir" aria-expanded="${editandoTexto === t.id}" aria-label="Editar el texto de ${esc(t.nombre)}" title="Editar nombre, descripción y requisitos">${LAPIZ}</button>` : ""}</div><small>${t.editada ? `Precio editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Precio oficial"}</small>${t.textoEditado ? `<small class="texto-estado">Texto editado por ${esc(t.textoPor)} el ${esc(fechaLegible(t.textoEn))}</small>` : ""}<span class="precio-pendiente" hidden>Cambios sin guardar</span></div>${campos}${editandoTexto === t.id ? editorTexto(t) : ""}</article>`;
+    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila${editandoTexto === t.id ? " precio-fila--editando" : ""}${preciosAbiertos.has(t.id) ? " precio-fila--abierta" : ""}" data-tramite="${esc(t.id)}"><div class="precio-nombre"><div class="precio-titulo"><h3>${esc(t.nombre)}</h3>${preciosPanel.esAdmin ? `<button class="lapiz" type="button" data-texto="abrir" aria-expanded="${editandoTexto === t.id}" aria-label="Editar el texto de ${esc(t.nombre)}" title="Editar nombre, descripción y requisitos">${LAPIZ}</button>` : ""}</div><small>${t.editada ? `Precio editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Precio oficial"}</small>${t.textoEditado ? `<small class="texto-estado">Texto editado por ${esc(t.textoPor)} el ${esc(fechaLegible(t.textoEn))}</small>` : ""}<span class="precio-pendiente" hidden>Cambios sin guardar</span>${preciosPanel.esAdmin ? `<button class="btn btn--line abrir-precio" type="button" data-abrir-precio aria-expanded="${preciosAbiertos.has(t.id)}">${preciosAbiertos.has(t.id) ? "Ocultar precio" : "Editar precio"}</button>` : ""}</div>${campos}${editandoTexto === t.id ? editorTexto(t) : ""}</article>`;
   }).join("") || "<p>No hay trámites con ese nombre.</p>";
   if (!$("#preciosLista .precio-fila")) $("#preciosLista").insertAdjacentHTML("beforeend", "<p>No hay trámites con estos filtros.</p>");
   document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
@@ -512,6 +529,14 @@ $("#preciosV").addEventListener("click", async (e) => {
       await cargarPreciosPanel();
     } catch (err) { $("#preciosMensaje").textContent = err.message; b.disabled = false; }
   }
+});
+$("#preciosV").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-abrir-precio]");
+  if (!b) return;
+  const fila = b.closest(".precio-fila"), id = fila.dataset.tramite, abierta = !preciosAbiertos.has(id);
+  if (abierta) preciosAbiertos.add(id); else preciosAbiertos.delete(id);
+  fila.classList.toggle("precio-fila--abierta", abierta);
+  b.setAttribute("aria-expanded", abierta); b.textContent = abierta ? "Ocultar precio" : "Editar precio";
 });
 $("#preciosV").addEventListener("input", (e) => {
   const form = e.target.closest("[data-texto-form]");
@@ -658,7 +683,11 @@ async function guardarMetricas(form, pedido) {
 $("#inicioPilotoForm").addEventListener("submit", e => { e.preventDefault(); guardarMetricas(e.currentTarget, { accion: "guardarInicioPiloto", fecha: $("#inicioPiloto").value || null }); });
 $("#metricasPrecios").addEventListener("submit", e => { e.preventDefault(); guardarMetricas(e.currentTarget, { accion: "guardarPreciosMetricas", ...Object.fromEntries([...new FormData(e.currentTarget)].map(([k,v]) => [k, Number(v)])) }); });
 
-const { data: { session } } = await sb.auth.getSession();
+// Si la sesión guardada no responde (pasa en algunos Safari de iPhone), se sigue sin ella: aparece el inicio de sesión.
+const sinRespuesta = (ms) => new Promise((ok) => setTimeout(() => ok({ data: { session: null }, tarde: true }), ms));
+const lectura = await Promise.race([sb.auth.getSession().catch(() => ({ data: { session: null } })), sinRespuesta(8000)]);
+const session = lectura.data?.session || null;
+if (lectura.tarde) console.warn("La sesión guardada no respondió a tiempo; se pide iniciar sesión de nuevo.");
 if (errorEnlace) {
   history.replaceState(null, "", location.pathname);
   vista("vVencido");

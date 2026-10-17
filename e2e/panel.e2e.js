@@ -130,3 +130,50 @@ test("agenda: muestra celulares de Ecuador en formato local y otros números com
   await expect(lista.getByRole("link", { name: "+14155552671" })).toHaveAttribute("href", "https://wa.me/14155552671");
   await expect(lista.getByRole("link", { name: "+59322345678" })).toBeVisible();
 });
+
+test("si la sesión guardada no responde (Safari de iPhone), aparece el inicio de sesión en vez de quedarse cargando", async ({ page }) => {
+  await page.clock.install();
+  await page.route("**/vendor/supabase-js-*.js", (r) => r.fulfill({ contentType: "text/javascript", body: "window.supabase={createClient:()=>({auth:{getSession:()=>new Promise(()=>{})}})};" }));
+  await page.route("**/api/panel-config", (r) => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: true } }));
+  await page.goto("/panel/");
+  await expect(page.locator("#cargando")).toBeVisible();
+  await page.clock.runFor(9000);
+  await expect(page.locator("#vEntrar")).toBeVisible();
+  await expect(page.locator("#cargando")).toBeHidden();
+});
+
+test("si el código del panel no se descarga, la pantalla de carga lo explica y ofrece reintentar", async ({ page }) => {
+  await page.route("**/panel/panel.js", (r) => r.abort());
+  await page.goto("/panel/");
+  await expect(page.locator("#cargando")).toContainText("No pudimos abrir el panel.");
+  await expect(page.locator("#cargando small")).toContainText("panel.js");
+  await expect(page.locator("#cargando").getByRole("button", { name: "Volver a intentar" })).toBeVisible();
+});
+
+test("en el celular las conversaciones van como una app: lista, chat a pantalla completa y citas en una hoja @movil", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/vendor/supabase-js-*.js", (r) => r.fulfill({ contentType: "text/javascript", body: 'window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:"t"}}})}})};' }));
+  await page.route("**/api/panel-config", (r) => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
+  const cita = { id: "c1", codigo: "4821", fecha: "2026-10-16", hora: "09:00", nombre: "Ana", tramite: "Poder general", estado: "confirmada" };
+  await page.route("**/api/panel?**", (r) => {
+    const a = new URL(r.request().url()).searchParams.get("accion");
+    if (a === "yo") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", rol: "personal" } });
+    if (a === "detalle") return r.fulfill({ json: { conversacion: { id: "v1", nombre: "Ana", telefono: "593999999999", derivada: true }, canal: "whatsapp", citas: [cita], documentos: [], mensajes: [], puedeResponder: true } });
+    return r.fulfill({ json: [{ id: "v1", nombre: "Ana", telefono: "593999999999", canal: "whatsapp", ultimo: "Hola" }] });
+  });
+  await page.goto("/panel/");
+  await expect(page.locator("#lista")).toBeVisible();
+  await expect(page.locator("#detalle")).toBeHidden();
+  await page.locator("#lista [data-id]").first().click();
+  await expect(page.locator("#lista")).toBeHidden();
+  const respuesta = page.locator("#resp");
+  await expect(respuesta).toBeVisible();
+  expect((await respuesta.boundingBox()).y + (await respuesta.boundingBox()).height).toBeGreaterThan(780);
+  await expect(page.locator("#lado")).toBeHidden();
+  await page.getByRole("button", { name: "Citas y documentos (1)" }).click();
+  await expect(page.locator("#lado")).toContainText("Ticket 4821");
+  await page.locator(".cerrar-lado").click();
+  await page.getByRole("button", { name: "Volver a las conversaciones" }).click();
+  await expect(page.locator("#lista")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
