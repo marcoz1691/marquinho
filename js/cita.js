@@ -213,7 +213,8 @@ function validar() {
     nombre: nombre.length < 2 || nombre.length > 80 ? "Escribe tu nombre de 2 a 80 caracteres." : "",
     celular: !/^(09\d{8}|5939\d{8})$/.test(cel) ? "Escribe tu celular de Ecuador, por ejemplo 0991234567." : "",
     nota: $("nota").value.length > 200 ? "Escribe una nota de hasta 200 caracteres." : "",
-    aceptaAviso: !$("aceptaAviso").checked ? "Acepta el aviso de privacidad para agendar tu cita." : ""
+    aceptaTerminos: !$("aceptaTerminos").checked ? "Acepta los términos y condiciones para agendar tu cita." : "",
+    aceptaDatos: !$("aceptaDatos").checked ? "Autoriza el tratamiento de tus datos para agendar tu cita." : ""
   };
   for (const [id, error] of Object.entries(errores)) {
     $("error-" + id).textContent = error;
@@ -242,7 +243,8 @@ $("datos").addEventListener("submit", async (e) => {
         fecha: dia,
         hora,
         nota: $("nota").value,
-        aceptaAviso: $("aceptaAviso").checked,
+        aceptaTerminos: $("aceptaTerminos").checked,
+        aceptaDatos: $("aceptaDatos").checked,
         sitio: $("sitio").value
       })
     });

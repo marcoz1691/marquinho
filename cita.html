@@ -79,13 +79,10 @@
               <p id="error-celular" class="error"></p>
               <label for="nota">Nota (opcional)</label><textarea id="nota" name="nota" maxlength="200" rows="3" aria-describedby="error-nota"></textarea>
               <p id="error-nota" class="error"></p>
-              <label class="acepta" for="aceptaAviso"
-                ><input id="aceptaAviso" name="aceptaAviso" type="checkbox" aria-describedby="error-aceptaAviso" /><span
-                  >Acepto el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a> para preparar mi visita y recibir avisos por
-                  WhatsApp.</span
-                ></label
-              >
-              <p id="error-aceptaAviso" class="error"></p>
+              <label class="acepta"><input id="aceptaTerminos" name="aceptaTerminos" type="checkbox" aria-describedby="error-aceptaTerminos"><span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos y condiciones</a>.</span></label>
+              <p id="error-aceptaTerminos" class="error"></p>
+              <label class="acepta"><input id="aceptaDatos" name="aceptaDatos" type="checkbox" aria-describedby="error-aceptaDatos"><span>Autorizo el tratamiento de mis datos según el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a> para preparar mi visita y recibir avisos por WhatsApp, incluido su procesamiento por proveedores con servidores fuera del Ecuador.</span></label>
+              <p id="error-aceptaDatos" class="error"></p>
               <div class="trampa" aria-hidden="true"><label for="sitio">Sitio</label><input id="sitio" name="sitio" tabindex="-1" autocomplete="off" /></div>
               <div id="error-envio" class="error error--envio" role="alert" hidden></div>
               <button id="confirmar" type="submit">Confirmar mi cita</button>
@@ -115,7 +112,7 @@
       <noscript>Activa JavaScript para ver las horas libres o llama al 02 600 1141 para agendar.</noscript>
     </main>
     <footer class="foot">
-      <div class="foot__in"><p>© 2026 Notaría 41 de Quito</p></div>
+      <div class="foot__in legal__pie"><p>© 2026 Notaría 41 de Quito</p><nav class="foot__links" aria-label="Textos legales"><a href="privacidad.html">Aviso de privacidad</a><a href="terminos.html">Términos y condiciones</a><a href="cookies.html">Cookies y almacenamiento</a><a href="reembolsos.html">Pagos y reembolsos</a></nav></div>
     </footer>
   </body>
 </html>

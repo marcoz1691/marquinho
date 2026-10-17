@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures.js";
 
 // El servidor de pruebas aplica los encabezados de vercel.json: así se comprueba la CSP real.
 test.describe("Política de seguridad (CSP)", () => {
-  for (const ruta of ["/", "/asistente.html", "/privacidad.html", "/404.html"]) {
+  for (const ruta of ["/", "/asistente.html", "/privacidad.html", "/terminos.html", "/cookies.html", "/reembolsos.html", "/404.html"]) {
     test(`CF-172 ${ruta} carga sin violar la política de seguridad`, async ({ page }) => {
       const violaciones = [];
       page.on("console", (m) => { if (/Content Security Policy/i.test(m.text())) violaciones.push(m.text()); });

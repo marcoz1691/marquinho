@@ -201,6 +201,7 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
     // Va en lotes pequeños (las listas de ids viajan en la URL). Primero se borran las filas y después los archivos: si el
     // almacenamiento falla queda un archivo huérfano (se avisa en el registro), nunca una fila con un enlace roto, y la purga
     // del día siguiente no repite el mismo error.
+    async registrarConsentimiento(c) { ok(await db.from("consentimientos").insert(c)); },
     async purgar({ inactivasAntesDe, borradosAntesDe, hoy }) {
       const LOTE = 50, LOTES = 4, corte = new Date(inactivasAntesDe).toISOString();
       let conversaciones = 0, documentos = 0;
@@ -235,6 +236,9 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
       }
       ok(await db.from("procesados").delete().lt("creado", new Date(Date.now() - 30 * 864e5).toISOString()));
       ok(await db.from("uso").delete().lt("creado", new Date(Date.now() - 7 * 864e5).toISOString()));   // contadores: guardan celulares y huellas de IP
+      // Historial de consentimientos: se conserva 5 años. Si la tabla aún no existe (falta la migración), no frena la purga.
+      const { error: errConsent } = await db.from("consentimientos").delete().lt("creado", new Date(Date.now() - 5 * 365 * 864e5).toISOString());
+      if (errConsent) console.warn("Purga: historial de consentimientos sin depurar:", errConsent.message);
       return { conversaciones, documentos };
     },
 

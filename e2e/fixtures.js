@@ -1,4 +1,5 @@
 import { test as base, expect } from "@playwright/test";
+import { AVISO_PRIVACIDAD, TERMINOS } from "../js/legal.js";
 import { readFileSync } from "node:fs";
 
 export const datos = JSON.parse(readFileSync(new URL("../data/tramites.json", import.meta.url)));
@@ -6,12 +7,14 @@ export const notaria = JSON.parse(readFileSync(new URL("../data/notaria.json", i
 export const tramite = (id) => datos.tramites.find((t) => t.id === id);
 
 export const test = base.extend({
+  aceptacionPrevia: [true, { option: true }],
   // Fuentes, íconos y mapa vienen de internet; se bloquean para que las pruebas no dependan de la red.
-  context: async ({ context, baseURL }, use) => {
+  context: async ({ context, baseURL, aceptacionPrevia }, use) => {
     const local = new URL(baseURL).host;
     await context.route(/^https?:\/\//, (route) =>
       new URL(route.request().url()).host === local ? route.fallback() : route.abort()
     );
+    if (aceptacionPrevia) await context.addInitScript(({ aviso, terminos }) => { localStorage.setItem("n41-acepta", JSON.stringify({ aviso, terminos })); }, { aviso: AVISO_PRIVACIDAD, terminos: TERMINOS });
     await use(context);
   }
 });

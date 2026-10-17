@@ -272,7 +272,10 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     var soc = Object.keys(N.redes || {}).filter(function (k) { return N.redes[k]; }).map(function (k) { return '<a href="' + esc(N.redes[k]) + '" target="_blank" rel="noopener">' + labels[k] + "</a>"; }).join("");
     if (soc) rows += '<div><h3>Redes</h3><div class="social">' + soc + "</div></div>";
     $("#contactInfo").innerHTML = rows;
-    $("#mapa").src = "https://www.openstreetmap.org/export/embed.html?bbox=" + [m.lng - .006, m.lat - .004, m.lng + .006, m.lat + .004].join("%2C") + "&layer=mapnik&marker=" + m.lat + "%2C" + m.lng;
+    // El mapa es de un tercero (OpenStreetMap): se carga solo cuando la persona lo pide (ver cookies.html).
+    var mapa = $("#mapa");
+    mapa.dataset.src = "https://www.openstreetmap.org/export/embed.html?bbox=" + [m.lng - .006, m.lat - .004, m.lng + .006, m.lat + .004].join("%2C") + "&layer=mapnik&marker=" + m.lat + "%2C" + m.lng;
+    $("#mapaCargar").onclick = function () { mapa.src = mapa.dataset.src; mapa.hidden = false; $("#mapaAviso").hidden = true; };
     if (tieneWa()) document.documentElement.dataset.wa = String(N.whatsapp).replace(/\D/g, "");
     $("#footTxt").textContent = "© " + new Date().getFullYear() + " " + N.nombre + " · " + N.notario;
     var redes = Object.keys(N.redes || {}).map(function (k) { return N.redes[k]; }).filter(Boolean);

@@ -4,7 +4,7 @@ Sitio web, asistente «Sofía» (web y WhatsApp) y panel del personal de la Nota
 
 ## Estructura
 
-- **Sitio estático:** `index.html`, `asistente.html`, `privacidad.html`, `404.html`, `css/`, `js/`, `assets/`. No hay build ni bundler: los archivos se sirven tal cual.
+- **Sitio estático:** `index.html`, `asistente.html`, `cita.html`, páginas legales (`privacidad.html`, `terminos.html`, `cookies.html`, `reembolsos.html`), `404.html`, `css/`, `js/`, `assets/`. No hay build ni bundler: los archivos se sirven tal cual.
 - **Funciones de Vercel:** `api/` (Node 24, módulos ES). La lógica compartida está en `api/_lib/`. Usan Claude (`@anthropic-ai/sdk`) y Supabase.
 - **Panel del personal:** `panel/`.
 - **Contenido:** una hoja de Google es la fuente única ([ADR 0001](docs/adr/0001-hoja-de-contenido-como-fuente-unica.md)). Los JSON de `data/` son el respaldo. [js/nucleo.js](js/nucleo.js) lo comparten la web y el asistente.
@@ -35,3 +35,4 @@ Antes de dar un cambio por terminado, `npm test` y `npm run test:e2e` deben pasa
 
 - Las cuentas se crean desde la pestaña **Equipo**: admin gestiona todos los perfiles y notario solo invita/da de baja a Personal. La primera cuenta admin se configura en Supabase (README).
 - Antes de usar Equipo, ejecuta el bloque «2026-10-11: perfil notario» de `supabase/esquema.sql` y permite la URL `…/panel/` en Authentication → URL Configuration.
+- Textos legales: `privacidad.html`, `terminos.html`, `cookies.html` y `reembolsos.html`, con sus versiones en `js/legal.js` (súbelas al cambiar un texto). Los formularios y el chat piden dos casillas separadas (términos y datos). Antes de desplegar, ejecuta el bloque «2026-10-16: historial de consentimientos». Pendientes legales del notario: [docs/legal/cumplimiento.md](docs/legal/cumplimiento.md).

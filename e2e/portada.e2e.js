@@ -86,6 +86,9 @@ test.describe("Contacto y datos de la notaría", () => {
     const { lat, lng } = notaria.mapa;
     await expect(page.getByRole("link", { name: "Cómo llegar" })).toHaveAttribute("href", `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
     await expect(page.getByRole("link", { name: "Abrir en Waze" })).toHaveAttribute("href", new RegExp(`ll=${lat},${lng}`));
+    // El mapa externo no se carga hasta que la persona lo pide.
+    await expect(page.locator("#mapa")).not.toHaveAttribute("src", /./);
+    await page.getByRole("button", { name: "Ver el mapa" }).click();
     await expect(page.locator("#mapa")).toHaveAttribute("src", new RegExp(`openstreetmap.*marker=${lat}%2C${lng}`));
   });
 

@@ -746,3 +746,33 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 .chat-lanzador{transition:transform .3s var(--ease),opacity .3s var(--ease),visibility 0s linear 0s}
 .lanzador-aparte .chat-lanzador{opacity:0;transform:translateY(16px);visibility:hidden;pointer-events:none;transition:transform .3s var(--ease),opacity .3s var(--ease),visibility 0s linear .3s}
 @media (prefers-reduced-motion:reduce){.lanzador-aparte .chat-lanzador{transform:none}}
+
+/* Aceptación previa compartida por las dos vistas del chat. */
+.aceptacion{min-width:0;flex-shrink:0;border:1px solid var(--line);border-radius:8px;margin:8px 12px;padding:10px;font-size:13px;line-height:1.45;max-height:30dvh;overflow:auto}
+.aceptacion legend{font-weight:600;padding:0 4px}
+.aceptacion label{display:flex;align-items:flex-start;gap:8px;margin:6px 0}
+.aceptacion input{flex:none;margin-top:4px;width:18px;height:18px;accent-color:var(--accent)}
+.aceptacion a{text-decoration:underline}
+.aceptacion__error{font-weight:600;margin:8px 0 0}
+
+/* Mapa a pedido: aviso con botón en lugar del mapa de OpenStreetMap hasta que la persona lo abre */
+.contact__map{position:relative}
+.mapa__aviso{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;text-align:center;color:var(--muted);background:var(--card)}
+.mapa__aviso i{font-size:40px;color:var(--accent)}
+.mapa__aviso p{margin:0;max-width:34ch;font-size:15px}
+.mapa__aviso[hidden]{display:none}
+
+/* Páginas legales: versión, listas, tabla y pie con todos los textos legales */
+.legal__version{font-size:var(--t-small);color:var(--muted);margin:12px 0 28px!important}
+.legal__lista{margin:8px 0 0;padding-left:22px;max-width:65ch}
+.legal__lista li{margin:6px 0;line-height:1.55}
+.legal p+p,.legal p+.legal__lista,.legal .legal__lista+p{margin-top:12px}
+.legal__tabla{width:100%;border-collapse:collapse;margin:12px 0;font-size:15px}
+.legal__tabla th,.legal__tabla td{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--line)}
+.legal__tabla th{font-weight:600;font-size:14px;color:var(--muted)}
+.legal__tabla code{font-size:12px;color:var(--muted);white-space:nowrap}
+@media (max-width:600px){.legal__tabla thead{display:none}.legal__tabla tr{display:grid;padding:10px 0;border-bottom:1px solid var(--line)}.legal__tabla td{border:0;padding:2px 0}}
+.legal__pie{grid-template-columns:1fr auto!important;align-items:center}
+.legal__pie .foot__links{display:flex;flex-wrap:wrap;gap:8px 20px;flex-direction:row}
+@media (max-width:700px){.legal__pie{grid-template-columns:1fr!important}}
+.foot__links a+a{margin-left:0}

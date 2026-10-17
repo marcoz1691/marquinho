@@ -207,3 +207,18 @@ grant execute on function sumar_metrica(date, text, bigint) to service_role;
 alter table personal drop constraint if exists personal_rol_check;
 alter table personal add constraint personal_rol_check check (rol in ('admin','notario','personal'));
 alter table personal add column if not exists creado timestamptz not null default now();
+
+-- 2026-10-16: historial de consentimientos (LOPDP art. 8; Reglamento art. 5). Evidencia de cuándo, por qué canal y qué
+-- versión del aviso de privacidad y de los términos aceptó cada persona. Se conserva hasta 5 años, aunque el chat se borre.
+create table if not exists consentimientos (
+  id bigint generated always as identity primary key,
+  creado timestamptz not null default now(),
+  canal text not null check (canal in ('formulario', 'chat-web', 'whatsapp', 'documentos')),
+  titular text not null,              -- huella (hash) del celular o de la sesión; nunca el dato en claro
+  aviso text not null,                -- versión del aviso de privacidad aceptada
+  terminos text not null default '',  -- versión de los términos aceptada ('' si el canal no los pide)
+  texto text not null default ''      -- lo que marcó o escribió la persona
+);
+create index if not exists consentimientos_titular on consentimientos (titular);
+alter table consentimientos enable row level security;
+-- Sin políticas públicas: acceso únicamente desde el servidor con service role.

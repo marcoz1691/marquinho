@@ -3,11 +3,13 @@ import { enviarChat as enviarMensaje } from "./funciones.js";
 // Burbuja de chat del asistente en la página principal. La página completa está en asistente.html.
 import { esc, bienvenida, nombreAsistente, mostrarNombre, NOMBRE_POR_DEFECTO, chatActual, crearChat, agregarMensaje, formato } from "./chat-nucleo.js";
 import { tarjetaCita } from "./cita-tarjeta.js";
+import { montarAceptacion } from "./aceptacion.js";
 
 const $ = (s) => document.querySelector(s);
 // Los cinco trámites más pedidos según el notario, como casos reales.
 const SUGERENCIAS = ["Voy a vender mi carro", "Necesito una declaración juramentada", "Necesito que alguien firme por mí", "Mi hijo menor va a viajar al exterior", "Necesito copias certificadas o materializar un documento"];
 const raiz = $("#chat"), lista = $("#chatMensajes"), form = $("#chatForm"), campo = $("#chatTexto"), lanzador = $("#chatAbrir");
+const aceptacion = montarAceptacion(form, "aceptacion");
 const funciones = await cargarFunciones();
 if (!funciones.chatWeb) { raiz.hidden = true; lanzador.hidden = true; }
 let chat = chatActual(), enviando = false, nombre = NOMBRE_POR_DEFECTO;
@@ -40,6 +42,7 @@ function agregar(m, sesion = chat.sesion) {
 async function enviar(texto) {
   texto = texto.trim();
   if (!texto || enviando) return;
+  if (!aceptacion.puedeEnviar()) { campo.value = texto; campo.dispatchEvent(new Event("input")); return; }
   enviando = true; form.classList.add("chat__form--ocupado");
   agregar({ autor: "cliente", texto });
   const escribiendo = document.createElement("div");
@@ -49,6 +52,7 @@ async function enviar(texto) {
   lista.appendChild(escribiendo); lista.scrollTop = lista.scrollHeight;
   const sesion = chat.sesion;
   const r = await enviarMensaje(sesion, texto);
+  if (r.aceptacion) aceptacion.pedirOtraVez();
   escribiendo.remove();
   if (r.error) agregar({ autor: "aviso", texto: r.error }, sesion);
   else {

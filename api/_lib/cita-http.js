@@ -4,6 +4,8 @@ import { createHash } from "node:crypto";
 import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
 import { construirResumen } from "./resumen.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
+import { registrarConsentimiento } from "./consentimiento.js";
+const TEXTO_FORMULARIO = "Casillas de la web: acepto los términos y condiciones; autorizo el tratamiento de mis datos según el aviso de privacidad";
 const HORA = 3600e3,
   DIA = 864e5;
 const json = (data, status = 200) =>
@@ -66,7 +68,9 @@ export function crearManejadorCita({
       if (nombre.length < 2 || nombre.length > 80 || /[\u0000-\u001f\u007f]/.test(nombre))
         return json({ error: "Escribe tu nombre de 2 a 80 caracteres." }, 400);
       if (!contacto || !/^5939\d{8}$/.test(contacto)) return json({ error: "Escribe tu celular de Ecuador, por ejemplo 0991234567." }, 400);
-      if (b.aceptaAviso !== true) return json({ error: "Acepta el aviso de privacidad para agendar tu cita." }, 400);
+      // Dos aceptaciones separadas (LOPDP, art. 8): los términos del servicio y el tratamiento de datos, que no se mezclan.
+      if (b.aceptaTerminos !== true) return json({ error: "Acepta los términos y condiciones para agendar tu cita." }, 400);
+      if (b.aceptaDatos !== true) return json({ error: "Autoriza el tratamiento de tus datos para agendar tu cita." }, 400);
       if (b.tramiteId != null && !tramite) return json({ error: "Elige un trámite de la lista o «Aún no sé / otro»." }, 400);
       if (b.nota != null && (typeof b.nota !== "string" || b.nota.length > 200)) return json({ error: "Escribe una nota de hasta 200 caracteres." }, 400);
       if (!fechaValida(b.fecha) || typeof b.hora !== "string" || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(b.hora))
@@ -105,9 +109,10 @@ export function crearManejadorCita({
         nombre,
         consentimiento: true,
         consentimientoEn: t.toISOString(),
-        consentimientoTexto: "Acepto el aviso de privacidad",
+        consentimientoTexto: TEXTO_FORMULARIO,
         consentimientoAviso: AVISO_PRIVACIDAD
       });
+      await registrarConsentimiento(almacen, { canal: "formulario", titular: contacto, texto: TEXTO_FORMULARIO, t });
       const cita = {
         conversacionId: conv.id,
         nombre,

@@ -3,7 +3,7 @@ import { textoVisible } from "./mensajes.js";
 
 export function crearAlmacenMemoria({ personal = [] } = {}) {
   personal = structuredClone(personal);
-  const invitaciones = [];
+  const invitaciones = [], consentimientos = [];
   const precios = new Map(), ajustes = {}, detalles = {}, metricas = new Map();
   const procesados = new Set(), convs = new Map(), sesiones = new Map();
   let archivos = [], docs = [], citas = [], pendientes = [];
@@ -156,6 +156,8 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
 
     // Retención: borra las conversaciones sin actividad desde `inactivasAntesDe` (salvo las que tienen una cita por venir)
     // y los documentos borrados desde el panel antes de `borradosAntesDe`.
+    async registrarConsentimiento(c) { consentimientos.push(copia(c)); },
+    async consentimientos() { return copia(consentimientos); },
     async purgar({ inactivasAntesDe, borradosAntesDe, hoy }) {
       const conCita = new Set(citas.filter((x) => x.fecha >= hoy && (x.estado === "pendiente" || x.estado === "confirmada")).map((x) => x.conversacionId));
       const actividad = (c) => Math.max(c.creada || 0, c.clienteEn || 0, ...[...sesiones.values()].filter((x) => x.conversacionId === c.id).map((x) => x.ultima));
