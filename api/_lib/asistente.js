@@ -1,12 +1,15 @@
 // Asistente de WhatsApp de la notaría: conversa con Claude, ejecuta sus herramientas y guarda la conversación.
 // Interfaz: crearAsistente(dependencias).atender(mensaje) -> textos a enviar al cliente.
-import { leerAjustes, leerFunciones } from "./funciones.js";
+import { leerAjustes, leerFunciones, funcionActiva } from "./funciones.js";
 import { registrar, canalDeTelefono } from "./metricas.js";
 import { construirResumen } from "./resumen.js";
 import { reglasCitas, horasLibres, celular } from "./citas.js";
 import { tipoArchivo } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
+import { registrarEvento } from "./eventos.js";
+import { emitirVinculo } from "./vinculos.js";
+import { NOTARIA_POR_DEFECTO } from "./notaria.js";
 // Dirección pública del sitio para los enlaces legales que Sofía comparte por WhatsApp.
 const SITIO = (process.env.SITIO_URL || "https://notaria41.vercel.app").replace(/\/$/, "");
 import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
@@ -255,8 +258,16 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const nueva = await almacen.crearSolicitudCita({ conversacionId: conv.id, tramiteId: t ? t.id : null, fecha: i.fecha, hora, nombre, nota: corto(i.nota, 200),
           estado: confirmada ? "confirmada" : "pendiente", ...(contacto ? { contacto } : {}) });
         await registrar(almacen, "cita.creada." + canalDeTelefono(conv.telefono), 1, ctx.t);
+        const notariaId = conv.notariaId || NOTARIA_POR_DEFECTO;
+        await registrarEvento(almacen, { notariaId, solicitudId: nueva.id, tipo: "creada", actor: "cliente" });
+        // Enlace para guardar el trámite en una cuenta: solo en la tarjeta del chat web y con el portal encendido (en WhatsApp, nunca).
+        let vinculo = null;
+        if (Array.isArray(ctx.eventos) && esWeb(conv) && funcionActiva(ajustes, "portal")) {
+          try { vinculo = await emitirVinculo({ almacen, notariaId, solicitudId: nueva.id, canal: "creacion", ahora: ctx.t.getTime() }); }
+          catch (e) { console.warn("No se emitió el enlace para guardar el trámite:", e?.code || "sin código"); }
+        }
         if (Array.isArray(ctx.eventos)) ctx.eventos.push({ tipo: "cita", resumen: construirResumen({ ...nueva, fecha: i.fecha, hora, nombre, tramiteId: t?.id || null,
-          estado: confirmada ? "confirmada" : "pendiente" }, C, { subirDocumentos: esWeb(conv) && ctx.funciones.documentos }) });
+          estado: confirmada ? "confirmada" : "pendiente" }, C, { subirDocumentos: esWeb(conv) && ctx.funciones.documentos }), ...(vinculo ? { vinculo: { token: vinculo.token, expira: vinculo.expira } } : {}) });
         const cliente = `${nombre} ${contacto ? "(" + contacto + ")" : quien}`;
         // La anterior se cancela después de crear la nueva, para que el cliente nunca quede sin cita.
         for (const a of activas) {

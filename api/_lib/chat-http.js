@@ -45,7 +45,7 @@ export function crearManejadorChat({ asistente, almacen, ahora = () => Date.now(
       }
       const eventos = [];
       const respuestas = await asistente.atender({ id: "web." + t + "." + Math.random().toString(36).slice(2, 10), de: "web:" + sesion, nombre: "", tipo: "texto", texto, canal: "web" }, { eventos });
-      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: funcionActiva(ajustes, "documentos") }));
+      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: funcionActiva(ajustes, "documentos"), ...(e.vinculo ? { vinculo: e.vinculo } : {}) }));
       return json({ respuestas, tarjetas, ...(!respuestas.length ? { ocupado: true } : {}) });
     }
   };

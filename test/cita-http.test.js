@@ -1,5 +1,6 @@
-import { it, expect, vi, beforeEach } from 'vitest';
+import { it, expect, vi, beforeEach, describe } from 'vitest';
 import { crearManejadorCita } from '../api/_lib/cita-http.js';
+import { consumirVinculo } from '../api/_lib/vinculos.js';
 import { crearAlmacenMemoria } from '../api/_lib/almacen-memoria.js';
 const C={notaria:{direccion:'Quito',horario:{dias:[1,2,3,4,5],abre:'08:00',cierra:'17:00',texto:'Lunes a viernes'},citas:{porHora:2,feriados:[]}},data:{tramites:[{id:'poder',nombre:'Poder',cat:'poderes',req:['Cédula'],tarifa:{tipo:'fija',valor:10}},{id:'revision',nombre:'Revisión',revision:true,req:[],tarifa:{tipo:'consultar'}}]},tarifas:{iva:0.15}};
 let almacen, avisar, api;
@@ -37,3 +38,51 @@ it("si no se pueden leer los ajustes (cupos y bloqueos), no agenda a ciegas", as
   expect(await almacen.citasEntre("2026-10-01", "2026-10-31")).toEqual([]);
 });
 it('la cita deja constancia en el historial de consentimientos sin guardar el celular en claro',async()=>{expect((await api.POST(req())).status).toBeLessThan(300);const [c]=await almacen.consentimientos();expect(c).toMatchObject({canal:'formulario',texto:expect.stringContaining('términos')});expect(JSON.stringify(c)).not.toContain('991234567');});
+
+describe("enlace para guardar el trámite (portal)", () => {
+  it("con el portal apagado responde igual que siempre: sin vinculo", async () => {
+    const r = await api.POST(req());
+    expect(r.status).toBe(201);
+    const b = await r.json();
+    expect(Object.keys(b)).toEqual(["resumen"]);
+    expect(JSON.stringify(b)).not.toContain("vinculo");
+  });
+  it("con el portal encendido devuelve un token de un solo uso que vence en 24 horas y registra el evento", async () => {
+    await almacen.guardarAjuste("funcion.portal", "1");
+    const b = await (await api.POST(req())).json();
+    expect(Object.keys(b)).toEqual(["resumen", "vinculo"]);
+    expect(b.resumen.vinculo).toBeUndefined();
+    expect(b.vinculo.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(b.vinculo.expira).toBe(Date.parse("2026-10-12T12:00:00Z") + 24 * 3600e3);
+    const cliente = await almacen.crearCliente({ notariaId: "notaria41", email: "ana@ejemplo.ec", emailVerificadoEn: new Date().toISOString() });
+    const id = await consumirVinculo({ almacen, notariaId: "notaria41", clienteId: cliente.id, token: b.vinculo.token, ahora: Date.parse("2026-10-12T13:00:00Z") });
+    expect(id).toBeTruthy();
+    const tramite = await almacen.tramiteDeCliente("notaria41", cliente.id, id);
+    expect(tramite.codigo).toBe(b.resumen.codigo);
+    expect(tramite.eventos.map((e) => e.tipo)).toEqual(["creada", "vinculada"]);
+    expect(tramite.eventos[0]).toMatchObject({ texto: "Recibimos tu solicitud de cita.", actor: "cliente" });
+    expect(await consumirVinculo({ almacen, notariaId: "notaria41", clienteId: cliente.id, token: b.vinculo.token, ahora: Date.parse("2026-10-12T13:00:00Z") })).toBeNull();
+  });
+  it("nunca entrega vinculo en la trampa, en el 409 ni en el 429", async () => {
+    await almacen.guardarAjuste("funcion.portal", "1");
+    expect(await (await api.POST(req({ ...cuerpo, sitio: "robot" }))).json()).not.toHaveProperty("vinculo");
+    await api.POST(req());
+    const repetida = await api.POST(req());
+    expect(repetida.status).toBe(409);
+    expect(await repetida.json()).not.toHaveProperty("vinculo");
+    const a = crearManejadorCita({ almacen, contenido: async () => C, limites: { consultas: 120, porIp: 0, porCelular: 3, porDia: 200 }, ahora: () => new Date("2026-10-12T12:00:00Z") });
+    const limitada = await a.POST(req({ ...cuerpo, celular: "0991234568" }));
+    expect(limitada.status).toBe(429);
+    expect(await limitada.json()).not.toHaveProperty("vinculo");
+  });
+  it("si no se puede emitir el enlace, la cita igual queda creada", async () => {
+    await almacen.guardarAjuste("funcion.portal", "1");
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    almacen.crearVinculacion = async () => { throw new Error("sin base"); };
+    const r = await api.POST(req());
+    expect(r.status).toBe(201);
+    expect(await r.json()).not.toHaveProperty("vinculo");
+    expect(aviso).toHaveBeenCalled();
+    aviso.mockRestore();
+  });
+});

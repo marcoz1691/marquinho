@@ -631,6 +631,29 @@ describe("tickets y eventos de citas", () => {
     expect(resultadoDe(claude).content).toContain("Ticket " + eventos[0].resumen.codigo);
     expect(resultadoDe(claude).content).toContain("El resumen con el ticket se le muestra al cliente aparte; no lo repitas completo. Solo dile el ticket y qué sigue.");
   });
+  it.each([
+    [true, "1", true], [true, "0", false], [true, undefined, false], [false, "1", false]
+  ])("enlace para guardar el trámite (web: %s, portal: %s) -> %s", async (web, portal, conVinculo) => {
+    if (portal !== undefined) await almacen.guardarAjuste("funcion.portal", portal);
+    const claude = claudeFalso([herramienta("solicitar_cita", { tramite_id: "poder", fecha: "2026-10-08", hora: "10:00", nombre: "Ana Pérez", telefono: "0991112233" }), texto("Listo")]);
+    const eventos = [];
+    await nuevo(claude).atender(mensaje(web ? { de: "web:abc123", canal: "web" } : {}), { eventos });
+    expect(eventos).toHaveLength(1);
+    if (conVinculo) {
+      expect(eventos[0].vinculo.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(eventos[0].vinculo.expira).toBe(Date.parse("2026-10-06T15:00:00Z") + 24 * 3600e3);
+      expect(eventos[0].resumen.vinculo).toBeUndefined();
+    } else expect(eventos[0]).not.toHaveProperty("vinculo");
+    // El texto para el modelo no cambia y nunca lleva el token.
+    expect(resultadoDe(claude).content).toContain("El resumen con el ticket se le muestra al cliente aparte");
+    expect(JSON.stringify(claude.llamadas)).not.toContain(eventos[0].vinculo?.token || "sin token");
+    // La cita creada queda en la línea de tiempo del cliente.
+    const conv = await almacen.conversacion(web ? "web:abc123" : "593991112233");
+    const [cita] = await almacen.solicitudesCita(conv.id);
+    const cliente = await almacen.crearCliente({ notariaId: "notaria41", email: "ana@ejemplo.ec", emailVerificadoEn: new Date().toISOString() });
+    await almacen.actualizarCita(cita.id, { clienteId: cliente.id });
+    expect((await almacen.tramiteDeCliente("notaria41", cliente.id, cita.id)).eventos).toMatchObject([{ tipo: "creada", texto: "Recibimos tu solicitud de cita.", actor: "cliente" }]);
+  });
   it("consulta el ticket solo entre las citas del cliente", async () => {
     const conv = await almacen.conversacion("593991112233");
     const a = await almacen.crearSolicitudCita({ conversacionId: conv.id, fecha: "2026-10-08", hora: "10:00", nombre: "Ana" });
