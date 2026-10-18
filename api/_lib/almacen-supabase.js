@@ -2,6 +2,7 @@
 // Usa la clave service_role: solo debe correr en el servidor.
 import { createClient } from "@supabase/supabase-js";
 import { nuevoCodigo } from "./tickets.js";
+import { crearPortalSupabase } from "./portal-supabase.js";
 import { textoVisible } from "./mensajes.js";
 
 const BUCKET = "documentos";
@@ -11,12 +12,14 @@ export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
   const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada,
     consentimientoTexto: r.consentimiento_texto || "", consentimientoAviso: r.consentimiento_aviso || "" };
-  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, codigo: r.codigo ?? null, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "" };
+  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, codigo: r.codigo ?? null, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "" , notariaId: r.notaria_id || "notaria41", clienteId: r.cliente_id ?? null };
   const doc = (r) => ({ id: r.id, conversacionId: r.conversacion_id, mediaId: r.media_id, nombre: r.nombre, mime: r.mime, descripcion: r.descripcion, tramiteId: r.tramite_id,
-    estado: r.estado, nota: r.nota, creado: Date.parse(r.creado) });
+    estado: r.estado, nota: r.nota, observacionCliente: r.observacion_cliente || "", solicitudId: r.solicitud_id ?? null, creado: Date.parse(r.creado) });
   const mensajesDe = async (filtro, valor) => ok(await db.from("mensajes").select("contenido").eq(filtro, valor).order("id")).map((m) => m.contenido);
 
   return {
+    // Portal de clientes (Sofía PreFirma), en su propio módulo.
+    ...crearPortalSupabase(db, ok),
     async precios() { return ok(await db.from("precios").select("*")).map((p) => ({ tramiteId: p.tramite_id, tipo: p.tipo, valor: p.valor === null ? null : Number(p.valor), unidad: p.unidad, tabla: p.tabla, actualizadoPor: p.actualizado_por, actualizadoEn: p.actualizado_en })); },
     async guardarPrecio(p) { ok(await db.from("precios").upsert({ tramite_id: p.tramiteId, tipo: p.tipo, valor: p.valor ?? null, unidad: p.unidad || "", tabla: p.tabla || "", actualizado_por: p.actualizadoPor || "", actualizado_en: new Date().toISOString() })); },
     async restaurarPrecio(id) { ok(await db.from("precios").delete().eq("tramite_id", id)); },
@@ -130,11 +133,12 @@ export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo
       const ruta = `${d.conversacionId}/${crypto.randomUUID()}-${(d.nombre || "archivo").replace(/[^\w.\-]+/g, "_")}`;
       ok(await db.storage.from(BUCKET).upload(ruta, d.bytes, { contentType: d.mime || "application/octet-stream" }));
       const r = ok(await db.from("documentos").insert({ conversacion_id: d.conversacionId, media_id: d.mediaId, nombre: d.nombre || "", mime: d.mime || "",
-        ruta, descripcion: d.descripcion || "", tramite_id: d.tramiteId || null }).select("id").single());
+        ruta, descripcion: d.descripcion || "", tramite_id: d.tramiteId || null, ...(d.solicitudId ? { solicitud_id: d.solicitudId } : {}) }).select("id").single());
       return { id: r.id };
     },
     async documento(id) { const r = ok(await db.from("documentos").select("*").eq("id", id).is("borrado_en", null).maybeSingle()); return r ? doc(r) : null; },
-    async revisarDocumento(id, { estado, nota = "" }) { ok(await db.from("documentos").update({ estado, nota }).eq("id", id)); },
+    // «nota» es interna (solo personal); «observacionCliente» la ve el cliente en su portal.
+    async revisarDocumento(id, { estado, nota = "", observacionCliente }) { ok(await db.from("documentos").update({ estado, nota, ...(observacionCliente !== undefined ? { observacion_cliente: observacionCliente } : {}) }).eq("id", id)); },
     async documentos(conversacionId) { return ok(await db.from("documentos").select("*").eq("conversacion_id", conversacionId).is("borrado_en", null).order("creado")).map(doc); },
     // Borrado recuperable: deja de verse; purgar() elimina el archivo después.
     async borrarDocumento(id, { por = "" } = {}) {
@@ -148,7 +152,7 @@ export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo
     async crearSolicitudCita(c) {
       for (let intento = 0; intento < 8; intento++) {
         const resultado = await db.from("solicitudes_cita").insert({ conversacion_id: c.conversacionId, tramite_id: c.tramiteId || null, fecha: c.fecha, hora: c.hora,
-          codigo: codigo(), nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id, codigo").single();
+          codigo: codigo(), nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente", ...(c.notariaId ? { notaria_id: c.notariaId } : {}) }).select("id, codigo").single();
         if (resultado.error?.code === "23505") continue;
         const r = ok(resultado);
         return { id: r.id, codigo: r.codigo };
@@ -240,6 +244,8 @@ export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo
       // Historial de consentimientos: se conserva 5 años. Si la tabla aún no existe (falta la migración), no frena la purga.
       const { error: errConsent } = await db.from("consentimientos").delete().lt("creado", new Date(Date.now() - 5 * 365 * 864e5).toISOString());
       if (errConsent) console.warn("Purga: historial de consentimientos sin depurar:", errConsent.message);
+      // Portal de clientes: tampoco frena la purga principal si su migración aún no se aplicó.
+      try { await this.purgarPortal(); } catch (e) { console.warn("Purga: portal de clientes sin depurar:", e.message); }
       return { conversaciones, documentos };
     },
 

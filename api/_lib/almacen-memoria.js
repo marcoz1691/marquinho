@@ -1,6 +1,7 @@
 // Adaptador en memoria del almacén: para pruebas y desarrollo local. Misma interfaz que almacen-supabase.js.
 import { textoVisible } from "./mensajes.js";
 import { nuevoCodigo } from "./tickets.js";
+import { crearPortalMemoria } from "./portal-memoria.js";
 
 export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}) {
   personal = structuredClone(personal);
@@ -13,8 +14,11 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
   const nuevoId = () => String(++seq);
   const copia = (x) => structuredClone(x);
   const porId = (id) => [...convs.values()].find((c) => c.id === id);
+  // Portal de clientes (Sofía PreFirma): accede a las mismas citas y documentos.
+  const portal = crearPortalMemoria({ citas: () => citas, documentos: () => docs, nuevoId });
 
   return {
+    ...portal,
     async precios() { return [...precios.values()].map(copia); },
     async guardarPrecio(p) { precios.set(p.tramiteId, { unidad: "", tabla: "", actualizadoPor: "", ...copia(p), actualizadoEn: new Date().toISOString() }); },
     async restaurarPrecio(id) { precios.delete(id); },
@@ -40,7 +44,7 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
     },
     async conversacion(telefono, nombre) {
       let c = convs.get(telefono);
-      if (!c) { c = { id: nuevoId(), telefono, nombre: nombre || "", consentimiento: false, derivada: false, creada: Date.now() }; convs.set(telefono, c); }
+      if (!c) { c = { id: nuevoId(), notariaId: "notaria41", telefono, nombre: nombre || "", consentimiento: false, derivada: false, creada: Date.now() }; convs.set(telefono, c); }
       else if (nombre && !c.nombre) c.nombre = nombre;
       return copia(c);
     },
@@ -104,9 +108,10 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
     async archivoRecibido(conversacionId, mediaId) {
       return copia(archivos.find((a) => a.conversacionId === conversacionId && a.id === mediaId) || null);
     },
-    async guardarDocumento(d) { const doc = { id: nuevoId(), creado: Date.now(), estado: "recibido", nota: "", ...d }; docs.push(doc); return { id: doc.id }; },
+    async guardarDocumento(d) { const doc = { id: nuevoId(), creado: Date.now(), estado: "recibido", nota: "", observacionCliente: "", solicitudId: null, ...d }; docs.push(doc); return { id: doc.id }; },
     async documento(id) { return copia(docs.find((d) => d.id === id && !d.borradoEn) || null); },
-    async revisarDocumento(id, { estado, nota = "" }) { Object.assign(docs.find((d) => d.id === id), { estado, nota }); },
+    // «nota» es interna (solo personal); «observacionCliente» la ve el cliente en su portal.
+    async revisarDocumento(id, { estado, nota = "", observacionCliente }) { Object.assign(docs.find((d) => d.id === id), { estado, nota, ...(observacionCliente !== undefined ? { observacionCliente } : {}) }); },
     async documentos(conversacionId) { return docs.filter((d) => d.conversacionId === conversacionId && !d.borradoEn).map(copia); },
     // Borrado recuperable: deja de verse; purgar() elimina el archivo después.
     async borrarDocumento(id, { por = "", ahora = Date.now() } = {}) { const d = docs.find((x) => x.id === id); if (d && !d.borradoEn) Object.assign(d, { borradoEn: ahora, borradoPor: por }); },
@@ -116,7 +121,7 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
       for (let intento = 0; intento < 8; intento++) {
         const ticket = codigo();
         if (citas.some((x) => x.fecha === c.fecha && x.codigo === ticket)) continue;
-        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c, codigo: ticket };
+        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", notariaId: "notaria41", clienteId: null, ...c, codigo: ticket };
         citas.push(x);
         return { id: x.id, codigo: ticket };
       }
@@ -170,6 +175,7 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
       citas = citas.filter((x) => !viejas.has(x.conversacionId));
       archivos = archivos.filter((x) => !viejas.has(x.conversacionId));
       pendientes = pendientes.filter((x) => !viejas.has(x.conversacionId));
+      await portal.purgarPortal();
       return { conversaciones: viejas.size, documentos: antes - docs.length };
     }
   };

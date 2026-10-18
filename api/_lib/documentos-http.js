@@ -1,7 +1,8 @@
 import { leerAjustes, errorWeb } from "./funciones.js";
 import { registrar } from "./metricas.js";
 // Documentos de la web: solo para una cita vigente de la propia conversación.
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import { huellaIp } from "./huella.js";
 import { tipoArchivo } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
@@ -41,8 +42,7 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       const nombre = (typeof b.nombre === "string" ? b.nombre : "").replace(/[^\w. -]/g, "").slice(0, 120);
 
       // Misma huella que el chat; la IP nunca se guarda en claro.
-      const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "desconocida";
-      const huella = createHash("sha256").update("notaria41:" + ip).digest("hex").slice(0, 24);
+      const huella = huellaIp(request);
       const t = ahora();
       const [nSesion, nIp] = await Promise.all([
         almacen.contarUso("documentos:sesion:" + b.sesion, HORA, t),
@@ -77,8 +77,7 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       const sesion = request.headers.get("x-sesion"), ticket = parametros.get("ticket");
       if (!sesionValida(sesion)) return json({ error: "Sesión inválida" }, 400);
       // La consulta también tiene tope por IP: así no sirve para probar tickets.
-      const t = ahora(), ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "desconocida";
-      const huella = createHash("sha256").update("notaria41:" + ip).digest("hex").slice(0, 24);
+      const t = ahora(), huella = huellaIp(request);
       if ((await almacen.contarUso("documentos:consulta:" + huella, HORA, t)) > limites.consultasPorIp) return json({ error: "Hiciste muchas consultas. Inténtalo de nuevo en una hora." }, 429);
       const encontrada = await buscarCita(sesion, ticket, t);
       if (!encontrada) return json({ error: SIN_CITA }, 404);

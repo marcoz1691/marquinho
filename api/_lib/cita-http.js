@@ -1,6 +1,6 @@
 import { errorWeb } from "./funciones.js";
 import { registrar } from "./metricas.js";
-import { createHash } from "node:crypto";
+import { huellaIp } from "./huella.js";
 import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
 import { construirResumen } from "./resumen.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
@@ -11,11 +11,7 @@ const HORA = 3600e3,
   DIA = 864e5;
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-const huella = (r) =>
-  createHash("sha256")
-    .update("notaria41:" + ((r.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "desconocida"))
-    .digest("hex")
-    .slice(0, 24);
+const huella = huellaIp;
 export function crearManejadorCita({
   almacen,
   contenido,
