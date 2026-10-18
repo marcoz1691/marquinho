@@ -110,7 +110,7 @@ test("409 por hora ocupada vuelve a día y hora con disponibilidad nueva", async
 });
 
 test("si ya tiene una cita, el aviso sale junto al botón con WhatsApp y teléfono @movil", async ({ page }) => {
-  const error = "Ya tienes una cita el lunes 12 de octubre a las 09:30 (ticket 1260). Si necesitas cambiarla, escríbenos por WhatsApp o llámanos.";
+  const error = "Ya tienes una cita activa con este celular. Si necesitas cambiarla o no recuerdas tu ticket, escríbenos por WhatsApp o llámanos.";
   await abrir(page, () => ({ status: 409, json: { error } }));
   await noSe(page);
   await elegirHora(page);

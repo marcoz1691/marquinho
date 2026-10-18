@@ -1,11 +1,12 @@
 // Adaptador del almacén sobre Supabase (Postgres + Storage). Misma interfaz que almacen-memoria.js.
 // Usa la clave service_role: solo debe correr en el servidor.
 import { createClient } from "@supabase/supabase-js";
+import { nuevoCodigo } from "./tickets.js";
 import { textoVisible } from "./mensajes.js";
 
 const BUCKET = "documentos";
 
-export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
+export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo } = {}) {
   const db = cliente || createClient(url, clave, { auth: { persistSession: false } });
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
   const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada,
@@ -146,9 +147,8 @@ export function crearAlmacenSupabase({ url, clave, cliente } = {}) {
 
     async crearSolicitudCita(c) {
       for (let intento = 0; intento < 8; intento++) {
-        const codigo = String(1000 + Math.floor(Math.random() * 9000));
         const resultado = await db.from("solicitudes_cita").insert({ conversacion_id: c.conversacionId, tramite_id: c.tramiteId || null, fecha: c.fecha, hora: c.hora,
-          codigo, nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id, codigo").single();
+          codigo: codigo(), nombre: c.nombre, nota: c.nota || "", contacto: c.contacto || null, estado: c.estado || "pendiente" }).select("id, codigo").single();
         if (resultado.error?.code === "23505") continue;
         const r = ok(resultado);
         return { id: r.id, codigo: r.codigo };

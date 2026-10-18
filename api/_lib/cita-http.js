@@ -5,6 +5,7 @@ import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibl
 import { construirResumen } from "./resumen.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
+const CITA_ACTIVA = "Ya tienes una cita activa con este celular. Si necesitas cambiarla o no recuerdas tu ticket, escríbenos por WhatsApp o llámanos.";
 const TEXTO_FORMULARIO = "Casillas de la web: acepto los términos y condiciones; autorizo el tratamiento de mis datos según el aviso de privacidad";
 const HORA = 3600e3,
   DIA = 864e5;
@@ -84,17 +85,8 @@ export function crearManejadorCita({
         (await almacen.solicitudesCita(previa.id)).find(
           (c) => ["pendiente", "confirmada"].includes(c.estado) && new Date(c.fecha + "T" + c.hora + ":00-05:00") > t
         );
-      if (activa) {
-        const fecha = new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", weekday: "long", day: "numeric", month: "long" })
-          .format(new Date(activa.fecha + "T12:00:00Z"))
-          .replace(",", "");
-        return json(
-          {
-            error: `Ya tienes una cita el ${fecha} a las ${activa.hora} (ticket ${activa.codigo}). Si necesitas cambiarla, escríbenos por WhatsApp o llámanos.`
-          },
-          409
-        );
-      }
+      // No se revelan la fecha, la hora ni el ticket: con solo saber un celular, cualquiera podría obtenerlos.
+      if (activa) return json({ error: CITA_ACTIVA }, 409);
       if (b.fecha < hoy || b.fecha > sumarDias(hoy, 29) || !(await horasLibres({ almacen, C, ajustes, fecha: b.fecha, ahora: t })).includes(b.hora))
         return json({ error: "Esa hora acaba de ocuparse. Elige otra.", dias: await disponibilidad(C, ajustes, t) }, 409);
       const [nIp, nDia] = await Promise.all([
