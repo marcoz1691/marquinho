@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" role="img" aria-labelledby="titulo descripcion">
+  <title id="titulo">Sofía PreFirma</title>
+  <desc id="descripcion">Una letra S formada por dos trazos conectados, junto al nombre Sofía PreFirma.</desc>
+  <defs>
+    <linearGradient id="fondo" x1="4" y1="4" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D5EF7"/>
+      <stop offset="1" stop-color="#2D7FF9"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="54" height="54" rx="17" fill="url(#fondo)"/>
+  <path d="M39 17.5c-2.6-3-6.4-4.5-11.2-4.5-6.5 0-11 3-11 7.6 0 5.1 4.5 6.7 11.2 7.8 6.4 1.1 9.1 2.4 9.1 6.4 0 4.8-4.4 8.2-10.8 8.2-5.1 0-9.3-1.7-12.3-5.2" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="42" cy="14" r="3.5" fill="#73E6D1"/>
+  <text x="69" y="27" fill="currentColor" font-family="Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="22" font-weight="750" letter-spacing="-0.7">Sofía</text>
+  <text x="69" y="43" fill="currentColor" opacity=".62" font-family="Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="650" letter-spacing="1.1">PREFIRMA</text>
+</svg>
