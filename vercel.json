@@ -61,6 +61,16 @@
   ],
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "sofiaprefirma.com"
+        }
+      ],
+      "destination": "/propuesta-sofia.html"
+    },
+    {
       "source": "/propuesta",
       "has": [
         {
