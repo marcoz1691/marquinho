@@ -21,7 +21,7 @@ botonesPeriodo.forEach(boton => boton.addEventListener("click", () => mostrarPer
 
 const compartir = document.querySelector("#compartir");
 compartir.addEventListener("click", async () => {
-  const datos = { title: document.title, text: "Conoce Sofía PreFirma, coordinación inteligente para notarías.", url: location.href };
+  const datos = { title: document.title, text: "Conoce Sofía PreFirma: cada trámite, listo para avanzar.", url: location.href };
   try {
     if (navigator.share) await navigator.share(datos);
     else {
@@ -32,6 +32,16 @@ compartir.addEventListener("click", async () => {
   } catch (error) {
     if (error.name !== "AbortError") compartir.textContent = "Copia el enlace del navegador";
   }
+});
+
+document.querySelector("#imprimir").addEventListener("click", () => window.print());
+
+document.querySelectorAll(".elegir-plan").forEach(enlace => {
+  enlace.addEventListener("click", () => {
+    const nombre = enlace.closest(".plan").dataset.plan;
+    document.querySelector("#seleccion-titulo").textContent = `Elegiste ${nombre}. Ahora lo adaptamos a tu notaría.`;
+    document.querySelector("#seleccion-texto").textContent = "Primero confirmamos los módulos, límites y canales contigo. Después configuramos una demostración con tus trámites principales y, cuando apruebes la propuesta, coordinamos la activación y el pago.";
+  });
 });
 
 if ("IntersectionObserver" in window) {
