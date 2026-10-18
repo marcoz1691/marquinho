@@ -58,6 +58,10 @@ _Avoid_: reserva, turno (hasta que esté confirmada)
 Una solicitud de cita confirmada por el personal: día y hora para firmar en la notaría.
 _Avoid_: turno, reserva
 
+**Ticket**:
+Código de 4 dígitos de una solicitud de cita, para que el cliente y el personal la ubiquen. Es una referencia, no una credencial: por sí solo nunca autoriza a ver, cambiar ni vincular un trámite, porque se repite entre días y se puede adivinar.
+_Avoid_: código de acceso, clave, contraseña
+
 **Pre-revisión**:
 Revisión que hace el personal de los documentos enviados por WhatsApp antes de la cita, para que el cliente resuelva todo en una sola visita.
 _Avoid_: validación, verificación (no tiene valor legal)
