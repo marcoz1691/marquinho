@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import { crearAlmacenMemoria } from "../api/_lib/almacen-memoria.js";
 import { crearAlmacenSupabase } from "../api/_lib/almacen-supabase.js";
+import { nuevoCodigo } from "../api/_lib/tickets.js";
 
 const solicitud = { conversacionId: "c1", fecha: "2026-10-08", hora: "10:00", nombre: "Ana" };
 function clienteFalso(resultados) {
@@ -17,37 +18,45 @@ function clienteFalso(resultados) {
 
 describe("tickets en memoria", () => {
   it("reintenta una colisión del mismo día y permite el mismo código otro día", async () => {
-    const azar = vi.spyOn(Math, "random").mockReturnValueOnce(0).mockReturnValueOnce(0).mockReturnValueOnce(0.5).mockReturnValueOnce(0);
-    try {
-      const a = crearAlmacenMemoria();
-      expect((await a.crearSolicitudCita(solicitud)).codigo).toBe("1000");
-      expect((await a.crearSolicitudCita(solicitud)).codigo).toBe("5500");
-      expect((await a.crearSolicitudCita({ ...solicitud, fecha: "2026-10-09" })).codigo).toBe("1000");
-      expect(azar).toHaveBeenCalledTimes(4);
-    } finally { azar.mockRestore(); }
+    const codigo = vi.fn().mockReturnValueOnce("1000").mockReturnValueOnce("1000").mockReturnValueOnce("5500").mockReturnValueOnce("1000");
+    const a = crearAlmacenMemoria({ codigo });
+    expect((await a.crearSolicitudCita(solicitud)).codigo).toBe("1000");
+    expect((await a.crearSolicitudCita(solicitud)).codigo).toBe("5500");
+    expect((await a.crearSolicitudCita({ ...solicitud, fecha: "2026-10-09" })).codigo).toBe("1000");
+    expect(codigo).toHaveBeenCalledTimes(4);
   });
   it("falla tras ocho intentos y no agrega una cita sin ticket", async () => {
-    const azar = vi.spyOn(Math, "random").mockReturnValue(0);
-    try {
-      const a = crearAlmacenMemoria();
-      await a.crearSolicitudCita(solicitud);
-      azar.mockClear();
-      await expect(a.crearSolicitudCita(solicitud)).rejects.toThrow(/ticket único/);
-      expect(azar).toHaveBeenCalledTimes(8);
-      expect(await a.solicitudesCita("c1")).toHaveLength(1);
-    } finally { azar.mockRestore(); }
+    const codigo = vi.fn(() => "1000");
+    const a = crearAlmacenMemoria({ codigo });
+    await a.crearSolicitudCita(solicitud);
+    codigo.mockClear();
+    await expect(a.crearSolicitudCita(solicitud)).rejects.toThrow(/ticket único/);
+    expect(codigo).toHaveBeenCalledTimes(8);
+    expect(await a.solicitudesCita("c1")).toHaveLength(1);
   });
 });
+
+describe("generador de tickets", () => {
+  it("usa azar criptográfico en el rango 1000–9999 y nunca Math.random", async () => {
+    const azar = vi.fn(() => 4821);
+    expect(nuevoCodigo(azar)).toBe("4821");
+    expect(azar).toHaveBeenCalledWith(1000, 10000);
+    const random = vi.spyOn(Math, "random");
+    try {
+      for (let i = 0; i < 200; i++) expect(nuevoCodigo()).toMatch(/^[1-9]\d{3}$/);
+      expect(random).not.toHaveBeenCalled();
+    } finally { random.mockRestore(); }
+  });
+});
+
 
 describe("tickets en Supabase", () => {
   it("reintenta el error 23505 y devuelve id y codigo", async () => {
     const cliente = clienteFalso([{ error: { code: "23505" } }, { data: { id: "1", codigo: "5500" } }]);
-    const azar = vi.spyOn(Math, "random").mockReturnValueOnce(0).mockReturnValueOnce(0.5);
-    try {
-      expect(await crearAlmacenSupabase({ cliente }).crearSolicitudCita(solicitud)).toEqual({ id: "1", codigo: "5500" });
-      expect(cliente.log.map((x) => x.ops[0][1].codigo)).toEqual(["1000", "5500"]);
-      expect(cliente.log[1].ops).toContainEqual(["select", "id, codigo"]);
-    } finally { azar.mockRestore(); }
+    const codigo = vi.fn().mockReturnValueOnce("1000").mockReturnValueOnce("5500");
+    expect(await crearAlmacenSupabase({ cliente, codigo }).crearSolicitudCita(solicitud)).toEqual({ id: "1", codigo: "5500" });
+    expect(cliente.log.map((x) => x.ops[0][1].codigo)).toEqual(["1000", "5500"]);
+    expect(cliente.log[1].ops).toContainEqual(["select", "id, codigo"]);
   });
   it("falla tras ocho colisiones", async () => {
     const cliente = clienteFalso(Array.from({ length: 8 }, () => ({ error: { code: "23505" } })));

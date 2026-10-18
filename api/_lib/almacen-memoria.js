@@ -1,7 +1,8 @@
 // Adaptador en memoria del almacén: para pruebas y desarrollo local. Misma interfaz que almacen-supabase.js.
 import { textoVisible } from "./mensajes.js";
+import { nuevoCodigo } from "./tickets.js";
 
-export function crearAlmacenMemoria({ personal = [] } = {}) {
+export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}) {
   personal = structuredClone(personal);
   const invitaciones = [], consentimientos = [];
   const precios = new Map(), ajustes = {}, detalles = {}, metricas = new Map();
@@ -113,11 +114,11 @@ export function crearAlmacenMemoria({ personal = [] } = {}) {
 
     async crearSolicitudCita(c) {
       for (let intento = 0; intento < 8; intento++) {
-        const codigo = String(1000 + Math.floor(Math.random() * 9000));
-        if (citas.some((x) => x.fecha === c.fecha && x.codigo === codigo)) continue;
-        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c, codigo };
+        const ticket = codigo();
+        if (citas.some((x) => x.fecha === c.fecha && x.codigo === ticket)) continue;
+        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", ...c, codigo: ticket };
         citas.push(x);
-        return { id: x.id, codigo };
+        return { id: x.id, codigo: ticket };
       }
       throw new Error("No se pudo generar un ticket único para ese día.");
     },
