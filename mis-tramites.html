@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es-EC">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Mis trámites · Sofía PreFirma</title>
+  <meta name="theme-color" content="#141832">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/fonts/archivo.css">
+  <link rel="stylesheet" href="assets/fonts/phosphor.css">
+  <link rel="stylesheet" href="css/cuenta.css">
+  <script type="module" src="js/mis-tramites.js"></script>
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <header class="portal-cabecera portal-cabecera--panel">
+    <a href="/propuesta" aria-label="Sofía PreFirma"><img src="assets/logo/sofia-prefirma.svg" alt="Sofía PreFirma"></a>
+    <nav aria-label="Cuenta"><button id="ver-cuenta" class="boton-texto" type="button"><i class="ph ph-user-circle" aria-hidden="true"></i> Mi cuenta</button><button id="salir" class="boton-texto" type="button">Salir</button></nav>
+  </header>
+  <main id="contenido" class="portal">
+    <header class="portal__intro"><div><p class="sobrelinea">Notaría 41 · portal del cliente</p><h1>Mis trámites</h1><p id="saludo">Aquí verás lo que sigue y los documentos que necesitan tu atención.</p></div><a class="boton-secundario" href="cita.html">Agendar otra cita</a></header>
+    <section id="perfil" class="aviso-perfil" hidden aria-labelledby="perfil-titulo">
+      <div><p class="sobrelinea">Una sola vez</p><h2 id="perfil-titulo">Completa tu perfil</h2><p>Así podremos relacionar tus trámites y avisarte con claridad.</p></div>
+      <form id="form-perfil" novalidate>
+        <label for="nombres">Nombres</label><input id="nombres" name="nombres" autocomplete="given-name" maxlength="80" required>
+        <label for="apellidos">Apellidos</label><input id="apellidos" name="apellidos" autocomplete="family-name" maxlength="80" required>
+        <label for="celular">Celular (opcional)</label><input id="celular" name="celular" type="tel" autocomplete="tel" placeholder="0991234567">
+        <label class="casilla"><input id="acepta-terminos" type="checkbox"><span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos y condiciones</a>.</span></label>
+        <label class="casilla"><input id="acepta-privacidad" type="checkbox"><span>Autorizo el tratamiento de mis datos según el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a>.</span></label>
+        <button type="submit">Guardar mi perfil</button><p id="perfil-estado" class="estado" role="status"></p>
+      </form>
+    </section>
+    <div class="filtros" role="group" aria-label="Filtrar trámites"><button type="button" data-filtro="activos" aria-pressed="true">En curso</button><button type="button" data-filtro="finalizados" aria-pressed="false">Finalizados</button></div>
+    <section id="lista" class="tramites" aria-live="polite"><p class="cargando">Cargando tus trámites…</p></section>
+    <section id="detalle" class="detalle" hidden aria-live="polite"></section>
+    <section id="cuenta-panel" class="cuenta-panel" hidden aria-labelledby="cuenta-titulo">
+      <div><p class="sobrelinea">Seguridad y avisos</p><h2 id="cuenta-titulo">Mi cuenta</h2><p id="cuenta-correo"></p></div>
+      <form id="form-preferencias"><label class="casilla"><input id="avisos-correo" type="checkbox"><span>Recibir avisos por correo</span></label><label class="casilla"><input id="avisos-whatsapp" type="checkbox"><span>Recibir avisos por WhatsApp</span></label><label for="celular-preferencias">Celular</label><input id="celular-preferencias" type="tel" autocomplete="tel"><button type="submit">Guardar preferencias</button><p id="preferencias-estado" class="estado" role="status"></p></form>
+      <button id="cerrar-todas" class="boton-peligro" type="button">Cerrar sesión en todos mis dispositivos</button>
+    </section>
+  </main>
+  <footer class="portal-pie"><span>Sofía prepara. Tu notaría decide.</span><a href="privacidad.html">Privacidad</a></footer>
+</body>
+</html>

@@ -139,7 +139,7 @@ export function crearPortalMemoria({ citas, documentos, nuevoId }) {
     // --- Pagos del ciudadano (caso A) ---
     async crearPago(p) {
       exigirNotaria(p.notariaId);
-      const previo = pagos.find((x) => x.idempotencia === p.idempotencia);
+      const previo = pagos.find((x) => x.notariaId === p.notariaId && x.idempotencia === p.idempotencia);
       if (previo) return { ...copia(previo), existente: true };
       const pago = { id: crypto.randomUUID(), solicitudId: null, clienteId: null, ticketSnapshot: "", moneda: "USD", estado: "creado",
         ordenProveedor: null, pagadoEn: null, ...copia(p), creado: iso(), actualizado: iso() };
@@ -147,6 +147,10 @@ export function crearPortalMemoria({ citas, documentos, nuevoId }) {
       return copia(pago);
     },
     async pagoPorId(notariaId, id) { exigirNotaria(notariaId); return copia(pagos.find((p) => p.notariaId === notariaId && p.id === id) || null); },
+    async pagoActivoPorSolicitud(notariaId, solicitudId) {
+      exigirNotaria(notariaId);
+      return copia(pagos.find((p) => p.notariaId === notariaId && p.solicitudId === solicitudId && ["creado", "pendiente", "procesando"].includes(p.estado)) || null);
+    },
     async pagoPorOrden(proveedor, orden) { return copia(pagos.find((p) => p.proveedor === proveedor && p.ordenProveedor === orden) || null); },
     async fijarOrdenPago(id, orden) {
       const p = pagos.find((x) => x.id === id);

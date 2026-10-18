@@ -112,8 +112,8 @@ describe.each(adaptadores)("portal %s", (_, crear) => {
   });
 
   it("pagos: idempotentes, transiciones condicionadas al estado y eventos sin duplicar", async () => {
-    const a = crear(), idem = "i-" + unico();
-    const p = await a.crearPago({ notariaId: N, concepto: "Poder especial", montoCentavos: 6652, proveedor: "falso", idempotencia: idem });
+    const a = crear(), idem = "i-" + unico(), t = await tramite(a);
+    const p = await a.crearPago({ notariaId: N, solicitudId: t.id, concepto: "Poder especial", montoCentavos: 6652, proveedor: "falso", idempotencia: idem });
     expect(p).toMatchObject({ estado: "creado", montoCentavos: 6652, moneda: "USD" });
     expect(await a.crearPago({ notariaId: N, concepto: "Otro", montoCentavos: 1, proveedor: "falso", idempotencia: idem })).toMatchObject({ id: p.id, existente: true });
     const orden = "o-" + unico();
@@ -122,6 +122,7 @@ describe.each(adaptadores)("portal %s", (_, crear) => {
     expect(await a.transicionarPago(p.id, "creado", "pendiente")).toBe(true);
     expect(await a.transicionarPago(p.id, "creado", "pendiente")).toBe(false);
     expect(await a.pagoPorId("notaria-b", p.id)).toBeNull();
+    expect((await a.pagoActivoPorSolicitud(N, t.id))?.id).toBe(p.id);
     const ev = { pagoId: p.id, proveedor: "falso", eventoProveedorId: "e-" + unico(), firmaValida: true, resultado: "aplicado" };
     expect(await a.registrarEventoPago(ev)).toEqual({ duplicado: false });
     expect(await a.registrarEventoPago(ev)).toEqual({ duplicado: true });

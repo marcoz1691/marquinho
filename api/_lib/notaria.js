@@ -1,8 +1,25 @@
-// Notaría que atiende cada pedido. Hoy el sistema sirve a una sola; con varias, se resolverá por el dominio del pedido.
-// Nunca se toma de lo que envía el navegador: lo decide el servidor (docs/multi-notaria.md).
+// Notaría que atiende cada pedido. Nunca se toma del cuerpo ni de un parámetro del navegador: la decide el servidor
+// por el dominio (docs/multi-notaria.md). NOTARIA_ID permite que cada proyecto de Vercel quede fijado a su notaría.
 export const NOTARIA_POR_DEFECTO = "notaria41";
 
-export function notariaDe(_request) { return NOTARIA_POR_DEFECTO; }
+const idValido = (id) => typeof id === "string" && /^[a-z0-9-]{3,40}$/.test(id);
+const hostDe = (request) => {
+  try { return new URL(request.url).hostname.toLowerCase(); }
+  catch { return ""; }
+};
+
+export function notariaDe(request, env = process.env) {
+  if (idValido(env.NOTARIA_ID)) return env.NOTARIA_ID;
+  const host = hostDe(request);
+  // En la plataforma, cada subdominio de notaría resuelve a su identificador. Los subdominios reservados siguen
+  // usando el piloto hasta que exista la selección pública de notaría.
+  const sufijo = ".sofiaprefirma.com";
+  if (host.endsWith(sufijo)) {
+    const subdominio = host.slice(0, -sufijo.length);
+    if (!subdominio.includes(".") && !["www", "app", "portal"].includes(subdominio) && idValido(subdominio)) return subdominio;
+  }
+  return NOTARIA_POR_DEFECTO;
+}
 
 // Todo método del almacén del portal exige la notaría: sin ella no hay consulta posible (aislamiento entre notarías).
 export function exigirNotaria(notariaId) {

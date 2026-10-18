@@ -330,13 +330,18 @@ create table if not exists pagos (
   estado text not null default 'creado' check (estado in ('creado', 'pendiente', 'procesando', 'pagado', 'fallido', 'cancelado', 'reembolsado')),
   proveedor text not null,
   orden_proveedor text,
-  idempotencia text not null unique,
+  idempotencia text not null,
   creado timestamptz not null default now(),
   actualizado timestamptz not null default now(),
   pagado_en timestamptz,
   unique (proveedor, orden_proveedor)
 );
 create index if not exists pagos_solicitud on pagos (notaria_id, solicitud_id);
+-- La idempotencia pertenece a una notaría y dos pedidos simultáneos nunca abren dos cobros para el mismo trámite.
+alter table pagos drop constraint if exists pagos_idempotencia_key;
+create unique index if not exists pagos_notaria_idempotencia on pagos (notaria_id, idempotencia);
+create unique index if not exists pagos_uno_activo_por_solicitud on pagos (solicitud_id)
+  where solicitud_id is not null and estado in ('creado', 'pendiente', 'procesando');
 
 create table if not exists pago_eventos (
   id bigint generated always as identity primary key,

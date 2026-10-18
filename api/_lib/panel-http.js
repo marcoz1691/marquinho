@@ -129,7 +129,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     devolver: (b) => panel.devolverAlAsistente(b.id),
     cita: (b) => panel.decidirCita(b.id, b.estado, b.motivo),
     asignarCita: (b) => panel.asignarCita(b.id, b.persona),
-    revisarDocumento: (b) => panel.revisarDocumento(b.id, b.estado, b.nota),
+    revisarDocumento: (b) => panel.revisarDocumento(b.id, b.estado, b.nota, b.observacionCliente),
     borrarDocumento: (b, email) => panel.borrarDocumento(b.id, email)
   };
 

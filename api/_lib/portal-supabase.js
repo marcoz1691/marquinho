@@ -141,13 +141,20 @@ export function crearPortalSupabase(db, ok) {
     // --- Pagos del ciudadano (caso A) ---
     async crearPago(p) {
       exigirNotaria(p.notariaId);
-      const previo = ok(await db.from("pagos").select("*").eq("idempotencia", p.idempotencia).maybeSingle());
+      const previo = ok(await db.from("pagos").select("*").eq("notaria_id", p.notariaId).eq("idempotencia", p.idempotencia).maybeSingle());
       if (previo) return { ...pago(previo), existente: true };
-      return pago(ok(await db.from("pagos").insert({ notaria_id: p.notariaId, solicitud_id: p.solicitudId || null, cliente_id: p.clienteId || null,
+      const insercion = await db.from("pagos").insert({ notaria_id: p.notariaId, solicitud_id: p.solicitudId || null, cliente_id: p.clienteId || null,
         ticket_snapshot: p.ticketSnapshot || "", concepto: p.concepto, monto_centavos: p.montoCentavos, moneda: p.moneda || "USD",
-        proveedor: p.proveedor, idempotencia: p.idempotencia }).select("*").single()));
+        proveedor: p.proveedor, idempotencia: p.idempotencia }).select("*").single();
+      if (insercion.error) throw Object.assign(new Error(`Supabase: ${insercion.error.message}`), { code: insercion.error.code });
+      return pago(insercion.data);
     },
     async pagoPorId(notariaId, id) { exigirNotaria(notariaId); return pago(ok(await db.from("pagos").select("*").eq("notaria_id", notariaId).eq("id", id).maybeSingle())); },
+    async pagoActivoPorSolicitud(notariaId, solicitudId) {
+      exigirNotaria(notariaId);
+      return pago(ok(await db.from("pagos").select("*").eq("notaria_id", notariaId).eq("solicitud_id", solicitudId)
+        .in("estado", ["creado", "pendiente", "procesando"]).maybeSingle()));
+    },
     async pagoPorOrden(proveedor, orden) { return pago(ok(await db.from("pagos").select("*").eq("proveedor", proveedor).eq("orden_proveedor", orden).maybeSingle())); },
     async fijarOrdenPago(id, orden) { ok(await db.from("pagos").update({ orden_proveedor: orden, actualizado: ahoraIso() }).eq("id", id)); },
     async transicionarPago(id, de, a, { pagadoEn = null } = {}) {

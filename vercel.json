@@ -7,6 +7,14 @@
       "maxDuration": 30,
       "includeFiles": "data/**"
     },
+    "api/cuenta.js": {
+      "maxDuration": 30,
+      "includeFiles": "data/**"
+    },
+    "api/pagos.js": {
+      "maxDuration": 30,
+      "includeFiles": "data/**"
+    },
     "api/whatsapp.js": {
       "maxDuration": 300,
       "includeFiles": "data/**"
@@ -71,6 +79,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/pagos-webhook",
+      "destination": "/api/pagos?webhook=tramite"
+    },
     {
       "source": "/propuesta",
       "has": [

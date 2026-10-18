@@ -8,7 +8,7 @@ El portal «Mis trámites» (Sofía PreFirma) necesita una cuenta opcional para 
 - **Sesión:** un token aleatorio de 32 bytes en la cookie `__Host-sp_sesion` (`HttpOnly`, `Secure`, `SameSite=Strict`). En la base solo se guarda su sha256.
 - **Sin enumeración:** pedir un código siempre responde lo mismo, exista o no la cuenta. Recuperar el acceso es el mismo flujo.
 - **Una cuenta por notaría:** `unique(notaria_id, email)`. La notaría la decide el servidor, nunca el navegador.
-- **El ticket nunca es credencial:** un trámite se guarda en la cuenta solo con un enlace de un solo uso y alta entropía (`tramite_vinculaciones`), consumido de forma atómica (`consumir_vinculacion`).
+- **El ticket nunca es credencial:** un trámite se guarda en la cuenta solo con un enlace de un solo uso y alta entropía (`tramite_vinculaciones`), consumido de forma atómica (`consumir_vinculacion`). El token viaja en el fragmento `#vincular=…`, que el navegador no envía al servidor ni al encabezado `Referer`; la interfaz lo retira de la barra antes de hacer pedidos.
 
 ## Considered Options
 

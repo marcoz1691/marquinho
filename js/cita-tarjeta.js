@@ -3,6 +3,8 @@ import { esc } from "./chat-nucleo.js";
 import { crearIcs } from "./calendario.js";
 import { reducirImagen } from "./imagenes.js";
 export function htmlCita(r) {
+  const guardar = /^[A-Za-z0-9_-]{43}$/.test(r.vinculo?.token || "")
+    ? `<a class="cita-guardar" href="/cuenta.html#vincular=${encodeURIComponent(r.vinculo.token)}">Guardar en Mis trámites</a>` : "";
   return '<h3>Tu cita</h3><strong class="cita-ticket">Ticket ' + esc(r.codigo) + '</strong><p>' +
     (r.estado === "pendiente" ? "Recibimos tu solicitud. El personal la confirmará por WhatsApp." : "Tu cita quedó confirmada.") +
     '</p><p>' + esc(r.fechaTexto || r.fecha) + ' · ' + esc(r.hora) + '</p>' +
@@ -10,7 +12,7 @@ export function htmlCita(r) {
     (r.requisitos?.length ? '<p>Lleva:</p><ul>' + r.requisitos.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') +
     (r.costo ? '<p>Costo referencial: <b>' + esc(r.costo.total) + '</b> con IVA.</p><p>' + esc(r.costo.detalle) + '</p>' : '') +
     (r.aviso ? '<p class="cita-aviso">' + esc(r.aviso) + '</p>' : '') +
-    '<div class="cita-botones"><button type="button" data-calendario>Agregar a mi calendario</button>' +
+    '<div class="cita-botones"><button type="button" data-calendario>Agregar a mi calendario</button>' + guardar +
     (r.subirDocumentos ? '<button type="button" data-subir aria-expanded="false">Subir documentos</button>' : '') + '</div>' +
     (r.subirDocumentos ? '<form class="cita-subida" hidden novalidate><label>Archivo<input type="file" name="archivo" accept="application/pdf,image/jpeg,image/png,image/webp"></label><label>Descripción<input name="descripcion" minlength="2" maxlength="120" required></label><label class="cita-consentimiento"><input type="checkbox" name="aceptaTerminos"> <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos y condiciones</a>.</span></label><label class="cita-consentimiento"><input type="checkbox" name="aceptaDatos"> <span>Autorizo el tratamiento de mis datos según el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a>, incluido su procesamiento por proveedores con servidores fuera del Ecuador.</span></label><button type="submit">Enviar</button><progress hidden aria-label="Progreso del envío"></progress><p class="cita-estado" aria-live="polite"></p><ul class="cita-documentos" aria-label="Documentos enviados"></ul></form>' : '');
 }

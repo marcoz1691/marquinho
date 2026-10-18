@@ -1,8 +1,11 @@
-# Notaría 41 de Quito: sitio web y asistente de WhatsApp
+# Sofía PreFirma: plataforma para notarías
+
+Este repositorio contiene la plataforma **Sofía PreFirma**. La **Notaría 41 de Quito es el primer piloto**, no el nombre ni el límite del producto. El sitio comercial se despliega en el proyecto de Vercel `sofiaprefirma`; el proyecto `notaria41` conserva el sitio público propio de la notaría.
 
 - **Sitio web estático** (`index.html`, `css/`, `js/`). Muestra trámites, requisitos, tarifas oficiales y la calculadora. Su contenido se edita desde Google Sheets.
 - **Asistente de WhatsApp con IA** (`api/`). Funciona en Vercel con Claude y Supabase. Conversa en lenguaje natural, cotiza, recibe documentos para pre-revisión y toma solicitudes de cita. Nunca completa actos notariales: todos se firman en la notaría ([ADR 0002](docs/adr/0002-el-asistente-no-completa-actos-notariales.md)).
 - **Panel del personal** (`panel/`). Desde ahí el personal responde chats derivados, confirma citas y revisa documentos.
+- **Portal del cliente** (`cuenta.html`, `mis-tramites.html`, `api/cuenta.js`). Permite guardar una cita mediante un enlace de un solo uso, revisar pendientes y enviar documentos. Está apagado por defecto.
 
 El vocabulario del dominio está en [GLOSSARY.md](GLOSSARY.md).
 
@@ -64,6 +67,15 @@ La guía para el notario está en [cms/GUIA-NOTARIO.md](cms/GUIA-NOTARIO.md).
 3. El cron de [vercel.json](vercel.json) llama a `/api/recordatorios` todos los días a las 17:00 de Quito, que son las 22:00 UTC.
 4. Deja activado **Fluid compute** (Settings → Functions): el webhook puede tardar hasta 300 s en conversaciones con varias herramientas.
 5. Cambia el número de WhatsApp de la web al **número del asistente**: en la pestaña Configuración de la hoja, dato «WhatsApp».
+
+### 4. Portal «Mis trámites» de Sofía PreFirma
+
+1. Ejecuta en Supabase el bloque **2026-10-18: cuentas de cliente y portal «Mis trámites»** de `supabase/esquema.sql`.
+2. En el proyecto Vercel `sofiaprefirma`, configura `NOTARIA_ID=notaria41`, un `CUENTA_SECRETO` aleatorio y las credenciales de Resend (`RESEND_API_KEY`, `CORREO_REMITENTE`). Verifica primero el dominio `sofiaprefirma.com` en Resend.
+3. Despliega y prueba el acceso con un correo de prueba. Luego activa **Mis trámites** desde Panel → Piloto. Sin el interruptor, la API responde como no disponible y las citas funcionan como antes.
+4. **Pagos en línea permanece apagado** hasta contratar e integrar una pasarela real. El proveedor falso se niega a funcionar en producción.
+
+La guía de separación entre el producto y el piloto está en [docs/despliegue-sofia-prefirma.md](docs/despliegue-sofia-prefirma.md).
 
 ### Cómo se comporta el asistente
 - **Modelo:** `claude-opus-5-5`, con respaldo automático ante rechazos (`fallbacks: "default"`) y caché del prompt. La base de conocimiento queda fija durante cada sesión de conversación, que se renueva tras 24 h sin mensajes.

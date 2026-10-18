@@ -9,6 +9,7 @@ import { leerSesion, mismoOrigen } from "./sesion-cliente.js";
 import { notariaDe } from "./notaria.js";
 import { calcularTarifa, money } from "../../js/nucleo.js";
 import { ESTADOS, puedePasar } from "./pagos/proveedor.js";
+import { registrarEvento } from "./eventos.js";
 
 const NO_DISPONIBLE = "El pago en línea no está disponible: paga en la notaría el día de tu trámite.";
 const SEGUN_CASO = "El valor de este trámite lo define la notaría según tu caso.";
@@ -34,7 +35,7 @@ const TEXTO_CLIENTE = {
 };
 async function eventoTramite(almacen, pago, estado) {
   if (!pago.solicitudId || !TEXTO_CLIENTE[estado]) return;
-  await almacen.registrarEventoTramite({ notariaId: pago.notariaId, solicitudId: pago.solicitudId, tipo: "pago_" + estado,
+  await registrarEvento(almacen, { notariaId: pago.notariaId, solicitudId: pago.solicitudId, tipo: "pago_" + estado,
     textoCliente: TEXTO_CLIENTE[estado](pago), actor: estado === "pendiente" ? "cliente" : "sistema" });
 }
 
@@ -77,9 +78,18 @@ export function crearManejadorPagos({ almacen, contenido, proveedor, ahora = () 
 
     // Un pago pendiente del mismo trámite y monto se retoma: evita dos cobros por el mismo trámite.
     const abierto = (t.pagos || []).find((p) => p.estado === "pendiente" && p.montoCentavos === montoCentavos);
-    let pago = abierto ? await almacen.pagoPorId(notariaId, abierto.id)
-      : await almacen.crearPago({ notariaId, solicitudId: t.id, clienteId, ticketSnapshot: String(t.codigo ?? ""), concepto: String(ficha.nombre).slice(0, 200),
-        montoCentavos, moneda: "USD", proveedor: proveedor.nombre, idempotencia });
+    let pago = abierto ? await almacen.pagoPorId(notariaId, abierto.id) : null;
+    if (!pago) {
+      try {
+        pago = await almacen.crearPago({ notariaId, solicitudId: t.id, clienteId, ticketSnapshot: String(t.codigo ?? ""), concepto: String(ficha.nombre).slice(0, 200),
+          montoCentavos, moneda: "USD", proveedor: proveedor.nombre, idempotencia });
+      } catch (e) {
+        // El índice parcial solo deja un pago activo por trámite. Si dos pedidos llegaron juntos, ambos retoman el ganador.
+        if (e?.code !== "23505") throw e;
+        pago = await almacen.pagoActivoPorSolicitud(notariaId, t.id);
+      }
+    }
+    if (!pago) return json({ error: FALLO_PASARELA }, 502);
     if (pago.clienteId !== clienteId || pago.solicitudId !== t.id || pago.proveedor !== proveedor.nombre)
       return json({ error: "Ese intento de pago no corresponde. Recarga la página e inténtalo de nuevo." }, 409);
     if (!["creado", "pendiente"].includes(pago.estado)) return json({ error: "Ese intento de pago ya terminó. Recarga la página e inténtalo de nuevo." }, 409);

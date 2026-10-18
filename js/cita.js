@@ -260,7 +260,7 @@ $("datos").addEventListener("submit", async (e) => {
       return;
     }
     if (!r.ok) throw new Error(b.error || "No pudimos guardar tu cita. Inténtalo de nuevo.");
-    $("tarjeta").replaceChildren(tarjetaCita(b.resumen));
+    $("tarjeta").replaceChildren(tarjetaCita({ ...b.resumen, ...(b.vinculo ? { vinculo: b.vinculo } : {}) }));
     $("titulo-4").textContent = b.resumen.estado === "pendiente" ? "Recibimos tu solicitud" : "Tu visita está agendada";
     ir(4);
     aviso("");
