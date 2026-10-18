@@ -3,12 +3,12 @@ import { registrar } from "./metricas.js";
 // Documentos de la web: solo para una cita vigente de la propia conversación.
 import { randomUUID } from "node:crypto";
 import { huellaIp } from "./huella.js";
-import { tipoArchivo } from "./archivos.js";
+import { validarArchivo, limpiarDescripcion, limpiarNombre, ERROR_DESCRIPCION } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
+import { notariaDe } from "./notaria.js";
 
-// Vercel rechaza pedidos de más de 4,5 MB: 3 MB de archivo son 4 MB en base64, que caben con el resto del JSON.
-const HORA = 3600 * 1000, MAX_BYTES = 3 * 1024 * 1024;
+const HORA = 3600 * 1000;
 const LIMITES = { porSesion: 20, porIp: 40, consultasPorIp: 120 };
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 const SIN_CITA = "No encuentro una cita vigente con ese ticket. Si la cambiaste, usa la tarjeta más reciente.";
@@ -36,10 +36,9 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       if (!sesionValida(b?.sesion)) return json({ error: "Sesión inválida" }, 400);
       if (b.aceptaTerminos !== true) return json({ error: "Acepta los términos y condiciones para enviar documentos." }, 400);
       if (b.aceptaDatos !== true) return json({ error: "Autoriza el tratamiento de tus datos para enviar documentos." }, 400);
-      // Una sola línea y sin caracteres de control: la descripción llega tal cual al aviso del personal.
-      const descripcion = typeof b.descripcion === "string" ? b.descripcion.replace(/[\s\u0000-\u001f\u007f]+/g, " ").trim() : "";
-      if (descripcion.length < 2 || descripcion.length > 120) return json({ error: "Describe el documento con entre 2 y 120 caracteres." }, 400);
-      const nombre = (typeof b.nombre === "string" ? b.nombre : "").replace(/[^\w. -]/g, "").slice(0, 120);
+      const descripcion = limpiarDescripcion(b.descripcion);
+      if (!descripcion) return json({ error: ERROR_DESCRIPCION }, 400);
+      const nombre = limpiarNombre(b.nombre);
 
       // Misma huella que el chat; la IP nunca se guarda en claro.
       const huella = huellaIp(request);
@@ -53,16 +52,17 @@ export function crearManejadorDocumentos({ almacen, ahora = () => Date.now(), li
       if (!encontrada) return json({ error: SIN_CITA }, 404);
       const { conv, cita } = encontrada;
 
-      // Buffer.from es permisivo: revisa el alfabeto y el relleno antes de decodificar.
-      if (typeof b.base64 !== "string" || !b.base64 || (b.base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(b.base64))) return json({ error: "El archivo no contiene base64 válido." }, 400);
-      const bytes = Buffer.from(b.base64, "base64");
-      if (bytes.toString("base64") !== b.base64) return json({ error: "El archivo no contiene base64 válido." }, 400);
-      if (bytes.length > MAX_BYTES) return json({ error: "El archivo pesa más de 3 MB. Reduce su tamaño e inténtalo de nuevo." }, 413);
-      const tipo = tipoArchivo(bytes);
-      if (!tipo) return json({ error: "Envía un archivo PDF, JPG, PNG o WEBP." }, 415);
+      const archivo = validarArchivo(b.base64);
+      if (archivo.error) return json({ error: archivo.error }, archivo.status);
+      const { bytes, tipo } = archivo;
       if ((await almacen.documentos(conv.id)).length >= 20) return json({ error: "Ya tienes 20 documentos en esta conversación." }, 409);
-      await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: "web-" + randomUUID(), nombre, mime: tipo, bytes, descripcion, tramiteId: cita.tramiteId });
+      await almacen.guardarDocumento({ conversacionId: conv.id, mediaId: "web-" + randomUUID(), nombre, mime: tipo, bytes, descripcion, tramiteId: cita.tramiteId, solicitudId: cita.id });
       await registrar(almacen, "doc.recibido.web", 1, t);
+      // La línea de tiempo del portal es un extra: si falla, el documento ya quedó guardado y la subida sigue.
+      try {
+        await almacen.registrarEventoTramite({ notariaId: notariaDe(request), solicitudId: cita.id, tipo: "documento_recibido",
+          textoCliente: "Recibimos tu documento: el personal lo revisará.", actor: "cliente" });
+      } catch (e) { console.error("No se pudo registrar el evento del documento:", e?.message || e); }
       if (!conv.consentimiento) await almacen.actualizarConversacion(conv.id, {
         consentimiento: true, consentimientoEn: new Date(t).toISOString(),
         consentimientoTexto: `Casillas de la web: términos y tratamiento de datos (ticket ${b.ticket})`, consentimientoAviso: AVISO_PRIVACIDAD
