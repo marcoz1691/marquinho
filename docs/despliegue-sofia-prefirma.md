@@ -1,5 +1,7 @@
 # Sofía PreFirma y Notaría 41 son proyectos distintos
 
+El plan completo de implementación, seguridad, pruebas y rollout está en [plan-piloto-notaria41.md](plan-piloto-notaria41.md).
+
 El producto se llama **Sofía PreFirma**. La Notaría 41 de Quito es su primer piloto. Comparten el código mientras se valida el producto, pero no comparten el destino público:
 
 | Proyecto Vercel | Dominio | Función |

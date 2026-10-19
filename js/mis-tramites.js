@@ -26,14 +26,14 @@ function pintarCliente(c) {
 }
 
 function tarjeta(t) {
-  return `<button class="tramite" type="button" data-id="${esc(t.id)}"><span class="tramite__arriba"><span><span class="tramite__ticket">${t.ticket ? `Ticket ${esc(t.ticket)}` : "Sin ticket"}</span><h2>${esc(t.nombre)}</h2></span><i class="ph ph-arrow-up-right" aria-hidden="true"></i></span><span class="tramite__estado">${esc(t.estadoTexto)}</span><span class="tramite__siguiente">${esc(t.siguientePaso)}</span><span class="tramite__meta"><span><i class="ph ph-calendar-blank" aria-hidden="true"></i> ${esc(fecha(t.cita.fecha))} · ${esc(t.cita.hora)}</span><span><i class="ph ph-file" aria-hidden="true"></i> ${t.documentosEnviados} documento${t.documentosEnviados === 1 ? "" : "s"}</span>${t.documentosPendientes ? `<span>${t.documentosPendientes} por corregir</span>` : ""}</span></button>`;
+  return `<button class="tramite" type="button" data-id="${esc(t.id)}"><span class="tramite__arriba"><span><span class="tramite__ticket">${t.ticket ? `Ticket ${esc(t.ticket)}` : "Sin ticket"}</span><h2>${esc(t.nombre)}</h2></span><i class="ph ph-arrow-right" aria-hidden="true"></i></span><span class="tramite__estado">${esc(t.estadoTexto)}</span><span class="tramite__siguiente">${esc(t.siguientePaso)}</span><span class="tramite__meta"><span><i class="ph ph-calendar-check" aria-hidden="true"></i> ${esc(fecha(t.cita.fecha))} · ${esc(t.cita.hora)}</span><span><i class="ph ph-files" aria-hidden="true"></i> ${t.documentosEnviados} documento${t.documentosEnviados === 1 ? "" : "s"}</span>${t.documentosPendientes ? `<span>${t.documentosPendientes} por corregir</span>` : ""}</span></button>`;
 }
 
 async function cargarLista() {
   $("detalle").hidden = true; $("cuenta-panel").hidden = true; $("lista").hidden = false; $("lista").innerHTML = '<p class="cargando">Cargando tus trámites…</p>';
   try {
     const { tramites } = await api("GET", "tramites", { filtro });
-    $("lista").innerHTML = tramites.length ? tramites.map(tarjeta).join("") : `<div class="vacio"><i class="ph ph-folder-open" aria-hidden="true"></i><p>${filtro === "activos" ? "Todavía no tienes trámites en curso. Cuando guardes una cita, aparecerá aquí." : "No tienes trámites finalizados."}</p></div>`;
+    $("lista").innerHTML = tramites.length ? tramites.map(tarjeta).join("") : `<div class="vacio"><i class="ph ph-files" aria-hidden="true"></i><p>${filtro === "activos" ? "Todavía no tienes trámites en curso. Cuando guardes una cita, aparecerá aquí." : "No tienes trámites finalizados."}</p></div>`;
   } catch (e) { $("lista").innerHTML = `<p class="vacio">${esc(e.message)}</p>`; }
 }
 

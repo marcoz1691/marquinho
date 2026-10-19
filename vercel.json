@@ -56,6 +56,17 @@
   ],
   "redirects": [
     {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.sofiaprefirma.com"
+        }
+      ],
+      "destination": "https://sofiaprefirma.com/:path*",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [
         {
