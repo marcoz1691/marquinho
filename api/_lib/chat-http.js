@@ -1,7 +1,7 @@
 import { leerAjustes, errorWeb, funcionActiva } from "./funciones.js";
 import { registrar } from "./metricas.js";
 // API del chat de la página web: el mismo asistente que WhatsApp, con límites para acotar costos y abusos.
-import { createHash } from "node:crypto";
+import { huellaIp } from "./huella.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
 
@@ -28,8 +28,7 @@ export function crearManejadorChat({ asistente, almacen, ahora = () => Date.now(
         return json({ error: "Acepta los términos y autoriza el tratamiento de tus datos para chatear.", aceptacion: true }, 400);
 
       // La IP se guarda solo como huella (hash), nunca en claro.
-      const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "desconocida";
-      const huella = createHash("sha256").update("notaria41:" + ip).digest("hex").slice(0, 24);
+      const huella = huellaIp(request);
       const t = ahora();
       const [nSesion, nIp, nDia] = await Promise.all([
         almacen.contarUso("chat:sesion:" + sesion, HORA, t),
@@ -46,7 +45,7 @@ export function crearManejadorChat({ asistente, almacen, ahora = () => Date.now(
       }
       const eventos = [];
       const respuestas = await asistente.atender({ id: "web." + t + "." + Math.random().toString(36).slice(2, 10), de: "web:" + sesion, nombre: "", tipo: "texto", texto, canal: "web" }, { eventos });
-      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: funcionActiva(ajustes, "documentos") }));
+      const tarjetas = eventos.filter((e) => e.tipo === "cita").map((e) => ({ ...e.resumen, subirDocumentos: funcionActiva(ajustes, "documentos"), ...(e.vinculo ? { vinculo: e.vinculo } : {}) }));
       return json({ respuestas, tarjetas, ...(!respuestas.length ? { ocupado: true } : {}) });
     }
   };

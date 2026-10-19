@@ -58,7 +58,9 @@ export function configPublica(fetch = globalThis.fetch) {
 }
 export async function cargarFunciones(fetch = globalThis.fetch) {
   const c = await configPublica(fetch);
-  return Object.fromEntries(["sitio", "chatWeb", "whatsappBot", "agenda", "documentos", "recordatorios"].map(id => [id, c?.funciones?.[id] !== false]));
+  // Encendidas salvo que el servidor diga false; portal y pagosEnLinea, apagadas salvo que diga true.
+  return { ...Object.fromEntries(["sitio", "chatWeb", "whatsappBot", "agenda", "documentos", "recordatorios"].map(id => [id, c?.funciones?.[id] !== false])),
+    ...Object.fromEntries(["portal", "pagosEnLinea"].map(id => [id, c?.funciones?.[id] === true])) };
 }
 export async function cargarPrecios(contenido, fetch = globalThis.fetch) {
   const c = await configPublica(fetch);

@@ -7,8 +7,12 @@ e2e/reporte/
 e2e/resultados/
 .vercel
 .env*
+!.env.example
 .DS_Store
 .claude/worktrees/
 assessment.txt
 supabase/.temp/
 ~$*
+
+# Repositorio independiente; nunca pertenece a Sofía PreFirma.
+/inmobiliaria/

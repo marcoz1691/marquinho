@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es-EC">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Entrar a Mis trámites · Sofía PreFirma</title>
+  <meta name="theme-color" content="#141832">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/fonts/archivo.css">
+  <link rel="stylesheet" href="assets/fonts/phosphor.css">
+  <link rel="stylesheet" href="css/cuenta.css">
+  <script type="module" src="js/cuenta.js"></script>
+</head>
+<body class="acceso">
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <header class="portal-cabecera">
+    <a href="/propuesta" aria-label="Sofía PreFirma"><img src="assets/logo/sofia-prefirma.svg" alt="Sofía PreFirma"></a>
+    <span>Portal del cliente</span>
+  </header>
+  <main id="contenido" class="acceso__contenido">
+    <section class="acceso__presentacion" aria-labelledby="titulo">
+      <p class="sobrelinea">Notaría 41 · piloto de Sofía PreFirma</p>
+      <h1 id="titulo">Tus trámites, documentos y pendientes en un solo lugar.</h1>
+      <p>Entra sin contraseña. Te enviaremos un código de seis dígitos a tu correo.</p>
+      <ul><li><i class="ph ph-shield-check" aria-hidden="true"></i> El ticket de tu cita no permite entrar a tu cuenta.</li><li><i class="ph ph-phone" aria-hidden="true"></i> Tu sesión se protege en este dispositivo.</li></ul>
+    </section>
+    <section class="acceso__tarjeta" aria-live="polite">
+      <div id="paso-correo">
+        <p class="paso">Paso 1 de 2</p>
+        <h2>Escribe tu correo</h2>
+        <p>Usa el correo donde quieres guardar y consultar tus trámites.</p>
+        <form id="form-correo" novalidate>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" name="correo" type="email" autocomplete="email" maxlength="254" required placeholder="tu@correo.com">
+          <button type="submit">Enviar código</button>
+        </form>
+      </div>
+      <div id="paso-codigo" hidden>
+        <p class="paso">Paso 2 de 2</p>
+        <h2>Revisa tu correo</h2>
+        <p>Enviamos un código a <strong id="correo-elegido"></strong>. Vence en 10 minutos.</p>
+        <form id="form-codigo" novalidate>
+          <label for="codigo">Código de seis dígitos</label>
+          <input id="codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000">
+          <button type="submit">Entrar a Mis trámites</button>
+        </form>
+        <button class="boton-texto" id="cambiar-correo" type="button">Usar otro correo</button>
+      </div>
+      <p id="estado" class="estado" role="status"></p>
+      <p class="legal-breve">Al crear tu perfil podrás aceptar por separado los <a href="terminos.html">términos</a> y el <a href="privacidad.html">aviso de privacidad</a>.</p>
+    </section>
+  </main>
+  <footer class="portal-pie"><span>Sofía prepara. Tu notaría decide.</span><a href="privacidad.html">Privacidad</a></footer>
+</body>
+</html>

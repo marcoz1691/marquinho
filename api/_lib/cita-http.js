@@ -1,21 +1,20 @@
-import { errorWeb } from "./funciones.js";
+import { errorWeb, funcionActiva } from "./funciones.js";
 import { registrar } from "./metricas.js";
-import { createHash } from "node:crypto";
+import { huellaIp } from "./huella.js";
 import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
 import { construirResumen } from "./resumen.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
+import { registrarEvento } from "./eventos.js";
+import { emitirVinculo } from "./vinculos.js";
+import { notariaDe } from "./notaria.js";
 const CITA_ACTIVA = "Ya tienes una cita activa con este celular. Si necesitas cambiarla o no recuerdas tu ticket, escríbenos por WhatsApp o llámanos.";
 const TEXTO_FORMULARIO = "Casillas de la web: acepto los términos y condiciones; autorizo el tratamiento de mis datos según el aviso de privacidad";
 const HORA = 3600e3,
   DIA = 864e5;
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-const huella = (r) =>
-  createHash("sha256")
-    .update("notaria41:" + ((r.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "desconocida"))
-    .digest("hex")
-    .slice(0, 24);
+const huella = huellaIp;
 export function crearManejadorCita({
   almacen,
   contenido,
@@ -123,7 +122,20 @@ export function crearManejadorCita({
         await avisar(
           `Cita para hoy confirmada (formulario): ${nombre} (${contacto}) — ${tramite?.nombre || "trámite por definir"} — hoy a las ${cita.hora}. Asígnala en el panel.`
         );
-      return json({ resumen: construirResumen({ ...cita, ...nueva }, C, { subirDocumentos: false }) }, 201);
+      const notariaId = notariaDe(request);
+      await registrarEvento(almacen, { notariaId, solicitudId: nueva.id, tipo: "creada", actor: "cliente" });
+      const respuesta = { resumen: construirResumen({ ...cita, ...nueva }, C, { subirDocumentos: false }) };
+      // Enlace de un solo uso para guardar el trámite en una cuenta (docs/adr/0004). Solo con el portal encendido;
+      // si no se pudo emitir, la cita ya existe y se responde sin él.
+      if (funcionActiva(ajustes, "portal")) {
+        try {
+          const { token, expira } = await emitirVinculo({ almacen, notariaId, solicitudId: nueva.id, canal: "creacion", ahora: t.getTime() });
+          respuesta.vinculo = { token, expira };
+        } catch (e) {
+          console.warn("No se emitió el enlace para guardar el trámite:", e?.code || "sin código");
+        }
+      }
+      return json(respuesta, 201);
     }
   };
 }

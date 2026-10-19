@@ -5,6 +5,8 @@ import { minutos } from "../../js/nucleo.js";
 // Acciones del panel del personal sobre conversaciones, citas y documentos.
 import { textoVisible, PREFIJO_PERSONAL } from "./mensajes.js";
 import { Aviso } from "./errores.js";
+import { registrarEvento, TEXTOS } from "./eventos.js";
+import { NOTARIA_POR_DEFECTO } from "./notaria.js";
 import { esHabilitante } from "../../js/nucleo.js";
 import { textoValido, textosDeAjustes } from "../../js/precios.js";
 
@@ -288,6 +290,9 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (cita.estado === estado) throw new Aviso(`La cita ya está ${estado}.`);
       if (cita.estado === "rechazada" || cita.estado === "atendida") throw new Aviso("Esta cita ya se cerró; si el cliente quiere otra, que la pida de nuevo.");
       await almacen.actualizarCita(citaId, { estado, motivo });
+      // Línea de tiempo del cliente: texto fijo, sin el motivo (puede ser interno). Cancelar una cita ya confirmada se dice como tal.
+      await registrarEvento(almacen, { notariaId: cita.notariaId || NOTARIA_POR_DEFECTO, solicitudId: cita.id, tipo: estado, actor: "personal",
+        textoCliente: estado === "rechazada" && cita.estado === "confirmada" ? "Tuvimos que cancelar tu cita. Escríbenos para elegir otra fecha." : TEXTOS[estado] });
       if (["atendida", "rechazada"].includes(estado)) await registrar(almacen, estado === "atendida" ? "cita.atendida" : "cita.cancelada", 1, ahora());
       if (estado === "atendida") return { avisado: false };
       const c = await conversacion(cita.conversacionId), C = await contenido();
@@ -310,18 +315,30 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       return { avisado: true };
     },
 
-    async revisarDocumento(id, estado, nota = "") {
+    // «nota» es interna (solo personal); «observacionCliente» es lo que el cliente ve en su portal.
+    async revisarDocumento(id, estado, nota = "", observacionCliente) {
       nota = limpio(nota, 300);
+      const conObservacion = observacionCliente !== undefined && observacionCliente !== null;
+      const observacion = conObservacion ? limpio(observacionCliente, 500) : "";
       if (!ESTADOS_DOC.includes(estado)) throw new Aviso(`Estado de documento inválido: ${estado}`);
       const d = await almacen.documento(id);
       if (!d) throw new Aviso("Documento no encontrado");
-      await almacen.revisarDocumento(id, { estado, nota });
+      await almacen.revisarDocumento(id, { estado, nota, ...(conObservacion ? { observacionCliente: observacion } : {}) });
+      // Documentos antiguos sin trámite (solicitudId nulo) no tienen línea de tiempo. La nota interna nunca va al evento.
+      if (estado !== "recibido" && d.solicitudId) {
+        let notariaId = NOTARIA_POR_DEFECTO;
+        try { notariaId = (await almacen.cita(d.solicitudId))?.notariaId || notariaId; } catch { /* sin la cita, la notaría por defecto */ }
+        await registrarEvento(almacen, { notariaId, solicitudId: d.solicitudId, tipo: "documento_" + estado, actor: "personal",
+          textoCliente: estado === "observado" && observacion ? observacion : TEXTOS["documento_" + estado] });
+      }
       if (estado === "recibido") return { avisado: false };
       const c = await conversacion(d.conversacionId);
       if (!(await dentroDeVentana(c.id))) return { avisado: false };
+      // Con la observación separada, al cliente solo le llega esa; sin ella (panel anterior), la nota como hasta ahora.
+      const paraCliente = conObservacion ? observacion : nota;
       await enviarComoPersonal(c, estado === "aprobado"
         ? `Revisamos tu documento «${d.descripcion}»: está correcto.`
-        : `Revisamos tu documento «${d.descripcion}» y tiene una observación: ${nota || "por favor, revísalo"}. Envíalo de nuevo o escríbenos si tienes dudas.`);
+        : `Revisamos tu documento «${d.descripcion}» y tiene una observación: ${paraCliente || "por favor, revísalo"}. Envíalo de nuevo o escríbenos si tienes dudas.`);
       return { avisado: true };
     },
 

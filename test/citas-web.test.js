@@ -65,3 +65,9 @@ it("la cita pendiente y sin trámite no muestra costo ni subida si no correspond
   expect(html).not.toContain("Subir documentos");
   expect(html).not.toContain("Lleva:");
 });
+it("ofrece guardar la cita solo con un vínculo válido, nunca con el ticket", async () => {
+  const { htmlCita } = await import("../js/cita-tarjeta.js");
+  const token = "a".repeat(43);
+  expect(htmlCita({ ...resumen, vinculo: { token } })).toContain(`/cuenta.html#vincular=${token}`);
+  expect(htmlCita({ ...resumen, vinculo: { token: resumen.codigo } })).not.toContain("Guardar en Mis trámites");
+});

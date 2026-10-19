@@ -1,5 +1,5 @@
 {
-  "name": "notaria41",
+  "name": "sofia-prefirma",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,7 +7,9 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "iconos": "node scripts/iconos.mjs",
-    "probar": "node --env-file=.env.local scripts/probar-asistente.mjs"
+    "probar": "node --env-file=.env.local scripts/probar-asistente.mjs",
+    "vercel:verificar:comercial": "node scripts/verificar-proyecto-vercel.mjs comercial",
+    "vercel:verificar:piloto": "node scripts/verificar-proyecto-vercel.mjs piloto"
   },
   "engines": {
     "node": "24.x"

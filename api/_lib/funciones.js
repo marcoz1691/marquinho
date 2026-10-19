@@ -4,9 +4,15 @@ export const FUNCIONES = [
   { id: "whatsappBot", nombre: "Sofía en WhatsApp", descripcion: "Sofía responde sola los mensajes de WhatsApp.", efectoAlApagar: "Sofía deja de responder. Cada cliente recibe una vez al día un mensaje automático y sus mensajes quedan en Conversaciones para que el personal responda." },
   { id: "agenda", nombre: "Agendar citas", descripcion: "La página «Agenda tu cita» y las citas que agenda Sofía.", efectoAlApagar: "Se ocultan los botones de «Agenda tu cita», la página muestra cómo contactar y Sofía deja de ofrecer citas." },
   { id: "documentos", nombre: "Recepción de documentos", descripcion: "Enviar fotos o archivos para revisión previa, por la web o por WhatsApp.", efectoAlApagar: "No se reciben documentos: Sofía pedirá traerlos a la cita y la web no ofrece subirlos." },
-  { id: "recordatorios", nombre: "Recordatorios de cita", descripcion: "El WhatsApp automático del día anterior a cada cita confirmada.", efectoAlApagar: "No se envían recordatorios hasta que la vuelvas a encender." }
+  { id: "recordatorios", nombre: "Recordatorios de cita", descripcion: "El WhatsApp automático del día anterior a cada cita confirmada.", efectoAlApagar: "No se envían recordatorios hasta que la vuelvas a encender." },
+  // Funciones nuevas que deben estar apagadas hasta que alguien las encienda a propósito (porDefecto: false).
+  { id: "portal", porDefecto: false, nombre: "Mis trámites (cuenta del cliente)", descripcion: "Cuenta opcional para que el cliente guarde sus trámites y vea sus citas, documentos y pendientes. Necesita el envío de correos configurado.", efectoAlApagar: "Desaparece «Guardar este trámite en mi cuenta» y las páginas de la cuenta muestran que no están disponibles. Los trámites siguen funcionando sin cuenta." },
+  { id: "pagosEnLinea", porDefecto: false, nombre: "Pagos en línea", descripcion: "Pago de trámites con tarjeta desde la cuenta del cliente. Solo funciona con una pasarela de pagos contratada y configurada.", efectoAlApagar: "No se muestra la opción de pagar en línea: el pago se hace en la notaría." }
 ];
-export function leerFunciones(ajustes = {}) { return Object.fromEntries(FUNCIONES.map(({ id }) => [id, ajustes["funcion." + id] !== "0"])); }
+// Las funciones de siempre están encendidas salvo que se apaguen ("0"); las de porDefecto:false, solo si se encienden ("1").
+export function leerFunciones(ajustes = {}) {
+  return Object.fromEntries(FUNCIONES.map(({ id, porDefecto = true }) => [id, porDefecto ? ajustes["funcion." + id] !== "0" : ajustes["funcion." + id] === "1"]));
+}
 export function funcionActiva(ajustes, id) { return leerFunciones(ajustes)[id] === true; }
 export const funcionWebActiva = (f, id) => f.sitio && f[id];
 export async function leerAjustes(almacen) {
@@ -18,7 +24,9 @@ export function errorWeb(ajustes, id) {
   const error = !f.sitio ? "El sitio de la notaría está en preparación. Escríbenos por WhatsApp o llámanos." : {
     chatWeb: "El asistente de la web no está disponible por ahora. Escríbenos por WhatsApp o llámanos.",
     agenda: "La agenda en línea no está disponible por ahora. Escríbenos por WhatsApp o llámanos para agendar.",
-    documentos: "Por ahora no recibimos documentos por la web. Tráelos a tu cita."
+    documentos: "Por ahora no recibimos documentos por la web. Tráelos a tu cita.",
+    portal: "Las cuentas de cliente no están disponibles por ahora. Puedes seguir tu trámite con tu ticket por WhatsApp o en la notaría.",
+    pagosEnLinea: "El pago en línea no está disponible: paga en la notaría el día de tu trámite."
   }[id];
   return { error, apagada: true };
 }

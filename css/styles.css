@@ -465,7 +465,8 @@ h2,.sub{text-align:left}
 .cita-ticket{display:block;font-size:28px;color:var(--accent);font-variant-numeric:tabular-nums}
 .cita-aviso,.cita-estado{color:var(--muted)}
 .cita-botones{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.cita-tarjeta button{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-input);background:var(--accent-soft);color:var(--fg);font:inherit;cursor:pointer;max-width:100%}
+.cita-tarjeta button,.cita-tarjeta .cita-guardar{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-input);background:var(--accent-soft);color:var(--fg);font:inherit;cursor:pointer;max-width:100%}
+.cita-tarjeta .cita-guardar{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 .cita-tarjeta button:disabled{opacity:.6;cursor:wait}
 .cita-subida{display:grid;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 .cita-subida label{display:grid;gap:6px}.cita-subida input:not([type=checkbox]){width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:var(--r-input);background:var(--bg);color:var(--fg);font:inherit}

@@ -414,9 +414,9 @@ $("#detalle").addEventListener("click", async (e) => {
       const r = await api("POST", { accion: "cita", id: b.dataset.cita, estado: b.dataset.estado, motivo });
       if (b.dataset.estado !== "atendida" && r.avisado === false) alert("La cita se actualizó, pero no se pudo avisar por WhatsApp (pasaron más de 24 horas). Llama al cliente.");
     } else if (b.dataset.doc) {
-      const nota = b.dataset.estado === "observado" ? prompt("¿Qué debe corregir el cliente?") : "";
-      if (nota === null) return;
-      await api("POST", { accion: "revisarDocumento", id: b.dataset.doc, estado: b.dataset.estado, nota });
+      const observacionCliente = b.dataset.estado === "observado" ? prompt("Mensaje que verá el cliente: ¿qué debe corregir?") : "";
+      if (observacionCliente === null) return;
+      await api("POST", { accion: "revisarDocumento", id: b.dataset.doc, estado: b.dataset.estado, nota: "", observacionCliente });
     } else if (b.dataset.ver) { const { url } = await api("GET", { accion: "documento", id: b.dataset.ver }); if (!url) return alert("Este documento ya no está disponible."); window.open(url, "_blank", "noopener"); return; }
     else if (b.dataset.borrar) { if (!confirm("¿Borrar este documento? Desaparece del panel y se elimina definitivamente a los 7 días.")) return; await api("POST", { accion: "borrarDocumento", id: b.dataset.borrar }); }
     else return;

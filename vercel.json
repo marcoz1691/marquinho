@@ -7,6 +7,14 @@
       "maxDuration": 30,
       "includeFiles": "data/**"
     },
+    "api/cuenta.js": {
+      "maxDuration": 30,
+      "includeFiles": "data/**"
+    },
+    "api/pagos.js": {
+      "maxDuration": 30,
+      "includeFiles": "data/**"
+    },
     "api/whatsapp.js": {
       "maxDuration": 300,
       "includeFiles": "data/**"
@@ -44,6 +52,67 @@
     {
       "path": "/api/purgar",
       "schedule": "0 8 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.sofiaprefirma.com"
+        }
+      ],
+      "destination": "https://sofiaprefirma.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "sofia-prefirma.vercel.app"
+        }
+      ],
+      "destination": "/propuesta",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "sofiaprefirma.com"
+        }
+      ],
+      "destination": "/propuesta",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/pagos-webhook",
+      "destination": "/api/pagos?webhook=tramite"
+    },
+    {
+      "source": "/propuesta",
+      "has": [
+        {
+          "type": "host",
+          "value": "sofia-prefirma.vercel.app"
+        }
+      ],
+      "destination": "/propuesta-sofia.html"
+    },
+    {
+      "source": "/propuesta",
+      "has": [
+        {
+          "type": "host",
+          "value": "sofiaprefirma.com"
+        }
+      ],
+      "destination": "/propuesta-sofia.html"
     }
   ],
   "headers": [

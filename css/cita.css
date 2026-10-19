@@ -206,6 +206,7 @@
 .cita-tarjeta {
   overflow-wrap: anywhere;
 }
+.cita-guardar{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 .contacto-cita {
   margin-right: 10px;
 }

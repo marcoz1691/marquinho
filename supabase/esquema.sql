@@ -222,3 +222,191 @@ create table if not exists consentimientos (
 create index if not exists consentimientos_titular on consentimientos (titular);
 alter table consentimientos enable row level security;
 -- Sin políticas públicas: acceso únicamente desde el servidor con service role.
+
+-- 2026-10-18: cuentas de cliente y portal «Mis trámites» (Sofía PreFirma). Ver docs/adr/0004 y docs/multi-notaria.md.
+-- Orden: notarías, notaria_id en tablas existentes, clientes, códigos, sesiones, vínculos de trámites, eventos, pagos.
+-- Los clientes NO son usuarios de Supabase Auth: el servidor emite sus sesiones. Todo acceso es por service_role.
+create table if not exists notarias (
+  id text primary key check (id ~ '^[a-z0-9-]{3,40}$'),
+  nombre text not null,
+  creado timestamptz not null default now()
+);
+insert into notarias (id, nombre) values ('notaria41', 'Notaría 41 de Quito') on conflict (id) do nothing;
+alter table conversaciones add column if not exists notaria_id text not null default 'notaria41' references notarias(id);
+alter table solicitudes_cita add column if not exists notaria_id text not null default 'notaria41' references notarias(id);
+alter table personal add column if not exists notaria_id text not null default 'notaria41' references notarias(id);
+
+create table if not exists clientes (
+  id uuid primary key default gen_random_uuid(),
+  notaria_id text not null references notarias(id),
+  email text not null check (email = lower(email) and length(email) between 3 and 254),
+  email_verificado_en timestamptz not null,
+  nombres text not null default '' check (length(nombres) <= 80),
+  apellidos text not null default '' check (length(apellidos) <= 80),
+  celular text check (celular ~ '^5939[0-9]{8}$'),
+  avisos_correo boolean not null default true,
+  avisos_whatsapp boolean not null default false,
+  privacidad_version text not null default '',
+  terminos_version text not null default '',
+  privacidad_aceptada_en timestamptz,
+  estado text not null default 'activa' check (estado in ('activa', 'bloqueada')),
+  creado timestamptz not null default now(),
+  ultimo_acceso timestamptz not null default now(),
+  unique (notaria_id, email)
+);
+
+-- Códigos de un solo uso: se guarda la huella del correo y el HMAC del código, nunca el correo ni el código en claro.
+create table if not exists cliente_codigos (
+  id uuid primary key default gen_random_uuid(),
+  notaria_id text not null references notarias(id),
+  destino_huella text not null,
+  codigo_hmac text not null,
+  intentos int not null default 0 check (intentos between 0 and 10),
+  expira_en timestamptz not null,
+  usado_en timestamptz,
+  ip_huella text not null default '',
+  creado timestamptz not null default now()
+);
+create index if not exists cliente_codigos_destino on cliente_codigos (notaria_id, destino_huella, creado desc);
+
+-- Sesiones del cliente: solo la huella sha256 del token de la cookie.
+create table if not exists cliente_sesiones (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid not null references clientes(id) on delete cascade,
+  notaria_id text not null references notarias(id),
+  token_hash text not null unique,
+  creada timestamptz not null default now(),
+  ultima_actividad timestamptz not null default now(),
+  expira_en timestamptz not null,
+  revocada_en timestamptz
+);
+create index if not exists cliente_sesiones_cliente on cliente_sesiones (cliente_id);
+
+alter table solicitudes_cita add column if not exists cliente_id uuid references clientes(id) on delete set null;
+create index if not exists solicitudes_cita_cliente on solicitudes_cita (notaria_id, cliente_id);
+create index if not exists solicitudes_cita_codigo on solicitudes_cita (notaria_id, codigo);
+alter table documentos add column if not exists solicitud_id uuid references solicitudes_cita(id) on delete set null;
+-- La observación la ve el cliente; la «nota» existente es interna y nunca sale del panel.
+alter table documentos add column if not exists observacion_cliente text not null default '' check (length(observacion_cliente) <= 500);
+
+-- Enlaces para guardar un trámite en una cuenta: token aleatorio de un solo uso; se guarda solo su huella.
+create table if not exists tramite_vinculaciones (
+  id uuid primary key default gen_random_uuid(),
+  notaria_id text not null references notarias(id),
+  solicitud_id uuid not null references solicitudes_cita(id) on delete cascade,
+  token_hash text not null unique,
+  canal text not null check (canal in ('creacion', 'whatsapp', 'panel')),
+  expira_en timestamptz not null,
+  usado_en timestamptz,
+  usado_por uuid references clientes(id) on delete set null,
+  creado_por text not null default 'sistema',
+  creado timestamptz not null default now()
+);
+create index if not exists tramite_vinculaciones_vigentes on tramite_vinculaciones (solicitud_id) where usado_en is null;
+
+create table if not exists tramite_eventos (
+  id bigint generated always as identity primary key,
+  notaria_id text not null references notarias(id),
+  solicitud_id uuid not null references solicitudes_cita(id) on delete cascade,
+  tipo text not null check (tipo in ('creada', 'confirmada', 'rechazada', 'atendida', 'documento_recibido', 'documento_aprobado',
+    'documento_observado', 'vinculada', 'desvinculada', 'pago_pendiente', 'pago_pagado', 'pago_fallido', 'pago_cancelado', 'pago_reembolsado')),
+  visible_cliente boolean not null default true,
+  texto_cliente text not null default '' check (length(texto_cliente) <= 300),
+  actor text not null check (actor in ('sistema', 'personal', 'cliente')),
+  creado timestamptz not null default now()
+);
+create index if not exists tramite_eventos_solicitud on tramite_eventos (solicitud_id, creado);
+
+-- Pagos del ciudadano por un trámite (caso A). El pago de la notaría por su plan (caso B) irá en otras tablas.
+create table if not exists pagos (
+  id uuid primary key default gen_random_uuid(),
+  notaria_id text not null references notarias(id),
+  solicitud_id uuid references solicitudes_cita(id) on delete set null,
+  cliente_id uuid references clientes(id) on delete set null,
+  ticket_snapshot text not null default '',
+  concepto text not null check (length(concepto) between 1 and 200),
+  monto_centavos int not null check (monto_centavos > 0),
+  moneda text not null default 'USD' check (moneda = 'USD'),
+  estado text not null default 'creado' check (estado in ('creado', 'pendiente', 'procesando', 'pagado', 'fallido', 'cancelado', 'reembolsado')),
+  proveedor text not null,
+  orden_proveedor text,
+  idempotencia text not null,
+  creado timestamptz not null default now(),
+  actualizado timestamptz not null default now(),
+  pagado_en timestamptz,
+  unique (proveedor, orden_proveedor)
+);
+create index if not exists pagos_solicitud on pagos (notaria_id, solicitud_id);
+-- La idempotencia pertenece a una notaría y dos pedidos simultáneos nunca abren dos cobros para el mismo trámite.
+alter table pagos drop constraint if exists pagos_idempotencia_key;
+create unique index if not exists pagos_notaria_idempotencia on pagos (notaria_id, idempotencia);
+create unique index if not exists pagos_uno_activo_por_solicitud on pagos (solicitud_id)
+  where solicitud_id is not null and estado in ('creado', 'pendiente', 'procesando');
+
+create table if not exists pago_eventos (
+  id bigint generated always as identity primary key,
+  pago_id uuid references pagos(id) on delete set null,
+  proveedor text not null,
+  evento_proveedor_id text not null,
+  tipo text not null default '',
+  estado_anterior text,
+  estado_nuevo text,
+  monto_centavos int,
+  moneda text,
+  firma_valida boolean not null,
+  resultado text not null check (resultado in ('aplicado', 'duplicado', 'ignorado_orden', 'discrepancia', 'firma_invalida')),
+  carga_huella text not null default '',   -- sha256 del cuerpo recibido; el cuerpo crudo no se guarda
+  creado timestamptz not null default now(),
+  unique (proveedor, evento_proveedor_id)
+);
+create or replace function pago_eventos_inmutable() returns trigger language plpgsql as $$
+begin raise exception 'pago_eventos es de solo agregar'; end $$;
+drop trigger if exists pago_eventos_inmutable on pago_eventos;
+create trigger pago_eventos_inmutable before update or delete on pago_eventos for each row execute function pago_eventos_inmutable();
+
+alter table consentimientos drop constraint if exists consentimientos_canal_check;
+alter table consentimientos add constraint consentimientos_canal_check check (canal in ('formulario', 'chat-web', 'whatsapp', 'documentos', 'portal'));
+
+-- Consumo atómico de un código: acierto, fallo (suma un intento y lo anula al quinto) o inexistente.
+create or replace function consumir_codigo_cliente(p_notaria text, p_destino text, p_hmac text) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare v_id uuid; v_hmac text;
+begin
+  select id, codigo_hmac into v_id, v_hmac from cliente_codigos
+    where notaria_id = p_notaria and destino_huella = p_destino and usado_en is null and expira_en > now() and intentos < 5
+    order by creado desc limit 1 for update;
+  if v_id is null then return false; end if;
+  if v_hmac = p_hmac then update cliente_codigos set usado_en = now() where id = v_id; return true; end if;
+  update cliente_codigos set intentos = intentos + 1, usado_en = case when intentos + 1 >= 5 then now() else null end where id = v_id;
+  return false;
+end $$;
+
+-- Consumo atómico de un enlace de vinculación: se usa una vez y solo vincula trámites sin dueño o del mismo cliente.
+create or replace function consumir_vinculacion(p_notaria text, p_token_hash text, p_cliente uuid) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v_sol uuid;
+begin
+  update tramite_vinculaciones set usado_en = now(), usado_por = p_cliente
+    where notaria_id = p_notaria and token_hash = p_token_hash and usado_en is null and expira_en > now()
+    returning solicitud_id into v_sol;
+  if v_sol is null then return null; end if;
+  update solicitudes_cita set cliente_id = p_cliente
+    where id = v_sol and notaria_id = p_notaria and (cliente_id is null or cliente_id = p_cliente);
+  if not found then return null; end if;
+  return v_sol;
+end $$;
+revoke execute on function consumir_codigo_cliente(text, text, text) from public, anon, authenticated;
+grant execute on function consumir_codigo_cliente(text, text, text) to service_role;
+revoke execute on function consumir_vinculacion(text, text, uuid) from public, anon, authenticated;
+grant execute on function consumir_vinculacion(text, text, uuid) to service_role;
+
+alter table notarias enable row level security;
+alter table clientes enable row level security;
+alter table cliente_codigos enable row level security;
+alter table cliente_sesiones enable row level security;
+alter table tramite_vinculaciones enable row level security;
+alter table tramite_eventos enable row level security;
+alter table pagos enable row level security;
+alter table pago_eventos enable row level security;
+revoke all on notarias, clientes, cliente_codigos, cliente_sesiones, tramite_vinculaciones, tramite_eventos, pagos, pago_eventos from anon, authenticated;
+-- Sin políticas: el aislamiento por notaría y por cliente lo exige el servidor (cada método del almacén pide notariaId).
