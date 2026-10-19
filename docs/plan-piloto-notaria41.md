@@ -54,7 +54,9 @@ El nivel 1 puede iniciar antes. El nivel 2 es obligatorio antes de incorporar un
 - 567 pruebas unitarias y 213 pruebas E2E aprobadas con la barrera de despliegue.
 - `sofiaprefirma.com` y `www.sofiaprefirma.com` sirven la portada comercial desde el proyecto `sofiaprefirma`, sin autenticación de Vercel.
 - Proyecto aislado `sofiaprefirma-notaria41` creado con `projectId` `prj_upo2XAFcjMVTjEVgp9tE2l8ECukg`.
-- Primer deployment del piloto creado sin dominio, variables operativas ni datos reales; permanece protegido por Vercel Authentication.
+- Deployment de preparación del piloto creado sin dominio, Supabase ni datos reales; permanece protegido por Vercel Authentication.
+- `NOTARIA_ID=notaria41` está fijado en producción y previews del piloto; sus definiciones de cron están vacías hasta el corte operativo.
+- Sin Supabase, las funciones de producción fallan cerradas y no recurren al almacén temporal en memoria.
 
 ### Bloqueos actuales
 

@@ -34,7 +34,8 @@ El destino recomendado para el portal de la primera notaría es `notaria41.sofia
 ## Estado verificado y reversión
 
 - Producción comercial validada: deployment `dpl_6VhdaVfgNCZ2DZeL8wE4vnaRcb8N`.
-- Piloto aislado inicial: deployment `dpl_DsNfpZEj4NZXFr3UqPjoGvMinJDq`; permanece protegido, sin dominio y sin variables operativas.
+- Piloto aislado de preparación: deployment `dpl_8o9ePXLLfzFWX1JXT4ijQSC4YCVc`; permanece protegido y sin dominio. Tiene `NOTARIA_ID=notaria41`, pero no Supabase ni otros secretos operativos.
+- El deployment de preparación se publicó sin definiciones de cron. No se restauran hasta configurar `CRON_SECRET`, Supabase y el corte del único backend operativo.
 - Antes de promover otra versión, conserva el ID del deployment que atiende cada dominio.
 - Para volver a la versión comercial validada, usa `vercel promote dpl_6VhdaVfgNCZ2DZeL8wE4vnaRcb8N --yes` desde un checkout que haya pasado `npm run vercel:verificar:comercial`.
 - No promociones el deployment del piloto ni le asignes `notaria41.sofiaprefirma.com` hasta completar las variables, migraciones y puertas G1–G2 del plan maestro.
