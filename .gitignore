@@ -13,3 +13,6 @@ e2e/resultados/
 assessment.txt
 supabase/.temp/
 ~$*
+
+# Repositorio independiente; nunca pertenece a Sofía PreFirma.
+/inmobiliaria/

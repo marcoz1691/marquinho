@@ -32,6 +32,9 @@ for (const pagina of [false, true]) {
       await expect(caja).toHaveCount(0);
       await expect.poll(() => pedidos.length).toBe(1);
       expect(pedidos[0]).toMatchObject({ texto: "Necesito una cita", aceptaTerminos: true, aceptaDatos: true });
+      // La ruta interceptada registra el pedido antes de que la interfaz termine de procesar la respuesta.
+      // Esperar el fin del indicador evita intentar el segundo envío mientras `enviando` todavía es true.
+      await expect(page.locator(pagina ? ".ac-pensando" : ".chat__escribiendo")).toHaveCount(0);
       await campo.fill("Otra consulta");
       await campo.press("Enter");
       await expect.poll(() => pedidos.length).toBe(2);

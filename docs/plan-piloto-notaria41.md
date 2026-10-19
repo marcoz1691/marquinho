@@ -51,7 +51,7 @@ El nivel 1 puede iniciar antes. El nivel 2 es obligatorio antes de incorporar un
 - Cálculo de pagos en servidor, idempotencia y webhook firmado como base técnica.
 - Interruptores `portal`, `documentos` y `pagosEnLinea`; portal y pagos nacen apagados.
 - Migración de cuentas, sesiones, vínculos, eventos y pagos preparada en `supabase/esquema.sql`.
-- 567 pruebas unitarias y 213 pruebas E2E aprobadas con la barrera de despliegue.
+- 569 pruebas unitarias y 213 pruebas E2E aprobadas con la barrera de despliegue.
 - `sofiaprefirma.com` y `www.sofiaprefirma.com` sirven la portada comercial desde el proyecto `sofiaprefirma`, sin autenticación de Vercel.
 - Proyecto aislado `sofiaprefirma-notaria41` creado con `projectId` `prj_upo2XAFcjMVTjEVgp9tE2l8ECukg`.
 - Deployment de preparación del piloto creado sin dominio, Supabase ni datos reales; permanece protegido por Vercel Authentication.

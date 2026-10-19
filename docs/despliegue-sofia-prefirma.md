@@ -17,6 +17,7 @@ El producto se llama **Sofía PreFirma**. La Notaría 41 de Quito es su primer p
 - `NOTARIA_ID=notaria41` identifica al piloto dentro del proyecto de Sofía. Cuando una segunda notaría esté lista, tendrá su identificador y dominio propios.
 - Los interruptores `portal` y `pagosEnLinea` nacen apagados. El primero se enciende después de configurar correo y base; el segundo solo después de integrar una pasarela real.
 - Antes de desplegar, ejecuta `npm run vercel:verificar:comercial` o `npm run vercel:verificar:piloto` dentro del checkout aislado correspondiente. La comprobación exige tanto el nombre como el `projectId` exactos y bloquea el proyecto institucional.
+- Durante la preparación, la verificación del piloto también exige que el `vercel.json` de ese checkout no contenga cron jobs. Se restauran únicamente después de G1 y del corte documentado del backend operativo.
 - No despliegues desde el checkout principal: actualmente su vínculo local pertenece a `notaria41`.
 
 ## Antes de habilitar el portal

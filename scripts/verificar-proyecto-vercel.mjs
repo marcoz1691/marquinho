@@ -34,6 +34,21 @@ export function validarProyectoVercel(destino, vinculo) {
   return esperado;
 }
 
+export function validarConfiguracionVercel(destino, configuracion) {
+  if (!configuracion || typeof configuracion !== "object") {
+    throw new Error("No se pudo leer la configuración de Vercel.");
+  }
+
+  if (destino === "piloto" && Array.isArray(configuracion.crons) && configuracion.crons.length > 0) {
+    throw new Error(
+      "Despliegue bloqueado: el piloto de preparación no puede registrar cron jobs. "
+      + "Retíralos del vercel.json del checkout aislado hasta completar G1 y el corte operativo.",
+    );
+  }
+
+  return configuracion;
+}
+
 async function ejecutar() {
   const destino = process.argv[2];
   let vinculo;
@@ -44,6 +59,13 @@ async function ejecutar() {
   }
 
   const esperado = validarProyectoVercel(destino, vinculo);
+  let configuracion;
+  try {
+    configuracion = JSON.parse(await readFile(resolve(process.argv[3] || "vercel.json"), "utf8"));
+  } catch {
+    throw new Error("Despliegue bloqueado: falta una configuración de Vercel válida.");
+  }
+  validarConfiguracionVercel(destino, configuracion);
   console.log(`Proyecto verificado: ${esperado.projectName} (${esperado.projectId}).`);
 }
 
