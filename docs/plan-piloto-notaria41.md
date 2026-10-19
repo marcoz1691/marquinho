@@ -1,6 +1,6 @@
 # Plan maestro: Sofía PreFirma y piloto de Notaría 41
 
-Estado del plan: **preparación**  
+Estado del plan: **Fase 0 en ejecución**
 Producto: **Sofía PreFirma**  
 Primer tenant: **Notaría 41 de Quito**
 
@@ -51,16 +51,17 @@ El nivel 1 puede iniciar antes. El nivel 2 es obligatorio antes de incorporar un
 - Cálculo de pagos en servidor, idempotencia y webhook firmado como base técnica.
 - Interruptores `portal`, `documentos` y `pagosEnLinea`; portal y pagos nacen apagados.
 - Migración de cuentas, sesiones, vínculos, eventos y pagos preparada en `supabase/esquema.sql`.
-- 562 pruebas unitarias aprobadas después del último ajuste local.
-- 213 pruebas E2E aprobadas para el commit `c0efd32`; deben repetirse después de guardar los últimos cambios de dominio e iconos.
+- 567 pruebas unitarias y 213 pruebas E2E aprobadas con la barrera de despliegue.
+- `sofiaprefirma.com` y `www.sofiaprefirma.com` sirven la portada comercial desde el proyecto `sofiaprefirma`, sin autenticación de Vercel.
+- Proyecto aislado `sofiaprefirma-notaria41` creado con `projectId` `prj_upo2XAFcjMVTjEVgp9tE2l8ECukg`.
+- Primer deployment del piloto creado sin dominio, variables operativas ni datos reales; permanece protegido por Vercel Authentication.
 
 ### Bloqueos actuales
 
-- `sofiaprefirma.com` está asociado al proyecto Vercel equivocado (`notaria41`).
-- `www.sofiaprefirma.com` no tiene una asociación/certificado correctos.
 - El checkout principal continúa vinculado en `.vercel/project.json` a `notaria41`.
 - El remoto Git sigue siendo `marcoz1691/marquinho.git`; falta el repositorio independiente.
-- Hay cuatro cambios del producto sin guardar y dos elementos ajenos sin seguimiento.
+- GitHub CLI no tiene una sesión autenticada, por lo que aún no se puede crear ni proteger el repositorio independiente desde este entorno.
+- `.shots.mjs` y el repositorio anidado y vacío `inmobiliaria/` siguen ajenos y sin seguimiento; no deben incluirse.
 - El núcleo histórico —panel, conversaciones, citas y documentos— todavía tiene consultas globales.
 - Precios, ajustes, interruptores, contenido, métricas, auditoría y algunos límites siguen siendo globales.
 - Los archivos no tienen cuarentena ni análisis antimalware.
@@ -72,18 +73,18 @@ El nivel 1 puede iniciar antes. El nivel 2 es obligatorio antes de incorporar un
 
 Prioridad: **crítica**.
 
-- [ ] Guardar los cambios pendientes de dominio e iconos sin incluir archivos ajenos.
-- [ ] Repetir pruebas unitarias y E2E desde el SHA que se publicará.
+- [x] Guardar los cambios pendientes de dominio e iconos sin incluir archivos ajenos.
+- [x] Repetir pruebas unitarias y E2E desde el SHA que se publicará.
 - [ ] Crear y autenticar el repositorio `sofia-prefirma`.
 - [ ] Subir la rama y proteger la rama principal.
-- [ ] Crear o confirmar los proyectos `sofiaprefirma` y `sofiaprefirma-notaria41`.
-- [ ] Añadir una verificación previa al despliegue que compare nombre y `projectId` esperados.
-- [ ] Confirmar el dominio `.vercel.app` real de cada proyecto; no codificar un alias histórico como si fuera estable.
-- [ ] Desplegar primero con URL de preview y sin mover dominios.
-- [ ] Validar portada, CSP, consola, rutas y funciones en preview.
-- [ ] Mover `sofiaprefirma.com` y `www` únicamente al proyecto comercial.
+- [x] Crear o confirmar los proyectos `sofiaprefirma` y `sofiaprefirma-notaria41`.
+- [x] Añadir una verificación previa al despliegue que compare nombre y `projectId` esperados.
+- [x] Confirmar el dominio `.vercel.app` real de cada proyecto; no codificar un alias histórico como si fuera estable.
+- [x] Desplegar primero sin mover dominios; el primer deployment del proyecto piloto quedó protegido y sin dominio personalizado.
+- [x] Validar portada y cabeceras CSP en los deployments aislados.
+- [x] Mover `sofiaprefirma.com` y `www` únicamente al proyecto comercial.
 - [ ] Asociar `notaria41.sofiaprefirma.com` únicamente al proyecto piloto.
-- [ ] Verificar DNS, HTTPS, certificado, redirección de `www` y contenido de cada host.
+- [ ] Verificar DNS, HTTPS, certificado, redirección de `www` y contenido de cada host. Comercial completado; falta el host del piloto.
 - [ ] Documentar cómo volver al deployment anterior y conservar su URL.
 
 **Puerta G0:** cada dominio muestra su proyecto esperado; desplegar Sofía no modifica la web institucional; existe rollback comprobado.
