@@ -30,8 +30,8 @@ for (const width of [390, 1366]) test(`el administrador ve el panel como Notario
   await expect(page.locator('[data-tab="funcionesV"]')).toBeHidden();
   await expect(page.locator('[data-tab="metricasV"]')).toBeHidden();
   await expect(page.locator('[data-tab="equipoV"]')).toBeVisible();
-  await expect(page.locator('[data-tab="app"]')).toHaveClass(/on/);
-  await expect(page.locator("#app")).toBeVisible();
+  await expect(page.locator('[data-tab="inicioV"]')).toHaveClass(/on/);
+  await expect(page.locator("#inicioV")).toBeVisible();
   expect(pedidos.filter(p => p.accion === "yo").at(-1).vista).toBe("notario");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   // Se mantiene al recargar la pestaña del navegador.

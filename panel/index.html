@@ -6,12 +6,13 @@
 <meta name="robots" content="noindex">
 <title>Panel Notaría 41</title>
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/fonts/phosphor.css">
 <link rel="stylesheet" href="../css/panel.css">
 <script src="arranque.js"></script>
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="app" class="on">Conversaciones</button><button data-tab="agendaV">Agenda</button><button data-tab="preciosV">Trámites</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="inicioV" class="on">Inicio</button><button data-tab="agendaV">Agenda</button><button data-tab="app">Conversaciones</button><button data-tab="preciosV">Trámites</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
 
 <div class="cargando" id="cargando" role="status"><img src="../assets/logo/logo-notaria41-verde.svg" alt=""><span>Cargando el panel…</span></div>
 
@@ -109,6 +110,14 @@
   <nav id="lista"></nav>
   <section id="detalle"><p class="vacio">Elige una conversación.</p></section>
 </main>
+<section id="inicioV" class="inicio" hidden>
+  <div class="inicio__cab"><p class="inicio__fecha" id="inicioFecha"></p><h2 id="inicioTitulo">Hoy</h2></div>
+  <div class="inicio__cifras" id="inicioCifras"></div>
+  <div class="inicio__columnas">
+    <section class="inicio__panel" aria-labelledby="inicioCitasTitulo"><div class="inicio__sub"><h3 id="inicioCitasTitulo">Citas de hoy</h3><button class="inicio__enlace" type="button" data-ir-pestana="agendaV">Ver agenda <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioCitas" class="inicio__lista"></div></section>
+    <section class="inicio__panel" aria-labelledby="inicioAtencionTitulo"><div class="inicio__sub"><h3 id="inicioAtencionTitulo">Requieren tu atención</h3><button class="inicio__enlace" type="button" data-ir-pestana="app">Ver conversaciones <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioAtencion" class="inicio__lista"></div></section>
+  </div>
+</section>
 <section id="agendaV" hidden>
   <div class="ag-top"><h2 id="agTitulo">Agenda</h2>
     <button class="btn btn--line" data-dia="-1" aria-label="Día anterior">‹</button>

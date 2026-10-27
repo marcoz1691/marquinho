@@ -162,6 +162,9 @@ test("en el celular las conversaciones van como una app: lista, chat a pantalla 
     return r.fulfill({ json: [{ id: "v1", nombre: "Ana", telefono: "593999999999", canal: "whatsapp", ultimo: "Hola" }] });
   });
   await page.goto("/panel/");
+  // Al entrar se ve el resumen del día; las conversaciones están en su propia pestaña.
+  await expect(page.locator("#inicioV")).toBeVisible();
+  await page.locator('[data-tab="app"]').click();
   await expect(page.locator("#lista")).toBeVisible();
   await expect(page.locator("#detalle")).toBeHidden();
   await page.locator("#lista [data-id]").first().click();

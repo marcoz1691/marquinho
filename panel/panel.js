@@ -15,7 +15,7 @@ if (!cfg) { $("#cargando span").textContent = "No pudimos abrir el panel. Revisa
 // PKCE no sirve aquí: las invitaciones las crea el administrador desde Supabase y no hay un verificador en este navegador.
 // El token del enlace lo protege la política de seguridad (CSP) del sitio y la verificación en dos pasos.
 const sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true } });
-let actual = null, timer = null, pestanaActual = "app";
+let actual = null, timer = null, pestanaActual = "inicioV", nombreSesion = "";
 
 const TRADUCCION = {
   "Invalid login credentials": "Correo o contraseña incorrectos.",
@@ -80,7 +80,7 @@ function vista(id) {
   clearInterval(timer);
   $("#cargando").hidden = true;
   $("#equipoV").hidden = true; $("#perfilSesion").hidden = true; $("#funcionesV").hidden = true; $("#metricasV").hidden = true;
-  $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
+  $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#inicioV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
   document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
   document.querySelectorAll(".msg").forEach((m) => { m.textContent = ""; m.className = "msg"; });
   const foco = $("#" + id + " input"); if (foco) setTimeout(() => foco.focus(), 30);
@@ -134,7 +134,7 @@ const INACTIVIDAD_MS = 30 * 60 * 1000;
 let ultimoUso = Date.now();
 ["pointerdown", "keydown", "scroll"].forEach((ev) => document.addEventListener(ev, () => { ultimoUso = Date.now(); }, { passive: true, capture: true }));
 setInterval(async () => {
-  if ($("#app").hidden && $("#agendaV").hidden && $("#preciosV").hidden) return;
+  if ($("#app").hidden && $("#agendaV").hidden && $("#preciosV").hidden && $("#inicioV").hidden) return;
   if (Date.now() - ultimoUso < INACTIVIDAD_MS) return;
   await sb.auth.signOut();
   vista("vEntrar");
@@ -148,13 +148,14 @@ async function mostrarApp() {
     // El perfil y las conversaciones se piden a la vez: el panel aparece completo de una sola vez.
     const [yo] = await Promise.all([api("GET", { accion: "yo" }), cargarLista()]);
     rolSesion = yo.rol;
+    nombreSesion = String(yo.nombre || "").trim().split(/\s+/)[0] || "";
     pintarVerComo(yo);
     $("#perfilSesion").textContent = perfiles[rolSesion] || "";
     $("#perfilSesion").hidden = false;
     $("[data-tab=funcionesV]").hidden = rolSesion !== "admin";
     $("[data-tab=metricasV]").hidden = rolSesion !== "admin";
     $("[data-tab=equipoV]").hidden = !["admin", "notario"].includes(rolSesion);
-    if ((["funcionesV", "metricasV"].includes(pestanaActual) && rolSesion !== "admin") || (pestanaActual === "equipoV" && !["admin", "notario"].includes(rolSesion))) pestanaActual = "app";
+    if ((["funcionesV", "metricasV"].includes(pestanaActual) && rolSesion !== "admin") || (pestanaActual === "equipoV" && !["admin", "notario"].includes(rolSesion))) pestanaActual = "inicioV";
   } catch (e) {
     if (e.sinPermiso) {
       const { data: { user } } = await sb.auth.getUser();
@@ -169,7 +170,7 @@ async function mostrarApp() {
   pestana(pestanaActual);
   if (rolSesion === "admin") cargarMetricas(true);
   clearInterval(timer);
-  const refrescar = () => ["preciosV", "funcionesV", "metricasV", "equipoV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
+  const refrescar = () => ["preciosV", "funcionesV", "metricasV", "equipoV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "inicioV" ? cargarInicio() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
   timer = setInterval(() => refrescar().catch((e) => console.warn("No se pudo actualizar:", e.message)), 15000);
 }
 
@@ -276,7 +277,8 @@ function pestana(id) {
   if (id === "metricasV") cargarMetricas();
   $("#preciosV").hidden = id !== "preciosV";
   if (id === "preciosV") cargarPreciosPanel();
-  $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV";
+  $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV"; $("#inicioV").hidden = id !== "inicioV";
+  if (id === "inicioV") cargarInicio();
   document.querySelectorAll("#tabs [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === id));
   if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); cargarCitasConfig(); }
 }
@@ -747,4 +749,35 @@ $("#equipoLista").addEventListener("change", async e => {
   s.disabled = true;
   try { pintarEquipo(await api("POST", { accion: "cambiarRol", email: s.dataset.equipoRol, rol: s.value })); $("#equipoMensaje").textContent = "Perfil guardado."; }
   catch (e) { pintarEquipo(equipoPanel); $("#equipoMensaje").textContent = e.message; }
+});
+
+/* ---------- Inicio: lo que el notario necesita ver al entrar ---------- */
+const ESTADO_CITA = { pendiente: "Por confirmar", confirmada: "Confirmada", atendida: "Atendida", rechazada: "Rechazada", cancelada: "Cancelada", inasistencia: "No vino" };
+async function cargarInicio() {
+  const hoy = hoyQuito();
+  try {
+    const [agenda, conversaciones] = await Promise.all([api("GET", { accion: "agenda", fecha: hoy }), api("GET", { accion: "conversaciones" })]);
+    const citas = (agenda.citas || []).filter((c) => !["rechazada", "cancelada"].includes(c.estado)).sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+    const porConfirmar = conversaciones.reduce((s, c) => s + (c.citasPendientes || 0), 0);
+    const derivadas = conversaciones.filter((c) => c.derivada);
+    const atencion = conversaciones.filter((c) => c.derivada || c.citasPendientes).slice(0, 8);
+    const fecha = new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", weekday: "long", day: "numeric", month: "long" }).format(new Date());
+    $("#inicioFecha").textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    const hora = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Guayaquil", hour: "numeric", hourCycle: "h23" }).format(new Date()));
+    $("#inicioTitulo").textContent = (hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches") + (nombreSesion ? ", " + nombreSesion : "");
+    const cifra = (n, texto, destino, icono, tono) => `<button class="inicio__cifra inicio__cifra--${n ? tono : "calma"}" type="button" data-ir-pestana="${destino}"><i class="ph ${icono}" aria-hidden="true"></i><strong>${n}</strong><span>${texto}</span></button>`;
+    $("#inicioCifras").innerHTML = cifra(citas.length, citas.length === 1 ? "cita hoy" : "citas hoy", "agendaV", "ph-calendar-check", "verde")
+      + cifra(porConfirmar, porConfirmar === 1 ? "cita por confirmar" : "citas por confirmar", "app", "ph-clock-countdown", "ambar")
+      + cifra(derivadas.length, derivadas.length === 1 ? "cliente pide una persona" : "clientes piden una persona", "app", "ph-chats-circle", "rojo");
+    $("#inicioCitas").innerHTML = citas.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b><span>${esc(c.nombre)}<small>${esc(c.tramite)}${c.codigo ? " · Ticket " + esc(c.codigo) : ""}</small></span><span class="inicio__estado inicio__estado--${esc(c.estado)}">${esc(ESTADO_CITA[c.estado] || c.estado)}</span></div>`).join("")
+      || '<p class="aviso">No hay citas para hoy.</p>';
+    $("#inicioAtencion").innerHTML = atencion.map((c) => `<button class="inicio__fila inicio__fila--boton" type="button" data-abrir-conv="${esc(c.id)}"><span class="inicio__estado inicio__estado--${c.derivada ? "persona" : "pendiente"}">${c.derivada ? "Pide una persona" : "Por confirmar"}</span><span>${esc(c.nombre || (c.canal === "web" ? "Visitante de la web" : c.telefono))}<small>${esc(c.ultimo || "")}</small></span><i class="ph ph-caret-right" aria-hidden="true"></i></button>`).join("")
+      || '<p class="aviso">Todo al día: no hay conversaciones pendientes.</p>';
+  } catch (e) { $("#inicioCifras").innerHTML = `<p class="aviso">${esc(e.message)}</p>`; }
+}
+$("#inicioV").addEventListener("click", (e) => {
+  const ir = e.target.closest("[data-ir-pestana]");
+  if (ir) return pestana(ir.dataset.irPestana);
+  const conv = e.target.closest("[data-abrir-conv]");
+  if (conv) { pestana("app"); abrir(conv.dataset.abrirConv); }
 });

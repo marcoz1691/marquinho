@@ -302,3 +302,40 @@ header .ver-como select{max-width:none}
 .lado>div,.ficha{min-width:0}
 .ficha b,.ficha span,.ficha small{overflow-wrap:anywhere}
 .funcion-falta{margin:0;padding:8px 10px;border-radius:8px;background:#FFF6E5;color:#7A4B00;font-size:13px}
+/* Inicio del panel: resumen del día */
+.inicio{max-width:1180px;margin:0 auto;padding:32px 24px 48px;display:grid;gap:24px}
+.inicio__fecha{margin:0 0 4px;color:var(--muted);font-size:14px;font-weight:500}
+.inicio__cab h2{margin:0;font-size:clamp(26px,3vw,34px);letter-spacing:-.025em;line-height:1.1}
+.inicio__cifras{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.inicio__cifra{--tono:var(--acc);--fondo:var(--soft);position:relative;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:14px;align-items:center;text-align:left;padding:20px 22px;border:1px solid var(--line);border-radius:16px;background:var(--card);cursor:pointer;font:inherit;color:inherit;box-shadow:0 1px 2px rgba(10,59,46,.05);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;overflow:hidden}
+.inicio__cifra::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--tono)}
+.inicio__cifra:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(10,59,46,.1);border-color:color-mix(in srgb,var(--tono) 35%,var(--line))}
+.inicio__cifra:focus-visible{outline:3px solid color-mix(in srgb,var(--tono) 40%,transparent);outline-offset:2px}
+.inicio__cifra i{grid-row:1/3;display:grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--fondo);color:var(--tono);font-size:24px}
+.inicio__cifra strong{font-size:32px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.inicio__cifra span{color:var(--muted);font-size:14px}
+.inicio__cifra--verde{--tono:#0E6B4F;--fondo:#E6F2EC}
+.inicio__cifra--ambar{--tono:#9A6200;--fondo:#FFF3D6}
+.inicio__cifra--rojo{--tono:#B3261E;--fondo:#FDE8E6}
+.inicio__cifra--calma{--tono:#9AA49F;--fondo:var(--alt)}
+.inicio__columnas{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:start}
+.inicio__panel{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(10,59,46,.05);overflow:hidden}
+.inicio__sub{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.inicio__sub h3{margin:0;font-size:15px;letter-spacing:-.01em}
+.inicio__enlace{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:6px 8px;border-radius:8px;color:var(--acc);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.inicio__enlace:hover{background:var(--soft)}
+.inicio__lista{display:grid}
+.inicio__lista>.aviso{margin:0;padding:22px 18px;color:var(--muted)}
+.inicio__fila{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 18px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;font:inherit;color:inherit;width:100%}
+.inicio__fila:last-child{border-bottom:0}
+.inicio__fila span{min-width:0}
+.inicio__fila small{display:block;color:var(--muted);font-size:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inicio__hora{font-variant-numeric:tabular-nums;font-size:15px;padding:6px 10px;border-radius:8px;background:var(--alt)}
+.inicio__estado{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--alt);color:var(--muted)}
+.inicio__estado--confirmada{background:#E6F2EC;color:#0E6B4F}
+.inicio__estado--pendiente{background:#FFF3D6;color:#7A4E00}
+.inicio__estado--persona{background:#FDE8E6;color:#8C1D17}
+.inicio__fila--boton{grid-template-columns:auto minmax(0,1fr) auto;cursor:pointer;transition:background .15s ease}
+.inicio__fila--boton:hover{background:var(--alt)}
+.inicio__fila--boton>i{color:var(--muted);font-size:16px}
+@media (max-width:900px){.inicio{padding:20px 14px 36px}.inicio__cifras,.inicio__columnas{grid-template-columns:1fr}.inicio__fila--boton{grid-template-columns:minmax(0,1fr) auto}.inicio__fila--boton .inicio__estado{grid-column:1/-1;justify-self:start}}
