@@ -7,10 +7,10 @@ test.describe("Contacto y datos de la notaría", () => {
   test("CF-70 la portada destaca al notario: cargo, nombre y lema desde los datos", async ({ page }) => {
     await abrirPortada(page);
     await expect(page).toHaveTitle(notaria.notarioCorto + " · " + notaria.nombre);
-    await expect(page.locator("#brandName")).toHaveText(notaria.notarioCorto);
-    await expect(page.locator("#brandSub")).toHaveText("Notaría 41 · Quito");
+    await expect(page.locator("#brandName")).toHaveCount(0);
+    await expect(page.locator("#brandSub")).toHaveCount(0);
     await expect(page.locator("#heroNotario")).toHaveText(notaria.cargo);
-    await expect(page.locator("#heroTitle")).toHaveText(notaria.notario);
+    await expect(page.locator("#heroTitle .hero__nombre")).toHaveText(notaria.notario);
     await expect(page.locator("#heroLema")).toHaveText(notaria.eslogan);
     expect(notaria.eslogan).toBe("Fe pública al servicio de la comunidad.");
     await expect(page.locator(".hero")).not.toContainText("Prepara tu trámite por WhatsApp");
@@ -20,9 +20,9 @@ test.describe("Contacto y datos de la notaría", () => {
     await page.route("**/data/notaria.json", () => {});
     await page.goto("/");
     await expect(page.locator("#heroNotario")).toHaveText("Notario Cuadragésimo Primero del Cantón Quito");
-    await expect(page.locator("#heroTitle")).toHaveText("Dr. Dobri Miguel Albornoz Donoso");
+    await expect(page.locator("#heroTitle .hero__nombre")).toHaveText("Dr. Dobri Miguel Albornoz Donoso");
     await expect(page.locator("#heroLema")).toHaveText("Fe pública al servicio de la comunidad.");
-    await expect(page.locator("#brandName")).toHaveText("Dr. Dobri Albornoz Donoso");
+    await expect(page.locator("#brandName")).toHaveCount(0);
     await expect(page).toHaveTitle("Dr. Dobri Albornoz Donoso · Notaría 41 de Quito");
   });
 

@@ -204,8 +204,9 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const texto = textoValido(b);
       if (!texto) throw new Aviso("Revisa el texto: el nombre debe tener entre 3 y 120 caracteres, la descripción y la nota hasta 500, y cada requisito o paso hasta 300 (máximo 25 por lista).");
       await almacen.guardarAjuste("tramite." + b.tramiteId, JSON.stringify(texto), por);
+      contenido.invalidar?.();
     },
-    async restaurarTexto(id) { await tramitePrecio(id); await almacen.restaurarAjuste("tramite." + id); },
+    async restaurarTexto(id) { await tramitePrecio(id); await almacen.restaurarAjuste("tramite." + id); contenido.invalidar?.(); },
     async guardarPrecio(p, por) {
       const C = await tramitePrecio(p.tramiteId);
       if (!["pct", "fija", "cuantia", "consultar"].includes(p.tipo)) throw new Aviso("Tipo de precio inválido.");

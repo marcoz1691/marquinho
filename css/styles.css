@@ -777,3 +777,6 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 .legal__pie .foot__links{display:flex;flex-wrap:wrap;gap:8px 20px;flex-direction:row}
 @media (max-width:700px){.legal__pie{grid-template-columns:1fr!important}}
 .foot__links a+a{margin-left:0}
+.hero__cargo{display:block;margin-top:14px;font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.01em;color:var(--accent);text-transform:none}
+.nav__brand img{width:56px;height:56px}
+@media(max-width:640px){.nav__brand img{width:48px;height:48px}}

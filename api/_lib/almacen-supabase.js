@@ -7,7 +7,7 @@ import { textoVisible } from "./mensajes.js";
 
 const BUCKET = "documentos";
 
-export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo } = {}) {
+export function crearAlmacenSupabase({ url, clave, cliente, notariaId = "notaria41", codigo = nuevoCodigo } = {}) {
   const db = cliente || createClient(url, clave, { auth: { persistSession: false } });
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
   const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada,
@@ -50,18 +50,18 @@ export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo
     },
 
     async conversacion(telefono, nombre) {
-      let r = ok(await db.from("conversaciones").select("*").eq("telefono", telefono).maybeSingle());
+      let r = ok(await db.from("conversaciones").select("*").eq("notaria_id", notariaId).eq("telefono", telefono).maybeSingle());
       if (!r) {
-        const ins = await db.from("conversaciones").insert({ telefono, nombre: nombre || "" }).select().single();
-        r = ins.error?.code === "23505" ? ok(await db.from("conversaciones").select("*").eq("telefono", telefono).single()) : ok(ins);
+        const ins = await db.from("conversaciones").insert({ notaria_id: notariaId, telefono, nombre: nombre || "" }).select().single();
+        r = ins.error?.code === "23505" ? ok(await db.from("conversaciones").select("*").eq("notaria_id", notariaId).eq("telefono", telefono).single()) : ok(ins);
       } else if (nombre && !r.nombre) {
         r = ok(await db.from("conversaciones").update({ nombre }).eq("id", r.id).select().single());
       }
       return conv(r);
     },
     // Busca sin crear (conversacion() crea si no existe).
-    async conversacionPorTelefono(telefono) { return conv(ok(await db.from("conversaciones").select("*").eq("telefono", telefono).maybeSingle())); },
-    async conversacionPorId(id) { return conv(ok(await db.from("conversaciones").select("*").eq("id", id).maybeSingle())); },
+    async conversacionPorTelefono(telefono) { return conv(ok(await db.from("conversaciones").select("*").eq("notaria_id", notariaId).eq("telefono", telefono).maybeSingle())); },
+    async conversacionPorId(id) { return conv(ok(await db.from("conversaciones").select("*").eq("notaria_id", notariaId).eq("id", id).maybeSingle())); },
     async actualizarConversacion(id, cambios) {
       const fila = {};
       if ("derivada" in cambios) fila.derivada = cambios.derivada;
@@ -74,12 +74,12 @@ export function crearAlmacenSupabase({ url, clave, cliente, codigo = nuevoCodigo
     },
     async resumenConversaciones() {
       const filas = ok(await db.from("conversaciones").select("id, nombre, telefono, derivada, ultimo_texto, ultima_actividad_ms, solicitudes_cita(count)")
-        .eq("solicitudes_cita.estado", "pendiente").order("ultima_actividad_ms", { ascending: false }).limit(200));
+        .eq("notaria_id", notariaId).eq("solicitudes_cita.estado", "pendiente").order("ultima_actividad_ms", { ascending: false }).limit(200));
       return filas.map((r) => ({ id: r.id, nombre: r.nombre, telefono: r.telefono, derivada: r.derivada, ultimoTexto: r.ultimo_texto,
         ultimaActividad: Number(r.ultima_actividad_ms), citasPendientes: r.solicitudes_cita?.[0]?.count || 0 }));
     },
     async conversaciones() {
-      const filas = ok(await db.from("conversaciones").select("*, sesiones(ultima_ms)"));
+      const filas = ok(await db.from("conversaciones").select("*, sesiones(ultima_ms)").eq("notaria_id", notariaId));
       return filas.map((r) => ({ ...conv(r), ultimaActividad: Math.max(0, ...(r.sesiones || []).map((s) => Number(s.ultima_ms))) }));
     },
 

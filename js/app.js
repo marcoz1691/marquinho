@@ -253,8 +253,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     }
     var tels = (N.telefonos || []).filter(Boolean);
     var corto = N.notarioCorto || N.notario || N.nombre;
-    $("#brandName").textContent = corto;
-    $("#heroNotario").textContent = N.cargo || N.nombre;
+    $("#heroNotario").textContent = N.cargo || "";
     tituloPortada(N.notario || N.nombre);
     if (N.eslogan) $("#heroLema").textContent = N.eslogan;
     document.title = corto + " · " + N.nombre;
@@ -396,8 +395,9 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   // El nombre del notario se parte en palabras para que cada una suba desde su máscara.
   function tituloPortada(t) {
     var h = $("#heroTitle"), limpio = String(t || "").trim();
-    if (!limpio || h.textContent.replace(/\s+/g, " ").trim() === limpio) return;
-    h.innerHTML = limpio.split(/\s+/).map(function (w, i) { return '<span class="palabra" style="--i:' + i + '"><span>' + esc(w) + "</span></span>"; }).join(" ");
+    if (!limpio || h.querySelector(".hero__nombre")?.textContent.replace(/\s+/g, " ").trim() === limpio) return;
+    var nombre = h.querySelector(".hero__nombre") || h;
+    nombre.innerHTML = limpio.split(/\s+/).map(function (w, i) { return '<span class="palabra" style="--i:' + i + '"><span>' + esc(w) + "</span></span>"; }).join(" ");
   }
 
   // Las frases pasan una sola vez y la portada termina en el lema, que es el texto que leen los lectores de pantalla.
