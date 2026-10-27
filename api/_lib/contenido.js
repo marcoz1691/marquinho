@@ -16,7 +16,8 @@ async function leerJSONLocales() {
 export function crearContenido({ leerLocal = leerJSONLocales, fetch = globalThis.fetch, ahora = Date.now, almacen } = {}) {
   let cache = null, cacheOficial = null, vence = 0, ultimaHoja = null, ultimosPrecios = [], ultimosAjustes = {};
 
-  return async function contenido({ oficial = false } = {}) {
+  const invalidar = () => { cache = null; vence = 0; };
+  const funcion = async function contenido({ oficial = false } = {}) {
     if (cache && ahora() < vence) return oficial ? structuredClone(cacheOficial) : cache;
     const L = await leerLocal();
     const base = { data: L.tramites, tarifas: L.tarifas, notaria: L.notaria };
@@ -50,4 +51,6 @@ export function crearContenido({ leerLocal = leerJSONLocales, fetch = globalThis
     vence = ahora() + CACHE_MS;
     return oficial ? structuredClone(cacheOficial) : cache;
   };
+  funcion.invalidar = invalidar;
+  return funcion;
 }
