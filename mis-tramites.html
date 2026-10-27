@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="assets/fonts/archivo.css">
   <link rel="stylesheet" href="assets/fonts/phosphor.css">
   <link rel="stylesheet" href="css/cuenta.css">
+  <link rel="stylesheet" href="css/chat-portal.css">
   <script type="module" src="js/mis-tramites.js"></script>
 </head>
 <body>
@@ -41,5 +42,23 @@
     </section>
   </main>
   <footer class="portal-pie"><span>Notaría 41 de Quito · Dr. Dobri Albornoz Donoso</span><span><a href="./">Volver a la página</a> · <a href="privacidad.html">Privacidad</a></span></footer>
+<button class="chat-lanzador" data-funcion="chatWeb" id="chatAbrir" type="button" aria-label="Abrir el chat de ayuda" aria-expanded="false" aria-controls="chat"><i class="ph-fill ph-chat-circle-dots" aria-hidden="true"></i><span>¿Te ayudo?</span></button>
+<section class="chat" data-funcion="chatWeb" id="chat" role="dialog" aria-label="Chat con la Notaría 41" hidden>
+  <header class="chat__cab">
+    <img src="assets/logo/logo-notaria41-verde.svg" alt="" width="36" height="36">
+    <div><b data-nombre>Sofía</b><small>Notaría 41 · respuestas automáticas</small></div>
+    <a class="chat__icono" href="asistente.html" target="_blank" rel="noopener" aria-label="Abrir el chat en pantalla completa" title="Pantalla completa"><i class="ph ph-arrows-out-simple" aria-hidden="true"></i></a>
+    <button class="chat__icono" id="chatNueva" type="button" aria-label="Empezar una conversación nueva" title="Conversación nueva"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i></button>
+    <button class="chat__icono" id="chatCerrar" type="button" aria-label="Cerrar el chat"><i class="ph ph-x" aria-hidden="true"></i></button>
+  </header>
+  <div class="chat__mensajes" id="chatMensajes" aria-live="polite"></div>
+  <div class="chat__sugerencias" id="chatSugerencias"></div>
+  <form class="chat__form" id="chatForm">
+    <textarea id="chatTexto" rows="1" maxlength="1000" placeholder="Escribe tu pregunta" aria-label="Escribe tu pregunta"></textarea>
+    <button type="submit" aria-label="Enviar"><i class="ph-fill ph-paper-plane-right" aria-hidden="true"></i></button>
+  </form>
+  <p class="chat__pie">Respuestas automáticas; no compartas datos sensibles. <a href="privacidad.html">Privacidad</a> <a href="terminos.html">Términos</a> <a id="chatWhatsapp" target="_blank" rel="noopener" hidden>Prefiero WhatsApp</a></p>
+</section>
+<script type="module" src="js/chat.js"></script>
 </body>
 </html>
