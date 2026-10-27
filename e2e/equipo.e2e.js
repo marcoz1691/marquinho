@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures.js";
 async function preparar(page, rol) {
   const pedidos = [];
-  let miembros = [{ email: "yo@test.ec", nombre: "Yo", rol, dosPasos: true }, { email: "ana@test.ec", nombre: "Ana", rol: "personal", dosPasos: false }];
+  let miembros = [{ email: "yo@test.ec", nombre: "Yo", rol, dosPasos: true }, { email: "ana@test.ec", nombre: "Ana", rol: "matricero", dosPasos: false }];
   await page.route("**/vendor/supabase-js-*.js", r => r.fulfill({ contentType: "text/javascript", body: 'window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:"test"}}})}})};' }));
   await page.route("**/api/panel-config", r => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
   await page.route(/\/api\/panel(?:\?|$)/, r => {
@@ -33,20 +33,20 @@ test("admin invita y da de baja con confirmación", async ({ page }) => {
   await expect(page.locator('[data-equipo-quitar="ana@test.ec"]')).toHaveCount(0);
   expect(pedidos[1]).toEqual({ accion: "quitarMiembro", email: "ana@test.ec" });
 });
-for (const width of [390, 1366]) test(`notario ve Equipo y solo Personal a ${width}px`, async ({ page }) => {
+for (const width of [390, 1366]) test(`notario ve Equipo y solo Matricero a ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 844 });
   await preparar(page, "notario");
   await expect(page.locator('[data-tab="funcionesV"]')).toBeHidden();
   await expect(page.locator('[data-tab="metricasV"]')).toBeHidden();
   await page.locator('[data-tab="equipoV"]').click();
   await expect(page.locator("#equipoRol option")).toHaveCount(1);
-  await expect(page.locator("#equipoRol")).toHaveValue("personal");
+  await expect(page.locator("#equipoRol")).toHaveValue("matricero");
   await expect(page.locator("[data-equipo-rol]")).toHaveCount(0);
   await expect(page.locator("#perfilSesion")).toHaveText("Notario");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 test("personal no ve Equipo", async ({ page }) => {
-  await preparar(page, "personal");
+  await preparar(page, "matricero");
   await expect(page.locator('[data-tab="equipoV"]')).toBeHidden();
   await expect(page.locator("#equipoV")).toBeHidden();
 });

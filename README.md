@@ -39,7 +39,7 @@ La guía para el notario está en [cms/GUIA-NOTARIO.md](cms/GUIA-NOTARIO.md).
 1. Crea un proyecto en supabase.com.
 2. En el **SQL Editor**, ejecuta [supabase/esquema.sql](supabase/esquema.sql). Crea las tablas con RLS y el bucket privado `documentos`.
 3. Crea la primera cuenta administradora en **Authentication → Users → Add user** y autorízala: `insert into personal (email, nombre, rol) values ('correo@…', 'Nombre', 'admin');`.
-4. Crea las demás cuentas desde **Equipo → Invitar a alguien** en el panel. El administrador gestiona todos los perfiles; el notario invita y da de baja al perfil Personal. La invitación permite crear contraseña y después configurar dos pasos. Si ya existe la cuenta, puede entrar con su contraseña o recuperarla.
+4. Crea las demás cuentas desde **Equipo → Invitar a alguien** en el panel. El administrador gestiona todos los perfiles; el notario invita y da de baja al perfil Matricero. La invitación permite crear contraseña y después configurar dos pasos. Si ya existe la cuenta, puede entrar con su contraseña o recuperarla.
 5. Ejecuta el bloque **2026-10-11: perfil notario** de `supabase/esquema.sql` (amplía perfiles y agrega la fecha de creación). Permite `https://<tu-dominio>/panel/` en **Authentication → URL Configuration → Redirect URLs**. Puedes definir `SITIO_URL` en el servidor; si falta, la invitación usa el encabezado Origin.
 5. En Authentication → Providers → Email, desactiva el registro público ("Allow new users to sign up") y deja la confirmación de correo activa.
 6. Copia `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY`, que están en Project Settings → API.

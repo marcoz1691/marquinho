@@ -81,6 +81,15 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     if (!roles.includes(rol)) fallo("No tienes permiso para cambiar este perfil.", 403);
     return rol;
   }
+  const hoyQuito = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
+  // Solo quien atiende la cita revisa sus documentos; el notario y el administrador pueden hacerlo siempre.
+  async function exigirResponsable(por, citaId) {
+    if (!citaId || ["admin", "notario"].includes(await almacen.rolDe(por))) return;
+    const cita = await almacen.cita(citaId);
+    if (!cita || cita.atiendeEmail === por) return;
+    fallo(cita.atiendeEmail ? `Esta cita la atiende ${cita.atiendeNombre || "otra persona"}.` : "Primero pulsa Atender en la cita para revisar sus documentos.", 409);
+  }
+  const nombreDelEquipo = async (email) => (await almacen.equipo()).find((p) => p.email === email)?.nombre || String(email).split("@")[0];
   return {
     async yo(email) { const p = (await almacen.equipo()).find(p => p.email === email); return { email, nombre: p?.nombre || "", rol: await almacen.rolDe(email) }; },
     async equipo(por) {
@@ -91,8 +100,8 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const actor = await permitir(por, ["admin", "notario"]), email = correo(b.email);
       const nombre = typeof b.nombre === "string" ? b.nombre.trim() : "";
       if (nombre.length < 2 || nombre.length > 80 || /[\u0000-\u001f\u007f]/.test(nombre)) fallo("Escribe un nombre de 2 a 80 caracteres.");
-      if (!["admin", "notario", "personal"].includes(b.rol)) fallo("Elige un perfil válido.");
-      if (actor === "notario" && b.rol !== "personal") fallo("Solo puedes invitar al perfil Personal.", 403);
+      if (!["admin", "notario", "matricero"].includes(b.rol)) fallo("Elige un perfil válido.");
+      if (actor === "notario" && b.rol !== "matricero") fallo("Solo puedes invitar al perfil Matricero.", 403);
       if (await almacen.rolDe(email)) fallo("Esa persona ya está en el equipo.", 409);
       if (await almacen.contarUso("panel:invitaciones:" + por, VENTANA_MS, ahora().getTime()) > 20) fallo("Ya enviaste 20 invitaciones hoy. Intenta mañana.", 429);
       try { await almacen.agregarMiembro({ email, nombre, rol: b.rol }); }
@@ -100,7 +109,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       let invitacion;
       // El correo de invitación saluda por su nombre, dice su perfil y quién lo invitó (ver supabase/correos/).
       const quien = (await almacen.equipo()).find((p) => p.email === por)?.nombre || "";
-      const datos = { nombre, perfil: { admin: "Administrador", notario: "Notario", personal: "Personal" }[b.rol], invito: quien };
+      const datos = { nombre, perfil: { admin: "Administrador", notario: "Notario", matricero: "Matricero" }[b.rol], invito: quien };
       try { invitacion = await almacen.invitar(email, redirectTo, datos); }
       catch { await almacen.quitarMiembro(email); fallo("No se pudo enviar la invitación. Intenta de nuevo.", 502); }
       return { ok: true, ...await this.equipo(por), ...invitacion, ...(invitacion.yaTeniaCuenta ? { aviso: "Ya tenía cuenta: puede entrar con su contraseña o usar ¿Olvidaste tu contraseña?" } : {}) };
@@ -110,7 +119,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (email === String(por).toLowerCase()) fallo("No puedes darte de baja a ti mismo.");
       const miembros = await almacen.equipo(), p = miembros.find(p => p.email === email);
       if (!p) fallo("Esa persona no está en el equipo.", 404);
-      if (actor === "notario" && p.rol !== "personal") fallo("Solo puedes dar de baja al perfil Personal.", 403);
+      if (actor === "notario" && p.rol !== "matricero") fallo("Solo puedes dar de baja al perfil Matricero.", 403);
       if (p.rol === "admin" && miembros.filter(p => p.rol === "admin").length <= 1) fallo("No puedes dar de baja al último administrador.");
       await almacen.quitarMiembro(email);
       return { ok: true, ...await this.equipo(por) };
@@ -119,7 +128,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       await permitir(por, ["admin"]);
       const email = correo(b.email);
       if (email === String(por).toLowerCase()) fallo("No puedes cambiar tu propio perfil.");
-      if (!["admin", "notario", "personal"].includes(b.rol)) fallo("Elige un perfil válido.");
+      if (!["admin", "notario", "matricero"].includes(b.rol)) fallo("Elige un perfil válido.");
       const miembros = await almacen.equipo(), p = miembros.find(p => p.email === email);
       if (!p) fallo("Esa persona no está en el equipo.", 404);
       if (p.rol === "admin" && b.rol !== "admin" && miembros.filter(p => p.rol === "admin").length <= 1) fallo("No puedes cambiar el perfil del último administrador.");
@@ -299,6 +308,68 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       await almacen.actualizarCita(citaId, { asignadaA: limpio(persona, 60) });
     },
 
+    // Resumen del día para quien atiende en la notaría: sus citas, las que nadie tiene y quién lleva las demás.
+    // No incluye celulares ni notas del cliente.
+    async miTurno(por) {
+      const fecha = hoyQuito(), C = await contenido();
+      const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
+      const citas = (await almacen.agenda(fecha)).filter((x) => ["confirmada", "atendida"].includes(x.estado))
+        .map(({ telefono, telefonoConversacion, contacto, nota, motivo, ...x }) => ({ ...x, tramite: nombreDe(x.tramiteId) }));
+      return {
+        fecha, email: por,
+        mias: citas.filter((x) => x.atiendeEmail === por),
+        sinAsignar: citas.filter((x) => x.estado === "confirmada" && !x.atiendeEmail),
+        deOtros: citas.filter((x) => x.atiendeEmail && x.atiendeEmail !== por)
+      };
+    },
+
+    // Quien la pide primero la lleva; la reserva es atómica, así que dos personas no pueden tener la misma cita.
+    async atenderCita(citaId, por) {
+      const cita = await almacen.cita(citaId);
+      if (!cita) fallo("Cita no encontrada", 404);
+      if (cita.estado !== "confirmada") fallo("Solo se atienden citas confirmadas.", 409);
+      if (cita.atiendeEmail === por) return { ya: true };
+      if (!(await almacen.reservarCita(citaId, { email: por, nombre: await nombreDelEquipo(por), desde: ahora().toISOString() }))) {
+        const ahoraDe = await almacen.cita(citaId);
+        fallo(`Ya la atiende ${ahoraDe?.atiendeNombre || "otra persona"}.`, 409);
+      }
+      return { ya: false };
+    },
+
+    async devolverCita(citaId, por) {
+      const cita = await almacen.cita(citaId);
+      if (!cita) fallo("Cita no encontrada", 404);
+      if (cita.estado === "atendida") fallo("Esa cita ya se atendió.", 409);
+      if (!cita.atiendeEmail) return;
+      if (cita.atiendeEmail !== por && !["admin", "notario"].includes(await almacen.rolDe(por))) fallo(`Esta cita la atiende ${cita.atiendeNombre || "otra persona"}.`, 403);
+      await almacen.actualizarCita(citaId, { atiendeEmail: "", atiendeNombre: "" });
+    },
+
+    async terminarCita(citaId, por) {
+      await exigirResponsable(por, citaId);
+      const cita = await almacen.cita(citaId);
+      if (cita && !cita.atiendeEmail && (await almacen.rolDe(por)) === "matricero") fallo("Primero pulsa Atender en la cita.", 409);
+      return this.decidirCita(citaId, "atendida");
+    },
+
+    // Solo el notario o un administrador: pasa la cita a otra persona del equipo, o la deja sin dueño si no se indica nadie.
+    async reasignarCita(citaId, destino) {
+      const cita = await almacen.cita(citaId);
+      if (!cita) fallo("Cita no encontrada", 404);
+      if (cita.estado === "atendida") fallo("Esa cita ya se atendió.", 409);
+      if (!destino) return almacen.actualizarCita(citaId, { atiendeEmail: "", atiendeNombre: "" });
+      const persona = (await almacen.equipo()).find((p) => p.email === String(destino).toLowerCase());
+      if (!persona || persona.rol !== "matricero") fallo("Elige a un matricero del equipo.");
+      await almacen.actualizarCita(citaId, { atiendeEmail: persona.email, atiendeNombre: persona.nombre || persona.email.split("@")[0] });
+    },
+
+    // Documentos de una cita (sin el archivo): todos ven la lista, solo quien atiende puede abrirlos o revisarlos.
+    async documentosDeCita(citaId) {
+      const cita = await almacen.cita(citaId);
+      if (!cita) fallo("Cita no encontrada", 404);
+      return (await almacen.documentos(cita.conversacionId)).filter((d) => d.solicitudId === citaId).map(({ bytes, ...d }) => d);
+    },
+
     async decidirCita(citaId, estado, motivo = "") {
       motivo = limpio(motivo, 200);
       if (!ESTADOS_CITA.includes(estado)) throw new Aviso(`Estado de cita inválido: ${estado}`);
@@ -333,13 +404,14 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     },
 
     // «nota» es interna (solo personal); «observacionCliente» es lo que el cliente ve en su portal.
-    async revisarDocumento(id, estado, nota = "", observacionCliente) {
+    async revisarDocumento(id, estado, nota = "", observacionCliente, por = "") {
       nota = limpio(nota, 300);
       const conObservacion = observacionCliente !== undefined && observacionCliente !== null;
       const observacion = conObservacion ? limpio(observacionCliente, 500) : "";
       if (!ESTADOS_DOC.includes(estado)) throw new Aviso(`Estado de documento inválido: ${estado}`);
       const d = await almacen.documento(id);
       if (!d) throw new Aviso("Documento no encontrado");
+      if (por) await exigirResponsable(por, d.solicitudId);
       await almacen.revisarDocumento(id, { estado, nota, ...(conObservacion ? { observacionCliente: observacion } : {}) });
       // Documentos antiguos sin trámite (solicitudId nulo) no tienen línea de tiempo. La nota interna nunca va al evento.
       if (estado !== "recibido" && d.solicitudId) {
@@ -360,7 +432,10 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       return { avisado: true };
     },
 
-    async urlDocumento(id) { return almacen.urlDocumento(id); },
+    async urlDocumento(id, por = "") {
+      if (por) await exigirResponsable(por, (await almacen.documento(id))?.solicitudId);
+      return almacen.urlDocumento(id);
+    },
     // Borrado recuperable: el documento sale del panel y el archivo se elimina en la limpieza diaria (ver purgar.js).
     async borrarDocumento(id, por = "") {
       if (!(await almacen.documento(id))) throw new Aviso("Documento no encontrado");

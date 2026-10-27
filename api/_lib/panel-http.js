@@ -6,9 +6,9 @@ import { Aviso } from "./errores.js";
 const HORA = 3600 * 1000;
 const GENERICO = "No se pudo completar la acción. Intenta de nuevo en unos segundos.";
 const SOLO_EDITORES_TRAMITES = "Solo el notario o un administrador puede editar los trámites.";
-// «Ver como»: un administrador revisa el panel con el perfil de notario o de personal (cabecera X-Ver-Como). Solo baja
+// «Ver como»: un administrador revisa el panel con el perfil de notario o de matricero (cabecera X-Ver-Como). Solo baja
 // permisos, nunca los sube, y mientras dura no se guarda nada: todo POST se rechaza. La auditoría sigue con su correo real.
-const VISTAS = ["notario", "personal"];
+const VISTAS = ["notario", "matricero"];
 const EN_VISTA_PREVIA = "Estás en vista previa: vuelve a Administrador para guardar cambios.";
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
@@ -95,12 +95,14 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     conversaciones: { fn: () => panel.conversaciones() },
     buscarTicket: { fn: (q) => panel.buscarTicket(q.get("codigo")), auditar: true },
     agenda: { fn: (q) => panel.agenda(q.get("fecha")) },
+    miTurno: { fn: (q, email) => panel.miTurno(email) },
+    documentosDeCita: { fn: (q) => panel.documentosDeCita(q.get("id")), auditar: true },
     detalle: { fn: (q) => panel.detalle(q.get("id")), auditar: true },
     documento: { auditar: true, estricta: true, fn: async (q, email) => {
       if ((await auth.contarUso("panel:descargas:" + email, HORA, ahora())) > limiteDescargas) {
         throw Object.assign(new Aviso("Abriste muchos documentos en la última hora. Espera un momento o pide ayuda al administrador."), { status: 429 });
       }
-      return { url: await panel.urlDocumento(q.get("id")) };
+      return { url: await panel.urlDocumento(q.get("id"), email) };
     } }
   };
   const acciones = {
@@ -129,7 +131,11 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     devolver: (b) => panel.devolverAlAsistente(b.id),
     cita: (b) => panel.decidirCita(b.id, b.estado, b.motivo),
     asignarCita: (b) => panel.asignarCita(b.id, b.persona),
-    revisarDocumento: (b) => panel.revisarDocumento(b.id, b.estado, b.nota, b.observacionCliente),
+    atenderCita: (b, email) => panel.atenderCita(b.id, email),
+    devolverCita: (b, email) => panel.devolverCita(b.id, email),
+    terminarCita: (b, email) => panel.terminarCita(b.id, email),
+    reasignarCita: async (b, email) => { await exigir(email, ["admin", "notario"], "Solo el notario o un administrador puede reasignar una cita."); return panel.reasignarCita(b.id, b.persona); },
+    revisarDocumento: (b, email) => panel.revisarDocumento(b.id, b.estado, b.nota, b.observacionCliente, email),
     borrarDocumento: (b, email) => panel.borrarDocumento(b.id, email)
   };
 

@@ -19,6 +19,7 @@
 .ph.ph-chat-text:before{content:"\e17a"}
 .ph.ph-chats-circle:before{content:"\e17e"}
 .ph.ph-check:before{content:"\e182"}
+.ph.ph-check-circle:before{content:"\e184"}
 .ph.ph-clock-countdown:before{content:"\ed2c"}
 .ph.ph-copy:before{content:"\e1ca"}
 .ph.ph-credit-card:before{content:"\e1d2"}
@@ -26,6 +27,7 @@
 .ph.ph-file-arrow-up:before{content:"\e61e"}
 .ph.ph-files:before{content:"\e710"}
 .ph.ph-hand-palm:before{content:"\e57e"}
+.ph.ph-hand-waving:before{content:"\e580"}
 .ph.ph-house:before{content:"\e2c2"}
 .ph.ph-info:before{content:"\e2ce"}
 .ph.ph-list:before{content:"\e2f0"}
@@ -47,8 +49,10 @@
 .ph.ph-stamp:before{content:"\ea48"}
 .ph.ph-sun:before{content:"\e472"}
 .ph.ph-trash:before{content:"\e4a6"}
+.ph.ph-user-focus:before{content:"\e6fc"}
 .ph.ph-user-switch:before{content:"\e756"}
 .ph.ph-users-three:before{content:"\e68e"}
+.ph.ph-warning:before{content:"\e4e0"}
 .ph.ph-whatsapp-logo:before{content:"\e5d0"}
 .ph.ph-x:before{content:"\e4f6"}
 @font-face{font-family:"Phosphor-Fill";src:url("Phosphor-Fill.woff2") format("woff2");font-weight:normal;font-style:normal;font-display:swap}
@@ -72,6 +76,7 @@
 .ph-fill.ph-chat-text:before{content:"\e17a"}
 .ph-fill.ph-chats-circle:before{content:"\e17e"}
 .ph-fill.ph-check:before{content:"\e182"}
+.ph-fill.ph-check-circle:before{content:"\e184"}
 .ph-fill.ph-clock-countdown:before{content:"\ed2c"}
 .ph-fill.ph-copy:before{content:"\e1ca"}
 .ph-fill.ph-credit-card:before{content:"\e1d2"}
@@ -79,6 +84,7 @@
 .ph-fill.ph-file-arrow-up:before{content:"\e61e"}
 .ph-fill.ph-files:before{content:"\e710"}
 .ph-fill.ph-hand-palm:before{content:"\e57e"}
+.ph-fill.ph-hand-waving:before{content:"\e580"}
 .ph-fill.ph-house:before{content:"\e2c2"}
 .ph-fill.ph-info:before{content:"\e2ce"}
 .ph-fill.ph-list:before{content:"\e2f0"}
@@ -100,7 +106,9 @@
 .ph-fill.ph-stamp:before{content:"\ea48"}
 .ph-fill.ph-sun:before{content:"\e472"}
 .ph-fill.ph-trash:before{content:"\e4a6"}
+.ph-fill.ph-user-focus:before{content:"\e6fc"}
 .ph-fill.ph-user-switch:before{content:"\e756"}
 .ph-fill.ph-users-three:before{content:"\e68e"}
+.ph-fill.ph-warning:before{content:"\e4e0"}
 .ph-fill.ph-whatsapp-logo:before{content:"\e5d0"}
 .ph-fill.ph-x:before{content:"\e4f6"}

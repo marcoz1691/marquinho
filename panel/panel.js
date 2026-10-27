@@ -43,11 +43,11 @@ async function api(metodo, params) {
 const VER_COMO = "panel.verComo";
 let verComo = (() => { try { return sessionStorage.getItem(VER_COMO) || ""; } catch { return ""; } })();
 function guardarVerComo(rol) {
-  verComo = ["notario", "personal"].includes(rol) ? rol : "";
+  verComo = ["notario", "matricero"].includes(rol) ? rol : "";
   try { if (verComo) sessionStorage.setItem(VER_COMO, verComo); else sessionStorage.removeItem(VER_COMO); } catch {}
 }
 const selectorVerComo = Object.assign(document.createElement("label"), { className: "ver-como", hidden: true,
-  innerHTML: '<span>Ver como</span><select id="verComo"><option value="">Administrador</option><option value="notario">Notario</option><option value="personal">Personal</option></select>' });
+  innerHTML: '<span>Ver como</span><select id="verComo"><option value="">Administrador</option><option value="notario">Notario</option><option value="matricero">Matricero</option></select>' });
 const avisoVerComo = Object.assign(document.createElement("div"), { className: "vista-previa", id: "vistaPrevia", hidden: true,
   innerHTML: '<p role="status"></p><button type="button" class="btn btn--line">Volver a Administrador</button>' });
 $("#perfilSesion").after(selectorVerComo);
@@ -80,7 +80,7 @@ function vista(id) {
   clearInterval(timer);
   $("#cargando").hidden = true;
   $("#equipoV").hidden = true; $("#perfilSesion").hidden = true; $("#funcionesV").hidden = true; $("#metricasV").hidden = true;
-  $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#inicioV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
+  $("#preciosV").hidden = true; $("#app").hidden = true; $("#agendaV").hidden = true; $("#inicioV").hidden = true; $("#turnoV").hidden = true; $("#tabs").hidden = true; $("#salir").hidden = true; $("#acceso").hidden = false;
   document.querySelectorAll("[data-vista]").forEach((v) => { v.hidden = v.id !== id; });
   document.querySelectorAll(".msg").forEach((m) => { m.textContent = ""; m.className = "msg"; });
   const foco = $("#" + id + " input"); if (foco) setTimeout(() => foco.focus(), 30);
@@ -134,7 +134,7 @@ const INACTIVIDAD_MS = 30 * 60 * 1000;
 let ultimoUso = Date.now();
 ["pointerdown", "keydown", "scroll"].forEach((ev) => document.addEventListener(ev, () => { ultimoUso = Date.now(); }, { passive: true, capture: true }));
 setInterval(async () => {
-  if ($("#app").hidden && $("#agendaV").hidden && $("#preciosV").hidden && $("#inicioV").hidden) return;
+  if ($("#app").hidden && $("#agendaV").hidden && $("#preciosV").hidden && $("#inicioV").hidden && $("#turnoV").hidden) return;
   if (Date.now() - ultimoUso < INACTIVIDAD_MS) return;
   await sb.auth.signOut();
   vista("vEntrar");
@@ -142,7 +142,7 @@ setInterval(async () => {
 }, 60 * 1000);
 
 let rolSesion = null;
-const perfiles = { admin: "Administrador", notario: "Notario", personal: "Personal" };
+const perfiles = { admin: "Administrador", notario: "Notario", matricero: "Matricero" };
 async function mostrarApp() {
   try {
     // El perfil y las conversaciones se piden a la vez: el panel aparece completo de una sola vez.
@@ -152,10 +152,14 @@ async function mostrarApp() {
     pintarVerComo(yo);
     $("#perfilSesion").textContent = perfiles[rolSesion] || "";
     $("#perfilSesion").hidden = false;
+    $("[data-tab=turnoV]").hidden = rolSesion !== "matricero";
     $("[data-tab=funcionesV]").hidden = rolSesion !== "admin";
     $("[data-tab=metricasV]").hidden = rolSesion !== "admin";
     $("[data-tab=equipoV]").hidden = !["admin", "notario"].includes(rolSesion);
     if ((["funcionesV", "metricasV"].includes(pestanaActual) && rolSesion !== "admin") || (pestanaActual === "equipoV" && !["admin", "notario"].includes(rolSesion))) pestanaActual = "inicioV";
+    // Quien atiende en la notaría entra directo a sus citas; el resto, al resumen del día.
+    if (rolSesion === "matricero" && pestanaActual === "inicioV") pestanaActual = "turnoV";
+    if (pestanaActual === "turnoV" && rolSesion !== "matricero") pestanaActual = "inicioV";
   } catch (e) {
     if (e.sinPermiso) {
       const { data: { user } } = await sb.auth.getUser();
@@ -170,7 +174,7 @@ async function mostrarApp() {
   pestana(pestanaActual);
   if (rolSesion === "admin") cargarMetricas(true);
   clearInterval(timer);
-  const refrescar = () => ["preciosV", "funcionesV", "metricasV", "equipoV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "inicioV" ? cargarInicio() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
+  const refrescar = () => ["preciosV", "funcionesV", "metricasV", "equipoV"].includes(pestanaActual) ? Promise.resolve() : pestanaActual === "inicioV" ? cargarInicio() : pestanaActual === "turnoV" ? cargarTurno() : pestanaActual === "agendaV" ? cargarAgenda({ auto: true }) : Promise.all([cargarLista(), actual ? abrir(actual, true) : null]);
   timer = setInterval(() => refrescar().catch((e) => console.warn("No se pudo actualizar:", e.message)), 15000);
 }
 
@@ -277,8 +281,9 @@ function pestana(id) {
   if (id === "metricasV") cargarMetricas();
   $("#preciosV").hidden = id !== "preciosV";
   if (id === "preciosV") cargarPreciosPanel();
-  $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV"; $("#inicioV").hidden = id !== "inicioV";
+  $("#app").hidden = id !== "app"; $("#agendaV").hidden = id !== "agendaV"; $("#inicioV").hidden = id !== "inicioV"; $("#turnoV").hidden = id !== "turnoV";
   if (id === "inicioV") cargarInicio();
+  if (id === "turnoV") cargarTurno();
   document.querySelectorAll("#tabs [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === id));
   if (id === "agendaV") { if (!$("#agFecha").value) $("#agFecha").value = hoyQuito(); cargarAgenda(); cargarCitasConfig(); }
 }
@@ -315,11 +320,17 @@ function pintarAgenda() {
   const personas = a.personal.map((p) => p.nombre || p.email);
   const opcionesDe = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
     .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
+  const matriceros = a.personal.filter((p) => p.rol === "matricero"), puedeReasignar = ["admin", "notario"].includes(rolSesion);
+  const quien = (x) => matriceros.length && !["rechazada", "cancelada"].includes(x.estado)
+    ? (puedeReasignar && x.estado === "confirmada"
+      ? `<select data-reasignar="${esc(x.id)}" aria-label="Quién atiende"><option value="">Sin responsable</option>${matriceros.map((p) => `<option value="${esc(p.email)}"${p.email === x.atiendeEmail ? " selected" : ""}>${esc(p.nombre || p.email)}</option>`).join("")}</select>`
+      : `<span class="ag-atiende">${x.atiendeNombre ? "Atiende: " + esc(x.atiendeNombre) : "Sin responsable"}</span>`)
+    : null;
   const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
   $("#agLista").innerHTML = a.citas.filter(x => filtroAgenda === "total" || (filtroAgenda === "rechazada" ? ["rechazada", "cancelada"].includes(x.estado) : x.estado === filtroAgenda)).map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
       <span class="ag-hora">${esc(x.hora)}${x.codigo ? `<small>Ticket ${esc(x.codigo)}</small>` : ""}</span>
       <div class="ag-cliente"><b>${esc(x.nombre)}</b><div class="ag-etiquetas">${ESTADO[x.estado] || '<span class="tag">Cancelada</span>'}${canalEtiqueta(x) ? `<span class="tag tag--canal">${canalEtiqueta(x)}</span>` : ""}</div><small>${[esc(x.tramite), telefonoCita(x), esc(x.nota)].filter(Boolean).join(" · ")}</small></div>
-      ${["rechazada", "cancelada"].includes(x.estado) ? "<span></span>" : `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}
+      ${["rechazada", "cancelada"].includes(x.estado) ? "<span></span>" : `${quien(x) ?? `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}`}
       <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Rechazar</button>` : ""}
         ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Atendida</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Cancelar</button>` : ""}
         <button class="btn btn--line" data-chat="${esc(x.conversacionId)}">${botonDetalle(x)}</button></div>
@@ -369,6 +380,8 @@ $("#agLimpiar").addEventListener("click", () => {
 });
 $("#agFecha").addEventListener("change", () => cargarAgenda());
 $("#agendaV").addEventListener("change", async (e) => {
+  const r = e.target.closest("[data-reasignar]");
+  if (r) { try { await api("POST", { accion: "reasignarCita", id: r.dataset.reasignar, persona: r.value }); r.blur(); await cargarAgenda(); } catch (err) { alert(err.message); await cargarAgenda(); } return; }
   const s = e.target.closest("[data-asignar]"); if (!s) return;
   try { await api("POST", { accion: "asignarCita", id: s.dataset.asignar, persona: s.value }); s.blur(); } catch (err) { alert(err.message); }
 });
@@ -396,7 +409,7 @@ const confirmarContacto = (b) => !b.dataset.contacto ||
   confirm(`Este celular lo escribió el cliente en la página web y no está verificado: +${b.dataset.contacto}.\n\nSi confirmas, le llegará un aviso por WhatsApp. ¿Seguro que es el número del cliente?`);
 
 function mensajes(d) {
-  const nombres = { cliente: d.conversacion.nombre || "Cliente", asistente: "Asistente", personal: "Personal" };
+  const nombres = { cliente: d.conversacion.nombre || "Cliente", asistente: "Asistente", matricero: "Matricero" };
   return d.mensajes.map((m) => `<div class="m m--${m.autor}"><small>${esc(nombres[m.autor])}</small>${esc(m.texto)}</div>`).join("") || '<p class="vacio">Sin mensajes.</p>';
 }
 
@@ -711,11 +724,11 @@ function opcionesPerfil(rol) {
 }
 function pintarEquipo(d) {
   equipoPanel = d;
-  $("#equipoRol").innerHTML = d.rol === "admin" ? opcionesPerfil("personal") : '<option value="personal">Personal</option>';
+  $("#equipoRol").innerHTML = d.rol === "admin" ? opcionesPerfil("matricero") : '<option value="matricero">Matricero</option>';
   const admins = d.miembros.filter(p => p.rol === "admin").length;
   $("#equipoLista").innerHTML = d.miembros.map(p => {
     const propio = p.email === d.yo, ultimo = p.rol === "admin" && admins === 1;
-    const quitar = !propio && !ultimo && (d.rol === "admin" || p.rol === "personal");
+    const quitar = !propio && !ultimo && (d.rol === "admin" || p.rol === "matricero");
     return `<article class="equipo-miembro"><div><h3>${esc(p.nombre)}</h3><p>${esc(p.email)}</p><p>${esc(perfiles[p.rol] || p.rol)} · ${p.dosPasos ? "Dos pasos activos" : "Pendiente de configurar"}</p></div><div class="equipo-acciones">${d.rol === "admin" ? `<label>Perfil de ${esc(p.nombre)}<select data-equipo-rol="${esc(p.email)}"${propio || ultimo ? " disabled" : ""}>${opcionesPerfil(p.rol)}</select></label>` : ""}${quitar ? `<button type="button" class="btn btn--warn" data-equipo-quitar="${esc(p.email)}">Dar de baja</button>` : ""}</div></article>`;
   }).join("");
 }
@@ -773,11 +786,83 @@ async function cargarInicio() {
       || '<p class="aviso">No hay citas para hoy.</p>';
     $("#inicioAtencion").innerHTML = atencion.map((c) => `<button class="inicio__fila inicio__fila--boton" type="button" data-abrir-conv="${esc(c.id)}"><span class="inicio__estado inicio__estado--${c.derivada ? "persona" : "pendiente"}">${c.derivada ? "Pide una persona" : "Por confirmar"}</span><span>${esc(c.nombre || (c.canal === "web" ? "Visitante de la web" : c.telefono))}<small>${esc(c.ultimo || "")}</small></span><i class="ph ph-caret-right" aria-hidden="true"></i></button>`).join("")
       || '<p class="aviso">Todo al día: no hay conversaciones pendientes.</p>';
+    pintarEquipoHoy(agenda);
   } catch (e) { $("#inicioCifras").innerHTML = `<p class="aviso">${esc(e.message)}</p>`; }
+}
+// «Quién tiene qué»: las citas confirmadas de hoy repartidas entre los matriceros, y las que nadie lleva todavía.
+function pintarEquipoHoy(agenda) {
+  const matriceros = (agenda.personal || []).filter((p) => p.rol === "matricero");
+  const activas = (agenda.citas || []).filter((c) => ["confirmada", "atendida"].includes(c.estado));
+  const libres = activas.filter((c) => c.estado === "confirmada" && !c.atiendeEmail);
+  $("#inicioEquipoPanel").hidden = !matriceros.length && !libres.length;
+  const iniciales = (n) => n.split(/\s+/).map((x) => x[0]).slice(0, 2).join("").toUpperCase();
+  const filas = matriceros.map((p) => {
+    const mias = activas.filter((c) => c.atiendeEmail === p.email), hechas = mias.filter((c) => c.estado === "atendida").length, nombre = p.nombre || p.email.split("@")[0];
+    const pend = mias.length - hechas;
+    return `<div class="inicio__fila"><b class="inicio__avatar">${esc(iniciales(nombre))}</b><span>${esc(nombre)}<small>${pend} por atender · ${hechas} atendida${hechas === 1 ? "" : "s"}</small></span><span class="inicio__estado ${pend ? "inicio__estado--confirmada" : ""}">${mias.length} cita${mias.length === 1 ? "" : "s"}</span></div>`;
+  }).join("");
+  const sin = libres.length ? `<button class="inicio__fila inicio__fila--boton" type="button" data-ir-pestana="agendaV"><b class="inicio__avatar inicio__avatar--alerta"><i class="ph ph-warning" aria-hidden="true"></i></b><span>Sin atender<small>${libres.map((c) => esc(c.hora)).join(" · ")}</small></span><span class="inicio__estado inicio__estado--persona">${libres.length} sin responsable</span></button>` : "";
+  $("#inicioEquipo").innerHTML = sin + filas;
 }
 $("#inicioV").addEventListener("click", (e) => {
   const ir = e.target.closest("[data-ir-pestana]");
   if (ir) return pestana(ir.dataset.irPestana);
   const conv = e.target.closest("[data-abrir-conv]");
   if (conv) { pestana("app"); abrir(conv.dataset.abrirConv); }
+});
+
+/* ---------- Mi turno: las citas de quien atiende en la notaría ---------- */
+const documentosAbiertos = new Set();
+async function cargarTurno() {
+  try {
+    const t = await api("GET", { accion: "miTurno" });
+    const fecha = new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", weekday: "long", day: "numeric", month: "long" }).format(new Date());
+    $("#turnoFecha").textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    $("#turnoTitulo").textContent = "Mi turno" + (nombreSesion ? ", " + nombreSesion : "");
+    const porAtender = t.mias.filter((c) => c.estado === "confirmada"), hechas = t.mias.length - porAtender.length;
+    const cifra = (n, texto, icono, tono) => `<div class="inicio__cifra inicio__cifra--${n ? tono : "calma"}"><i class="ph ${icono}" aria-hidden="true"></i><strong>${n}</strong><span>${texto}</span></div>`;
+    $("#turnoCifras").innerHTML = cifra(porAtender.length, porAtender.length === 1 ? "cita tuya por atender" : "citas tuyas por atender", "ph-user-focus", "verde")
+      + cifra(t.sinAsignar.length, t.sinAsignar.length === 1 ? "cita sin atender" : "citas sin atender", "ph-hand-waving", "ambar")
+      + cifra(hechas, hechas === 1 ? "cita atendida por ti" : "citas atendidas por ti", "ph-check-circle", "verde");
+    const datos = (c) => `<span>${esc(c.nombre)}<small>${esc(c.tramite)}${c.codigo ? " · Ticket " + esc(c.codigo) : ""}</small></span>`;
+    $("#turnoMias").innerHTML = t.mias.map((c) => {
+      const abierto = documentosAbiertos.has(c.id), atendida = c.estado === "atendida";
+      return `<div class="inicio__fila turno__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<span class="inicio__estado ${atendida ? "" : "inicio__estado--confirmada"}">${atendida ? "Atendida" : "Atendiendo"}</span>
+        <div class="turno__acciones"><button class="btn btn--line" type="button" data-turno-docs="${esc(c.id)}" aria-expanded="${abierto}">Documentos</button>${atendida ? "" : `<button class="btn" type="button" data-turno-terminar="${esc(c.id)}">Terminar</button><button class="btn btn--line" type="button" data-turno-devolver="${esc(c.id)}">Devolver</button>`}</div>
+        <div class="turno__docs" id="docs-${esc(c.id)}"${abierto ? "" : " hidden"}></div></div>`;
+    }).join("") || '<p class="aviso">Todavía no atiendes ninguna cita. Elige una de la lista de abajo.</p>';
+    $("#turnoLibres").innerHTML = t.sinAsignar.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<button class="btn" type="button" data-turno-atender="${esc(c.id)}">Atender</button></div>`).join("")
+      || '<p class="aviso">No hay citas esperando a alguien.</p>';
+    $("#turnoOtrosPanel").hidden = !t.deOtros.length;
+    $("#turnoOtros").innerHTML = t.deOtros.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<span class="inicio__estado">${c.estado === "atendida" ? "Atendida por" : "Lo atiende"} ${esc(c.atiendeNombre)}</span></div>`).join("");
+    await Promise.all([...documentosAbiertos].map(pintarDocumentosTurno));
+  } catch (e) { $("#turnoCifras").innerHTML = `<p class="aviso">${esc(e.message)}</p>`; }
+}
+async function pintarDocumentosTurno(citaId) {
+  const caja = document.getElementById("docs-" + citaId); if (!caja) return documentosAbiertos.delete(citaId);
+  const docs = await api("GET", { accion: "documentosDeCita", id: citaId });
+  const estados = { recibido: "Por revisar", aprobado: "Aprobado", observado: "Observado" };
+  caja.innerHTML = docs.map((d) => `<div class="turno__doc"><span>${esc(d.descripcion || "Documento")}<small>${esc(estados[d.estado] || d.estado)}</small></span>
+    <button class="btn btn--line" type="button" data-turno-ver="${esc(d.id)}">Ver</button><button class="btn" type="button" data-turno-doc="${esc(d.id)}" data-estado="aprobado">Aprobar</button><button class="btn btn--line" type="button" data-turno-doc="${esc(d.id)}" data-estado="observado">Observar</button></div>`).join("")
+    || '<p class="aviso">El cliente todavía no subió documentos.</p>';
+}
+$("#turnoV").addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  try {
+    if (b.dataset.turnoAtender) await api("POST", { accion: "atenderCita", id: b.dataset.turnoAtender });
+    else if (b.dataset.turnoDevolver) { if (!confirm("¿Devolver esta cita? Volverá a la lista para que otra persona la atienda.")) return; await api("POST", { accion: "devolverCita", id: b.dataset.turnoDevolver }); }
+    else if (b.dataset.turnoTerminar) await api("POST", { accion: "terminarCita", id: b.dataset.turnoTerminar });
+    else if (b.dataset.turnoDocs) {
+      const id = b.dataset.turnoDocs, caja = document.getElementById("docs-" + id), abre = caja.hidden;
+      caja.hidden = !abre; b.setAttribute("aria-expanded", String(abre));
+      if (abre) { documentosAbiertos.add(id); await pintarDocumentosTurno(id); } else documentosAbiertos.delete(id);
+      return;
+    } else if (b.dataset.turnoVer) { const { url } = await api("GET", { accion: "documento", id: b.dataset.turnoVer }); if (!url) return alert("Este documento ya no está disponible."); window.open(url, "_blank", "noopener"); return; }
+    else if (b.dataset.turnoDoc) {
+      const observacionCliente = b.dataset.estado === "observado" ? prompt("Mensaje que verá el cliente: ¿qué debe corregir?") : "";
+      if (observacionCliente === null) return;
+      await api("POST", { accion: "revisarDocumento", id: b.dataset.turnoDoc, estado: b.dataset.estado, nota: "", observacionCliente });
+    } else return;
+  } catch (err) { alert(err.message); }
+  await cargarTurno();
 });
