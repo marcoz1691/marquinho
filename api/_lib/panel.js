@@ -1,4 +1,4 @@
-import { FUNCIONES, leerFunciones } from "./funciones.js";
+import { FUNCIONES, leerFunciones, faltaConfiguracion } from "./funciones.js";
 import { registrar, canalDeTelefono, CLAVES, PRECIOS } from "./metricas.js";
 import { reglasCitas, fechaQuito, fechaValida } from "./citas.js";
 import { minutos } from "../../js/nucleo.js";
@@ -117,11 +117,13 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const f = leerFunciones(Object.fromEntries(detalles.map(r => [r.clave, r.valor])));
       return { funciones: FUNCIONES.map(x => {
         const d = detalles.find(r => r.clave === "funcion." + x.id);
-        return { ...x, activa: f[x.id], actualizadoPor: d?.actualizadoPor || "", actualizadoEn: d?.actualizadoEn || "" };
+        return { ...x, activa: f[x.id], falta: faltaConfiguracion(x.id), actualizadoPor: d?.actualizadoPor || "", actualizadoEn: d?.actualizadoEn || "" };
       }) };
     },
     async guardarFuncion({ id, activa }, por) {
       if (!FUNCIONES.some(f => f.id === id) || typeof activa !== "boolean") throw new Aviso("Elige una función y un estado válidos.");
+      const falta = activa && faltaConfiguracion(id);
+      if (falta) throw new Aviso("No se puede encender todavía. " + falta);
       await almacen.guardarAjuste("funcion." + id, activa ? "1" : "0", por);
       return { ok: true, ...await this.funciones() };
     },
