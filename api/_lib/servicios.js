@@ -6,6 +6,7 @@ import { crearAlmacenMemoria } from "./almacen-memoria.js";
 import { crearContenido } from "./contenido.js";
 import { crearAsistente } from "./asistente.js";
 import { crearPanel } from "./panel.js";
+import { crearCorreo } from "./correo.js";
 import { limitarPlantillas } from "./limites.js";
 
 let servicios;
@@ -24,7 +25,7 @@ export function obtenerServicios(env = process.env) {
     catch (e) { console.error("No se pudo avisar al personal:", e.message); }
   };
   let asistente;
-  const panel = crearPanel({ almacen, whatsapp, contenido,
+  const panel = crearPanel({ almacen, whatsapp, contenido, enviarCorreo: crearCorreo(env),
     plantillas: { citaConfirmada: env.CITA_CONFIRMADA_PLANTILLA || "cita_confirmada", citaRechazada: env.CITA_RECHAZADA_PLANTILLA || "cita_rechazada" } });
   servicios = { whatsapp, almacen, contenido, panel, env, avisar,
     get asistente() { return asistente ||= crearAsistente({ claude: new Anthropic({ timeout: 90 * 1000, maxRetries: 1 }), almacen, whatsapp, contenido, avisar }); }
