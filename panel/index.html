@@ -12,7 +12,7 @@
 </head>
 <body>
 <header><img src="../assets/logo/logo-notaria41-blanco.svg" alt=""><b>Panel · Notaría 41</b>
-  <nav class="tabs" id="tabs" hidden><button data-tab="inicioV" class="on">Inicio</button><button data-tab="agendaV">Agenda</button><button data-tab="app">Conversaciones</button><button data-tab="preciosV">Trámites</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
+  <nav class="tabs" id="tabs" hidden><button data-tab="turnoV" hidden>Mi turno</button><button data-tab="inicioV" class="on">Inicio</button><button data-tab="agendaV">Agenda</button><button data-tab="app">Conversaciones</button><button data-tab="preciosV">Trámites</button><button data-tab="funcionesV" hidden>Funciones</button><button data-tab="metricasV" hidden>Métricas</button><button data-tab="equipoV" hidden>Equipo</button></nav><span class="sp"></span><span id="perfilSesion" hidden></span><button id="salir" hidden>Salir</button></header>
 
 <div class="cargando" id="cargando" role="status"><img src="../assets/logo/logo-notaria41-verde.svg" alt=""><span>Cargando el panel…</span></div>
 
@@ -110,6 +110,13 @@
   <nav id="lista"></nav>
   <section id="detalle"><p class="vacio">Elige una conversación.</p></section>
 </main>
+<section id="turnoV" class="inicio" hidden>
+  <div class="inicio__cab"><p class="inicio__fecha" id="turnoFecha"></p><h2 id="turnoTitulo">Mi turno</h2></div>
+  <div class="inicio__cifras" id="turnoCifras"></div>
+  <section class="inicio__panel" aria-labelledby="turnoMiasTitulo"><div class="inicio__sub"><h3 id="turnoMiasTitulo">Mis citas de hoy</h3></div><div id="turnoMias" class="inicio__lista"></div></section>
+  <section class="inicio__panel" aria-labelledby="turnoLibresTitulo"><div class="inicio__sub"><h3 id="turnoLibresTitulo">Sin atender</h3><small class="inicio__nota">Pulsa Atender y la cita pasa a ser tuya</small></div><div id="turnoLibres" class="inicio__lista"></div></section>
+  <section class="inicio__panel" id="turnoOtrosPanel" aria-labelledby="turnoOtrosTitulo" hidden><div class="inicio__sub"><h3 id="turnoOtrosTitulo">Las llevan tus compañeros</h3></div><div id="turnoOtros" class="inicio__lista"></div></section>
+</section>
 <section id="inicioV" class="inicio" hidden>
   <div class="inicio__cab"><p class="inicio__fecha" id="inicioFecha"></p><h2 id="inicioTitulo">Hoy</h2></div>
   <div class="inicio__cifras" id="inicioCifras"></div>
@@ -117,6 +124,7 @@
     <section class="inicio__panel" aria-labelledby="inicioCitasTitulo"><div class="inicio__sub"><h3 id="inicioCitasTitulo">Citas de hoy</h3><button class="inicio__enlace" type="button" data-ir-pestana="agendaV">Ver agenda <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioCitas" class="inicio__lista"></div></section>
     <section class="inicio__panel" aria-labelledby="inicioAtencionTitulo"><div class="inicio__sub"><h3 id="inicioAtencionTitulo">Requieren tu atención</h3><button class="inicio__enlace" type="button" data-ir-pestana="app">Ver conversaciones <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioAtencion" class="inicio__lista"></div></section>
   </div>
+  <section class="inicio__panel" id="inicioEquipoPanel" aria-labelledby="inicioEquipoTitulo" hidden><div class="inicio__sub"><h3 id="inicioEquipoTitulo">Quién tiene qué hoy</h3><button class="inicio__enlace" type="button" data-ir-pestana="agendaV">Reasignar en la agenda <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioEquipo" class="inicio__lista"></div></section>
 </section>
 <section id="agendaV" hidden>
   <div class="ag-top"><h2 id="agTitulo">Agenda</h2>
@@ -154,7 +162,7 @@
 <h3>Invitar a alguien</h3><form id="equipoInvitar">
 <div class="campo"><label for="equipoNombre">Nombre</label><input id="equipoNombre" name="nombre" minlength="2" maxlength="80" autocomplete="name" required></div>
 <div class="campo"><label for="equipoEmail">Correo</label><input id="equipoEmail" name="email" type="email" autocomplete="email" required></div>
-<div class="campo"><label for="equipoRol">Perfil</label><select id="equipoRol" name="rol"><option value="personal">Personal</option></select></div>
+<div class="campo"><label for="equipoRol">Perfil</label><select id="equipoRol" name="rol"><option value="matricero">Matricero</option></select></div>
 <button class="btn" type="submit">Enviar invitación</button></form><p id="equipoMensaje" role="status" aria-live="polite"></p></section>
 <!-- Librería de Supabase alojada aquí con versión fija (no desde un CDN): nadie puede cambiar el código que maneja las sesiones. -->
 <script src="vendor/supabase-js-2.117.2.js"></script>

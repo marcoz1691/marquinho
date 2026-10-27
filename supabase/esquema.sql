@@ -410,3 +410,12 @@ alter table pagos enable row level security;
 alter table pago_eventos enable row level security;
 revoke all on notarias, clientes, cliente_codigos, cliente_sesiones, tramite_vinculaciones, tramite_eventos, pagos, pago_eventos from anon, authenticated;
 -- Sin políticas: el aislamiento por notaría y por cliente lo exige el servidor (cada método del almacén pide notariaId).
+
+-- 2026-10-28: matriceros (el perfil «personal» pasa a llamarse «matricero») y quién atiende cada cita
+alter table personal drop constraint if exists personal_rol_check;
+update personal set rol = 'matricero' where rol = 'personal';
+alter table personal alter column rol set default 'matricero';
+alter table personal add constraint personal_rol_check check (rol in ('admin','notario','matricero'));
+alter table solicitudes_cita add column if not exists atiende_email text not null default '';
+alter table solicitudes_cita add column if not exists atiende_nombre text not null default '';
+alter table solicitudes_cita add column if not exists atiende_desde timestamptz;

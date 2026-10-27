@@ -16,7 +16,7 @@ function preparar({ usuario = { email: "carla@notaria41.ec", email_confirmed_at:
     borrarDocumento: vi.fn(async () => {})
   };
   const almacen = crearAlmacenMemoria();
-  const auth = Object.assign(almacen, { usuarioDeToken: vi.fn(async (t) => (t === "TOKEN" ? usuario : null)), esPersonal: vi.fn(async () => esPersonal), rolDe: vi.fn(async () => "personal") });
+  const auth = Object.assign(almacen, { usuarioDeToken: vi.fn(async (t) => (t === "TOKEN" ? usuario : null)), esPersonal: vi.fn(async () => esPersonal), rolDe: vi.fn(async () => "matricero") });
   return { m: crearManejadorPanel({ panel, auth, exigirMfa, limiteDescargas, avisar, ahora: () => 1_000_000 }), panel, almacen };
 }
 const req = (metodo, ruta, { token = "TOKEN", body } = {}) => new Request("https://x/api/panel" + ruta, {
@@ -240,17 +240,17 @@ describe("Ver como (vista previa de un perfil)", () => {
     const { m } = prepararVista();
     expect(await (await m.GET(conVista("notario"))).json()).toEqual({ email: "carla@notaria41.ec", nombre: "Carla", rol: "notario", vistaPrevia: true });
     expect(await (await m.GET(conVista("notario", "GET", "?accion=precios"))).json()).toMatchObject({ rol: "notario", esAdmin: true });
-    expect(await (await m.GET(conVista("personal", "GET", "?accion=precios"))).json()).toMatchObject({ rol: "personal", esAdmin: false });
+    expect(await (await m.GET(conVista("matricero", "GET", "?accion=precios"))).json()).toMatchObject({ rol: "matricero", esAdmin: false });
     expect((await m.GET(conVista("notario", "GET", "?accion=funciones"))).status).toBe(403);
     expect(await (await m.GET(conVista("notario", "GET", "?accion=equipo"))).json()).toMatchObject({ rol: "notario" });
-    expect((await m.GET(conVista("personal", "GET", "?accion=equipo"))).status).toBe(403);
+    expect((await m.GET(conVista("matricero", "GET", "?accion=equipo"))).status).toBe(403);
     // Sin la cabecera vuelve a ser administrador.
     expect(await (await m.GET(req("GET", "?accion=funciones"))).json()).toMatchObject({ esAdmin: true, rol: "admin" });
   });
 
   it("ignora la cabecera si quien la manda no es administrador: nunca sube permisos", async () => {
-    const { m } = prepararVista("personal");
-    expect(await (await m.GET(conVista("notario"))).json()).toEqual({ email: "carla@notaria41.ec", nombre: "Carla", rol: "personal" });
+    const { m } = prepararVista("matricero");
+    expect(await (await m.GET(conVista("notario"))).json()).toEqual({ email: "carla@notaria41.ec", nombre: "Carla", rol: "matricero" });
     expect(await (await m.GET(conVista("notario", "GET", "?accion=precios"))).json()).toMatchObject({ esAdmin: false });
     expect((await m.GET(conVista("admin", "GET", "?accion=funciones"))).status).toBe(403);
     expect((await m.POST(conVista("notario", "POST", "", { accion: "responder", id: "1", texto: "Hola" }))).status).toBe(200);
@@ -271,7 +271,7 @@ describe("Ver como (vista previa de un perfil)", () => {
     }
     expect(panel.guardarPrecio).not.toHaveBeenCalled();
     expect(panel.responder).not.toHaveBeenCalled();
-    await m.GET(conVista("personal", "GET", "?accion=detalle&id=7"));
+    await m.GET(conVista("matricero", "GET", "?accion=detalle&id=7"));
     expect(await almacen.auditoria()).toContainEqual(expect.objectContaining({ email: "carla@notaria41.ec", accion: "detalle", objetivo: "7", ok: true }));
     // Sin la cabecera el administrador vuelve a guardar.
     expect((await m.POST(req("POST", "", { body: { accion: "guardarPrecio", tramiteId: "t" } }))).status).toBe(200);
