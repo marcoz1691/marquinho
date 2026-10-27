@@ -3,7 +3,7 @@
 import { leerAjustes, leerFunciones, funcionActiva } from "./funciones.js";
 import { registrar, canalDeTelefono } from "./metricas.js";
 import { construirResumen } from "./resumen.js";
-import { reglasCitas, horasLibres, celular } from "./citas.js";
+import { reglasCitas, horasLibres, diasDisponibles, celular } from "./citas.js";
 import { tipoArchivo } from "./archivos.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
@@ -238,6 +238,10 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         if (!H.dias.includes(dia) || m < minutos(H.abre) || m >= minutos(H.cierra)) return error(`Fuera del horario de atención (${H.texto}).`);
         // Lectura estricta: si falla, la herramienta da error y Sofía no agenda sin conocer cupos ni bloqueos.
         const ajustes = await almacen.ajustes(), reglas = reglasCitas(C, ajustes);
+        if (i.fecha === hoy && enQuito(ctx.t).min >= minutos(reglas.corteHoy)) {
+          const siguiente = (await diasDisponibles({ almacen, C, ajustes, desde: hoy, dias: 14, ahora: ctx.t }))[0];
+          return error(`Las citas para hoy se agendan hasta las ${reglas.corteHoy}. ${siguiente ? `Ofrece el siguiente día hábil: ${siguiente.fecha} (horas libres: ${siguiente.horas.join(", ")}).` : "Ahora no quedan días con horas libres: ofrece que escriban o llamen a la notaría."}`);
+        }
         if (reglas.bloqueos.some(b => b.fijo && b.fecha === i.fecha)) return error(`El ${i.fecha} es feriado y la notaría no atiende: ofrece otro día.`);
         const contacto = esWeb(conv) ? celular(i.telefono) : null;
         if (esWeb(conv) && !contacto) return error("Falta un celular válido del cliente (por ejemplo 0991234567): pídelo: los avisos de la cita llegarán por WhatsApp.");

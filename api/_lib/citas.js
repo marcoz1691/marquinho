@@ -1,6 +1,11 @@
 import { minutos } from "../../js/nucleo.js";
 export const fechaQuito = (t) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+// Minutos desde la medianoche, hora de Quito.
+export const minutosQuito = (t) => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Guayaquil", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(t).map((x) => [x.type, x.value]));
+  return +p.hour * 60 + +p.minute;
+};
 export const sumarDias = (fecha, n) => new Date(new Date(fecha + "T12:00:00Z").getTime() + n * 864e5).toISOString().slice(0, 10);
 export const fechaValida = (f) => typeof f === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f) && !isNaN(new Date(f + "T12:00:00Z")) && sumarDias(f, 0) === f;
 export function celular(v) {
@@ -19,14 +24,17 @@ export function reglasCitas(C, ajustes = {}) {
   return {
     porHora: Number.isInteger(valor) && valor >= 1 && valor <= 20 ? valor : oficial,
     porHoraOficial: oficial,
+    // Pasada esta hora ya no se agenda para el mismo día: la cita queda para el siguiente día hábil.
+    corteHoy: C.notaria.citas?.corteMismoDia ?? "12:00",
     bloqueos: [...(C.notaria.citas?.feriados || []).map((fecha) => ({ fecha, hora: null, motivo: "Feriado", fijo: true })), ...extras],
     horario: C.notaria.horario
   };
 }
 function disponibles({ C, ajustes, fecha, ahora = new Date(), excluirIds = [] }, citas) {
   if (!fechaValida(fecha)) return [];
-  const { porHora, bloqueos, horario: H } = reglasCitas(C, ajustes);
+  const { porHora, bloqueos, horario: H, corteHoy } = reglasCitas(C, ajustes);
   const hoy = fechaQuito(ahora);
+  if (fecha === hoy && minutosQuito(ahora) >= minutos(corteHoy)) return [];
   if (fecha < hoy || !H.dias.includes(new Date(fecha + "T12:00:00Z").getUTCDay()) || bloqueos.some((b) => b.fecha === fecha && b.hora === null)) return [];
   const ocupadas = citas.filter((c) => ["pendiente", "confirmada"].includes(c.estado) && !excluirIds.includes(c.id));
   const libres = [];

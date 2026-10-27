@@ -86,3 +86,30 @@ describe("enlace para guardar el trámite (portal)", () => {
     aviso.mockRestore();
   });
 });
+
+describe("corte del mediodía para el mismo día", () => {
+  const tarde = () => new Date("2026-10-12T18:30:00Z"); // lunes 13:30 en Quito
+  it("después de las 12:00 hoy ya no hay horas y el siguiente día hábil sí", async () => {
+    const a = crearManejadorCita({ almacen, contenido: async () => C, ahora: tarde });
+    const b = await (await a.GET(new Request("https://n.ec/api/cita"))).json();
+    expect(b.dias[0].fecha).toBe("2026-10-13");
+    expect(b.hoyCerrado).toEqual({ corte: "12:00" });
+  });
+  it("antes de las 12:00 hoy sigue disponible y no hay aviso", async () => {
+    const b = await (await api.GET(new Request("https://n.ec/api/cita"))).json();
+    expect(b.dias[0].fecha).toBe("2026-10-12");
+    expect(b.hoyCerrado).toBeNull();
+  });
+  it("rechaza agendar para hoy pasado el corte y devuelve los días disponibles", async () => {
+    const a = crearManejadorCita({ almacen, contenido: async () => C, ahora: tarde });
+    const r = await a.POST(req({ ...cuerpo, hora: "16:00" }));
+    expect(r.status).toBe(409);
+    const b = await r.json();
+    expect(b.error).toMatch(/hasta las 12:00/);
+    expect(b.dias[0].fecha).toBe("2026-10-13");
+  });
+  it("el viernes después del corte, el siguiente día hábil es el lunes", async () => {
+    const a = crearManejadorCita({ almacen, contenido: async () => C, ahora: () => new Date("2026-10-16T18:30:00Z") });
+    expect((await (await a.GET(new Request("https://n.ec/api/cita"))).json()).dias[0].fecha).toBe("2026-10-19");
+  });
+});

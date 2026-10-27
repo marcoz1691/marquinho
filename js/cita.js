@@ -147,6 +147,8 @@ async function cargar() {
     if (!b.dias.length) {
       $("a-fecha").disabled = true;
       aviso("No quedan horas libres por ahora. Escríbenos o llámanos para ayudarte.", true);
+    } else if (b.hoyCerrado) {
+      aviso(`Las citas para hoy se agendan hasta las ${b.hoyCerrado.corte}. El siguiente día hábil con horas libres es el ${fechaTexto(b.dias[0].fecha)}.`);
     } else aviso("");
   } catch (e) {
     aviso(e.message || "No pudimos cargar las horas libres. Escríbenos o llámanos para agendar.", true);

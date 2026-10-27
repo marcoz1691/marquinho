@@ -349,4 +349,16 @@ header .ver-como select{max-width:none}
 .turno__doc{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center}
 .turno__doc small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .ag-atiende{font-size:14px;color:var(--muted)}
-@media (max-width:900px){.inicio{padding:20px 14px 36px}.inicio__cifras,.inicio__columnas{grid-template-columns:1fr}.inicio__fila--boton{grid-template-columns:minmax(0,1fr) auto}.inicio__fila--boton .inicio__estado{grid-column:1/-1;justify-self:start}.turno__fila{grid-template-columns:auto minmax(0,1fr)}.turno__fila .inicio__estado{grid-column:1/-1;justify-self:start}.turno__acciones{grid-column:1/-1;justify-content:flex-start}.turno__doc{grid-template-columns:1fr 1fr 1fr}.turno__doc>span{grid-column:1/-1}}
+.inicio__panel--ahora{border-color:color-mix(in srgb,var(--acc) 40%,var(--line));box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 10%,transparent)}
+.inicio__tabla{overflow-x:auto}
+.inicio__tabla table{width:100%;border-collapse:collapse;font-size:15px}
+.inicio__tabla th,.inicio__tabla td{padding:14px 18px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.inicio__tabla thead th{font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--alt)}
+.inicio__tabla tbody tr:last-child>*{border-bottom:0}
+.inicio__tabla small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.inicio__tabla-alerta>*{background:#FDE8E6;color:#8C1D17}
+.inicio__tabla-alerta small{color:#8C1D17}
+.inicio__vacio{color:var(--muted)}
+.tag--atiende{background:var(--soft);color:var(--acc)}
+.turno__acciones .btn[disabled]{opacity:.5;cursor:not-allowed}
+@media (max-width:900px){.inicio{padding:20px 14px 36px}.inicio__cifras,.inicio__columnas{grid-template-columns:1fr}.inicio__fila--boton{grid-template-columns:minmax(0,1fr) auto}.inicio__fila--boton .inicio__estado{grid-column:1/-1;justify-self:start}.turno__fila{grid-template-columns:auto minmax(0,1fr)}.turno__fila .inicio__estado{grid-column:1/-1;justify-self:start}.turno__acciones{grid-column:1/-1;justify-content:flex-start}.turno__doc{grid-template-columns:1fr 1fr 1fr}.turno__doc>span{grid-column:1/-1}.inicio__tabla thead{position:absolute;left:-9999px}.inicio__tabla table,.inicio__tabla tbody,.inicio__tabla tr,.inicio__tabla th,.inicio__tabla td{display:block}.inicio__tabla tr{padding:12px 0;border-bottom:1px solid var(--line)}.inicio__tabla th,.inicio__tabla td{border:0;padding:4px 18px}.inicio__tabla td[data-etiqueta]::before{content:attr(data-etiqueta);display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}}

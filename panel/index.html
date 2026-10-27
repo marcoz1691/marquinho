@@ -113,9 +113,11 @@
 <section id="turnoV" class="inicio" hidden>
   <div class="inicio__cab"><p class="inicio__fecha" id="turnoFecha"></p><h2 id="turnoTitulo">Mi turno</h2></div>
   <div class="inicio__cifras" id="turnoCifras"></div>
-  <section class="inicio__panel" aria-labelledby="turnoMiasTitulo"><div class="inicio__sub"><h3 id="turnoMiasTitulo">Mis citas de hoy</h3></div><div id="turnoMias" class="inicio__lista"></div></section>
-  <section class="inicio__panel" aria-labelledby="turnoLibresTitulo"><div class="inicio__sub"><h3 id="turnoLibresTitulo">Sin atender</h3><small class="inicio__nota">Pulsa Atender y la cita pasa a ser tuya</small></div><div id="turnoLibres" class="inicio__lista"></div></section>
-  <section class="inicio__panel" id="turnoOtrosPanel" aria-labelledby="turnoOtrosTitulo" hidden><div class="inicio__sub"><h3 id="turnoOtrosTitulo">Las llevan tus compañeros</h3></div><div id="turnoOtros" class="inicio__lista"></div></section>
+  <section class="inicio__panel inicio__panel--ahora" aria-labelledby="turnoAhoraTitulo"><div class="inicio__sub"><h3 id="turnoAhoraTitulo">Atendiendo ahora</h3></div><div id="turnoAhora" class="inicio__lista"></div></section>
+  <section class="inicio__panel" aria-labelledby="turnoColaTitulo"><div class="inicio__sub"><h3 id="turnoColaTitulo">Mi cola</h3><small class="inicio__nota">En orden de hora</small></div><div id="turnoCola" class="inicio__lista"></div></section>
+  <section class="inicio__panel" aria-labelledby="turnoLibresTitulo"><div class="inicio__sub"><h3 id="turnoLibresTitulo">Sin asignar</h3><small class="inicio__nota">Pásala a tu cola y queda a tu nombre</small></div><div id="turnoLibres" class="inicio__lista"></div></section>
+  <section class="inicio__panel" id="turnoOtrosPanel" aria-labelledby="turnoOtrosTitulo" hidden><div class="inicio__sub"><h3 id="turnoOtrosTitulo">Tus compañeros</h3></div><div id="turnoOtros" class="inicio__lista"></div></section>
+  <section class="inicio__panel" id="turnoHechasPanel" aria-labelledby="turnoHechasTitulo" hidden><div class="inicio__sub"><h3 id="turnoHechasTitulo">Atendidas hoy</h3></div><div id="turnoHechas" class="inicio__lista"></div></section>
 </section>
 <section id="inicioV" class="inicio" hidden>
   <div class="inicio__cab"><p class="inicio__fecha" id="inicioFecha"></p><h2 id="inicioTitulo">Hoy</h2></div>
@@ -124,7 +126,7 @@
     <section class="inicio__panel" aria-labelledby="inicioCitasTitulo"><div class="inicio__sub"><h3 id="inicioCitasTitulo">Citas de hoy</h3><button class="inicio__enlace" type="button" data-ir-pestana="agendaV">Ver agenda <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioCitas" class="inicio__lista"></div></section>
     <section class="inicio__panel" aria-labelledby="inicioAtencionTitulo"><div class="inicio__sub"><h3 id="inicioAtencionTitulo">Requieren tu atención</h3><button class="inicio__enlace" type="button" data-ir-pestana="app">Ver conversaciones <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioAtencion" class="inicio__lista"></div></section>
   </div>
-  <section class="inicio__panel" id="inicioEquipoPanel" aria-labelledby="inicioEquipoTitulo" hidden><div class="inicio__sub"><h3 id="inicioEquipoTitulo">Quién tiene qué hoy</h3><button class="inicio__enlace" type="button" data-ir-pestana="agendaV">Reasignar en la agenda <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioEquipo" class="inicio__lista"></div></section>
+  <section class="inicio__panel" id="inicioEquipoPanel" aria-labelledby="inicioEquipoTitulo" hidden><div class="inicio__sub"><h3 id="inicioEquipoTitulo">Matriceros: atendiendo y en cola</h3><button class="inicio__enlace" type="button" data-ir-pestana="agendaV">Reasignar en la agenda <i class="ph ph-arrow-right" aria-hidden="true"></i></button></div><div id="inicioEquipo" class="inicio__tabla"></div></section>
 </section>
 <section id="agendaV" hidden>
   <div class="ag-top"><h2 id="agTitulo">Agenda</h2>

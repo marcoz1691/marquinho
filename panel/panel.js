@@ -321,15 +321,17 @@ function pintarAgenda() {
   const opcionesDe = (actual) => ['<option value="">Sin asignar</option>', ...[...new Set([...personas, actual].filter(Boolean))]
     .map((n) => `<option${n === actual ? " selected" : ""}>${esc(n)}</option>`)].join("");
   const matriceros = a.personal.filter((p) => p.rol === "matricero"), puedeReasignar = ["admin", "notario"].includes(rolSesion);
+  const atencion = (x) => x.atiendeEmail ? (x.estado === "atendida" ? "Atendido por " : x.atencionInicio ? "Atendiendo: " : "En cola de ") + esc(x.atiendeNombre) : x.estado === "atendida" ? "Atendida" : "Sin asignar";
+  const etiquetaAtencion = (x) => matriceros.length && ["confirmada", "atendida"].includes(x.estado) ? `<span class="tag tag--atiende${x.atiendeEmail ? "" : " tag--pend"}">${atencion(x)}</span>` : "";
   const quien = (x) => matriceros.length && !["rechazada", "cancelada"].includes(x.estado)
     ? (puedeReasignar && x.estado === "confirmada"
-      ? `<select data-reasignar="${esc(x.id)}" aria-label="Quién atiende"><option value="">Sin responsable</option>${matriceros.map((p) => `<option value="${esc(p.email)}"${p.email === x.atiendeEmail ? " selected" : ""}>${esc(p.nombre || p.email)}</option>`).join("")}</select>`
-      : `<span class="ag-atiende">${x.atiendeNombre ? "Atiende: " + esc(x.atiendeNombre) : "Sin responsable"}</span>`)
+      ? `<select data-reasignar="${esc(x.id)}" aria-label="Quién atiende"><option value="">Sin asignar</option>${matriceros.map((p) => `<option value="${esc(p.email)}"${p.email === x.atiendeEmail ? " selected" : ""}>${esc(p.nombre || p.email)}</option>`).join("")}</select>`
+      : "<span></span>")
     : null;
   const ESTADO = { pendiente: '<span class="tag tag--pend">Pendiente</span>', confirmada: '<span class="tag">Confirmada</span>', atendida: '<span class="tag">Atendida</span>', rechazada: '<span class="tag">Cancelada</span>' };
   $("#agLista").innerHTML = a.citas.filter(x => filtroAgenda === "total" || (filtroAgenda === "rechazada" ? ["rechazada", "cancelada"].includes(x.estado) : x.estado === filtroAgenda)).map((x) => `<div class="ag-cita ag-cita--${esc(x.estado)}">
       <span class="ag-hora">${esc(x.hora)}${x.codigo ? `<small>Ticket ${esc(x.codigo)}</small>` : ""}</span>
-      <div class="ag-cliente"><b>${esc(x.nombre)}</b><div class="ag-etiquetas">${ESTADO[x.estado] || '<span class="tag">Cancelada</span>'}${canalEtiqueta(x) ? `<span class="tag tag--canal">${canalEtiqueta(x)}</span>` : ""}</div><small>${[esc(x.tramite), telefonoCita(x), esc(x.nota)].filter(Boolean).join(" · ")}</small></div>
+      <div class="ag-cliente"><b>${esc(x.nombre)}</b><div class="ag-etiquetas">${ESTADO[x.estado] || '<span class="tag">Cancelada</span>'}${etiquetaAtencion(x)}${canalEtiqueta(x) ? `<span class="tag tag--canal">${canalEtiqueta(x)}</span>` : ""}</div><small>${[esc(x.tramite), telefonoCita(x), esc(x.nota)].filter(Boolean).join(" · ")}</small></div>
       ${["rechazada", "cancelada"].includes(x.estado) ? "<span></span>" : `${quien(x) ?? `<select data-asignar="${esc(x.id)}" aria-label="Asignar a">${opcionesDe(x.asignadaA)}</select>`}`}
       <div class="acc">${x.estado === "pendiente" ? `<button class="btn" data-cita="${esc(x.id)}" data-estado="confirmada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Confirmar</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Rechazar</button>` : ""}
         ${x.estado === "confirmada" ? `<button class="btn btn--line" data-cita="${esc(x.id)}" data-estado="atendida">Atendida</button><button class="btn btn--warn" data-cita="${esc(x.id)}" data-estado="rechazada"${x.contacto ? ` data-contacto="${esc(x.contacto)}"` : ""}>Cancelar</button>` : ""}
@@ -789,20 +791,25 @@ async function cargarInicio() {
     pintarEquipoHoy(agenda);
   } catch (e) { $("#inicioCifras").innerHTML = `<p class="aviso">${esc(e.message)}</p>`; }
 }
-// «Quién tiene qué»: las citas confirmadas de hoy repartidas entre los matriceros, y las que nadie lleva todavía.
+// Tabla de matriceros: a quién atiende cada uno ahora, cuántas tiene en cola, y las citas que nadie lleva todavía.
 function pintarEquipoHoy(agenda) {
   const matriceros = (agenda.personal || []).filter((p) => p.rol === "matricero");
   const activas = (agenda.citas || []).filter((c) => ["confirmada", "atendida"].includes(c.estado));
   const libres = activas.filter((c) => c.estado === "confirmada" && !c.atiendeEmail);
   $("#inicioEquipoPanel").hidden = !matriceros.length && !libres.length;
-  const iniciales = (n) => n.split(/\s+/).map((x) => x[0]).slice(0, 2).join("").toUpperCase();
   const filas = matriceros.map((p) => {
-    const mias = activas.filter((c) => c.atiendeEmail === p.email), hechas = mias.filter((c) => c.estado === "atendida").length, nombre = p.nombre || p.email.split("@")[0];
-    const pend = mias.length - hechas;
-    return `<div class="inicio__fila"><b class="inicio__avatar">${esc(iniciales(nombre))}</b><span>${esc(nombre)}<small>${pend} por atender · ${hechas} atendida${hechas === 1 ? "" : "s"}</small></span><span class="inicio__estado ${pend ? "inicio__estado--confirmada" : ""}">${mias.length} cita${mias.length === 1 ? "" : "s"}</span></div>`;
+    const mias = activas.filter((c) => c.atiendeEmail === p.email);
+    const ahora = mias.find((c) => c.estado === "confirmada" && c.atencionInicio);
+    const cola = mias.filter((c) => c.estado === "confirmada" && !c.atencionInicio).sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+    const hechas = mias.filter((c) => c.estado === "atendida").length;
+    const desde = ahora ? new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(ahora.atencionInicio)) : "";
+    return `<tr><th scope="row">${esc(p.nombre || p.email.split("@")[0])}</th>
+      <td data-etiqueta="Atendiendo">${ahora ? `<span class="inicio__estado inicio__estado--confirmada">Ticket ${esc(ahora.codigo || "")}</span> ${esc(ahora.nombre)}<small>${esc(ahora.tramite)} · desde las ${esc(desde)}</small>` : '<span class="inicio__vacio">Libre</span>'}</td>
+      <td data-etiqueta="En cola">${cola.length ? `<b>${cola.length}</b><small>${cola.map((c) => esc(c.hora)).join(" · ")}</small>` : '<span class="inicio__vacio">0</span>'}</td>
+      <td data-etiqueta="Atendidas hoy">${hechas}</td></tr>`;
   }).join("");
-  const sin = libres.length ? `<button class="inicio__fila inicio__fila--boton" type="button" data-ir-pestana="agendaV"><b class="inicio__avatar inicio__avatar--alerta"><i class="ph ph-warning" aria-hidden="true"></i></b><span>Sin atender<small>${libres.map((c) => esc(c.hora)).join(" · ")}</small></span><span class="inicio__estado inicio__estado--persona">${libres.length} sin responsable</span></button>` : "";
-  $("#inicioEquipo").innerHTML = sin + filas;
+  const sin = libres.length ? `<tr class="inicio__tabla-alerta"><th scope="row"><i class="ph ph-warning" aria-hidden="true"></i> Sin asignar</th><td data-etiqueta="Atendiendo"><span class="inicio__vacio">—</span></td><td data-etiqueta="En cola"><b>${libres.length}</b><small>${libres.map((c) => esc(c.hora)).join(" · ")}</small></td><td data-etiqueta="Atendidas hoy">—</td></tr>` : "";
+  $("#inicioEquipo").innerHTML = `<table><thead><tr><th scope="col">Matricero</th><th scope="col">Atendiendo</th><th scope="col">En cola</th><th scope="col">Atendidas hoy</th></tr></thead><tbody>${sin}${filas}</tbody></table>`;
 }
 $("#inicioV").addEventListener("click", (e) => {
   const ir = e.target.closest("[data-ir-pestana]");
@@ -819,22 +826,28 @@ async function cargarTurno() {
     const fecha = new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", weekday: "long", day: "numeric", month: "long" }).format(new Date());
     $("#turnoFecha").textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
     $("#turnoTitulo").textContent = "Mi turno" + (nombreSesion ? ", " + nombreSesion : "");
-    const porAtender = t.mias.filter((c) => c.estado === "confirmada"), hechas = t.mias.length - porAtender.length;
+    const confirmadas = t.mias.filter((c) => c.estado === "confirmada");
+    const ahora = confirmadas.filter((c) => c.atencionInicio), cola = confirmadas.filter((c) => !c.atencionInicio), hechas = t.mias.filter((c) => c.estado === "atendida");
     const cifra = (n, texto, icono, tono) => `<div class="inicio__cifra inicio__cifra--${n ? tono : "calma"}"><i class="ph ${icono}" aria-hidden="true"></i><strong>${n}</strong><span>${texto}</span></div>`;
-    $("#turnoCifras").innerHTML = cifra(porAtender.length, porAtender.length === 1 ? "cita tuya por atender" : "citas tuyas por atender", "ph-user-focus", "verde")
-      + cifra(t.sinAsignar.length, t.sinAsignar.length === 1 ? "cita sin atender" : "citas sin atender", "ph-hand-waving", "ambar")
-      + cifra(hechas, hechas === 1 ? "cita atendida por ti" : "citas atendidas por ti", "ph-check-circle", "verde");
+    $("#turnoCifras").innerHTML = cifra(ahora.length, ahora.length === 1 ? "persona atendiendo ahora" : "personas atendiendo ahora", "ph-user-focus", "verde")
+      + cifra(cola.length, cola.length === 1 ? "cita en tu cola" : "citas en tu cola", "ph-queue", "ambar")
+      + cifra(hechas.length, hechas.length === 1 ? "cita atendida por ti" : "citas atendidas por ti", "ph-check-circle", "verde");
     const datos = (c) => `<span>${esc(c.nombre)}<small>${esc(c.tramite)}${c.codigo ? " · Ticket " + esc(c.codigo) : ""}</small></span>`;
-    $("#turnoMias").innerHTML = t.mias.map((c) => {
-      const abierto = documentosAbiertos.has(c.id), atendida = c.estado === "atendida";
-      return `<div class="inicio__fila turno__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<span class="inicio__estado ${atendida ? "" : "inicio__estado--confirmada"}">${atendida ? "Atendida" : "Atendiendo"}</span>
-        <div class="turno__acciones"><button class="btn btn--line" type="button" data-turno-docs="${esc(c.id)}" aria-expanded="${abierto}">Documentos</button>${atendida ? "" : `<button class="btn" type="button" data-turno-terminar="${esc(c.id)}">Terminar</button><button class="btn btn--line" type="button" data-turno-devolver="${esc(c.id)}">Devolver</button>`}</div>
-        <div class="turno__docs" id="docs-${esc(c.id)}"${abierto ? "" : " hidden"}></div></div>`;
-    }).join("") || '<p class="aviso">Todavía no atiendes ninguna cita. Elige una de la lista de abajo.</p>';
-    $("#turnoLibres").innerHTML = t.sinAsignar.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<button class="btn" type="button" data-turno-atender="${esc(c.id)}">Atender</button></div>`).join("")
+    const docs = (c) => `<div class="turno__docs" id="docs-${esc(c.id)}"${documentosAbiertos.has(c.id) ? "" : " hidden"}></div>`;
+    const botonDocs = (c) => `<button class="btn btn--line" type="button" data-turno-docs="${esc(c.id)}" aria-expanded="${documentosAbiertos.has(c.id)}">Documentos</button>`;
+    const fila = (c, estado, botones) => `<div class="inicio__fila turno__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}${estado}<div class="turno__acciones">${botones}</div>${docs(c)}</div>`;
+    $("#turnoAhora").innerHTML = ahora.map((c) => fila(c, '<span class="inicio__estado inicio__estado--confirmada">Atendiendo</span>',
+      `${botonDocs(c)}<button class="btn" type="button" data-turno-terminar="${esc(c.id)}">Terminar</button><button class="btn btn--line" type="button" data-turno-devolver="${esc(c.id)}">Devolver</button>`)).join("")
+      || '<p class="aviso">No estás atendiendo a nadie. Elige la siguiente de tu cola.</p>';
+    $("#turnoCola").innerHTML = cola.map((c) => fila(c, '<span class="inicio__estado inicio__estado--pendiente">En tu cola</span>',
+      `${botonDocs(c)}<button class="btn" type="button" data-turno-iniciar="${esc(c.id)}"${ahora.length ? " disabled title=\"Termina primero la cita que estás atendiendo\"" : ""}>Atender ahora</button><button class="btn btn--line" type="button" data-turno-devolver="${esc(c.id)}">Devolver</button>`)).join("")
+      || '<p class="aviso">Tu cola está vacía. Pasa una cita de abajo a tu cola.</p>';
+    $("#turnoLibres").innerHTML = t.sinAsignar.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<button class="btn" type="button" data-turno-encolar="${esc(c.id)}">Pasar a mi cola</button></div>`).join("")
       || '<p class="aviso">No hay citas esperando a alguien.</p>';
     $("#turnoOtrosPanel").hidden = !t.deOtros.length;
-    $("#turnoOtros").innerHTML = t.deOtros.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<span class="inicio__estado">${c.estado === "atendida" ? "Atendida por" : "Lo atiende"} ${esc(c.atiendeNombre)}</span></div>`).join("");
+    $("#turnoOtros").innerHTML = t.deOtros.map((c) => `<div class="inicio__fila"><b class="inicio__hora">${esc(c.hora)}</b>${datos(c)}<span class="inicio__estado">${c.estado === "atendida" ? "Atendido por" : c.atencionInicio ? "Atendiendo:" : "En cola de"} ${esc(c.atiendeNombre)}</span></div>`).join("");
+    $("#turnoHechasPanel").hidden = !hechas.length;
+    $("#turnoHechas").innerHTML = hechas.map((c) => fila(c, '<span class="inicio__estado">Atendida</span>', botonDocs(c))).join("");
     await Promise.all([...documentosAbiertos].map(pintarDocumentosTurno));
   } catch (e) { $("#turnoCifras").innerHTML = `<p class="aviso">${esc(e.message)}</p>`; }
 }
@@ -849,7 +862,8 @@ async function pintarDocumentosTurno(citaId) {
 $("#turnoV").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b) return;
   try {
-    if (b.dataset.turnoAtender) await api("POST", { accion: "atenderCita", id: b.dataset.turnoAtender });
+    if (b.dataset.turnoEncolar) await api("POST", { accion: "encolarCita", id: b.dataset.turnoEncolar });
+    else if (b.dataset.turnoIniciar) await api("POST", { accion: "iniciarCita", id: b.dataset.turnoIniciar });
     else if (b.dataset.turnoDevolver) { if (!confirm("¿Devolver esta cita? Volverá a la lista para que otra persona la atienda.")) return; await api("POST", { accion: "devolverCita", id: b.dataset.turnoDevolver }); }
     else if (b.dataset.turnoTerminar) await api("POST", { accion: "terminarCita", id: b.dataset.turnoTerminar });
     else if (b.dataset.turnoDocs) {

@@ -1,7 +1,8 @@
 import { errorWeb, funcionActiva } from "./funciones.js";
 import { registrar } from "./metricas.js";
 import { huellaIp } from "./huella.js";
-import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles } from "./citas.js";
+import { celular, fechaQuito, fechaValida, sumarDias, horasLibres, diasDisponibles, reglasCitas, minutosQuito } from "./citas.js";
+import { minutos } from "../../js/nucleo.js";
 import { construirResumen } from "./resumen.js";
 import { AVISO_PRIVACIDAD } from "./privacidad.js";
 import { registrarConsentimiento } from "./consentimiento.js";
@@ -32,8 +33,11 @@ export function crearManejadorCita({
       if ((await almacen.contarUso("cita:get:" + huella(request), HORA, t.getTime())) > limites.consultas)
         return json({ error: "Hiciste muchas consultas. Espera un momento o escríbenos por WhatsApp." }, 429);
       const C = await contenido();
+      const { corteHoy } = reglasCitas(C, ajustes);
       return json({
         dias: await disponibilidad(C, ajustes, t),
+        // Pasada la hora de corte, hoy ya no se agenda y la cita queda para el siguiente día hábil.
+        hoyCerrado: minutosQuito(t) >= minutos(corteHoy) ? { corte: corteHoy } : null,
         horario: C.notaria.horario.texto,
         tramites: C.data.tramites.map(({ id, nombre, cat }) => ({ id, nombre, cat })),
         categorias: (C.data.categorias || []).map(({ id, nombre }) => ({ id, nombre }))
@@ -86,6 +90,9 @@ export function crearManejadorCita({
         );
       // No se revelan la fecha, la hora ni el ticket: con solo saber un celular, cualquiera podría obtenerlos.
       if (activa) return json({ error: CITA_ACTIVA }, 409);
+      const { corteHoy } = reglasCitas(C, ajustes);
+      if (b.fecha === hoy && minutosQuito(t) >= minutos(corteHoy))
+        return json({ error: `Las citas para hoy se agendan hasta las ${corteHoy}. Elige el siguiente día hábil.`, dias: await disponibilidad(C, ajustes, t) }, 409);
       if (b.fecha < hoy || b.fecha > sumarDias(hoy, 29) || !(await horasLibres({ almacen, C, ajustes, fecha: b.fecha, ahora: t })).includes(b.hora))
         return json({ error: "Esa hora acaba de ocuparse. Elige otra.", dias: await disponibilidad(C, ajustes, t) }, 409);
       const [nIp, nDia] = await Promise.all([

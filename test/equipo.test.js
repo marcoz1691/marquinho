@@ -54,9 +54,9 @@ it("notario quita solo personal y no cambia roles", async () => {
   expect((await post({ accion: "cambiarRol", email: "otra@test.ec", rol: "notario" })).status).toBe(403);
   expect((await post({ accion: "quitarMiembro", email: "otra@test.ec" })).status).toBe(200);
 });
-const edicion = ["guardarPrecio", "restaurarPrecio", "guardarSBU", "restaurarSBU", "guardarCupo", "agregarBloqueo", "quitarBloqueo"];
+const edicion = ["guardarPrecio", "restaurarPrecio", "guardarSBU", "restaurarSBU", "guardarCupo", "agregarBloqueo", "quitarBloqueo", "asignarCita"];
 const piloto = ["guardarFuncion", "guardarPreciosMetricas", "guardarInicioPiloto"];
-const comunes = ["responder", "devolver", "cita", "asignarCita", "revisarDocumento", "borrarDocumento"];
+const comunes = ["responder", "devolver", "cita", "revisarDocumento", "borrarDocumento"];
 it.each(["admin", "notario", "matricero"].flatMap(rol => [...edicion, ...piloto, ...comunes].map(accion => [rol, accion])))("matriz %s: %s", async (rol, accion) => {
   const { p, post, a } = preparar(rol);
   const metodo = { devolver: "devolverAlAsistente", cita: "decidirCita" }[accion] || accion;

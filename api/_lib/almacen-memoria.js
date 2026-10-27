@@ -121,7 +121,7 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
       for (let intento = 0; intento < 8; intento++) {
         const ticket = codigo();
         if (citas.some((x) => x.fecha === c.fecha && x.codigo === ticket)) continue;
-        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", atiendeEmail: "", atiendeNombre: "", atiendeDesde: null, notariaId: "notaria41", clienteId: null, ...c, codigo: ticket };
+        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", atiendeEmail: "", atiendeNombre: "", atiendeDesde: null, atencionInicio: null, notariaId: "notaria41", clienteId: null, ...c, codigo: ticket };
         citas.push(x);
         return { id: x.id, codigo: ticket };
       }
@@ -137,8 +137,15 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
     async actualizarCita(id, cambios) {
       const c = citas.find((x) => x.id === id);
       Object.assign(c, cambios);
-      if ("atiendeEmail" in cambios) { c.atiendeNombre = cambios.atiendeNombre || ""; c.atiendeDesde = cambios.atiendeEmail ? (cambios.atiendeDesde || new Date().toISOString()) : null; }
+      if ("atiendeEmail" in cambios) { c.atiendeNombre = cambios.atiendeNombre || ""; c.atiendeDesde = cambios.atiendeEmail ? (cambios.atiendeDesde || new Date().toISOString()) : null; c.atencionInicio = null; }
     },
+    async iniciarAtencion(id, email, desde) {
+      const c = citas.find((x) => x.id === id);
+      if (!c || c.estado !== "confirmada" || c.atiendeEmail !== email || c.atencionInicio) return false;
+      c.atencionInicio = desde;
+      return true;
+    },
+    async enAtencion(email) { return citas.filter((c) => c.atiendeEmail === email && c.estado === "confirmada" && c.atencionInicio).map(copia); },
     async reservarCita(id, { email, nombre, desde }) {
       const c = citas.find((x) => x.id === id);
       if (!c || c.estado !== "confirmada" || c.atiendeEmail) return false;

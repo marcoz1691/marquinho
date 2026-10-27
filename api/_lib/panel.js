@@ -87,7 +87,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     if (!citaId || ["admin", "notario"].includes(await almacen.rolDe(por))) return;
     const cita = await almacen.cita(citaId);
     if (!cita || cita.atiendeEmail === por) return;
-    fallo(cita.atiendeEmail ? `Esta cita la atiende ${cita.atiendeNombre || "otra persona"}.` : "Primero pulsa Atender en la cita para revisar sus documentos.", 409);
+    fallo(cita.atiendeEmail ? `Esta cita la lleva ${cita.atiendeNombre || "otra persona"}.` : "Primero pasa la cita a tu cola para revisar sus documentos.", 409);
   }
   const nombreDelEquipo = async (email) => (await almacen.equipo()).find((p) => p.email === email)?.nombre || String(email).split("@")[0];
   return {
@@ -302,6 +302,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       return (await almacen.citasPorCodigo(codigo, hoy)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" }));
     },
 
+    // Solo el notario o un administrador reparte citas a mano; los matriceros solo llevan las suyas.
     async asignarCita(citaId, persona) {
       if (!(await almacen.cita(citaId))) throw new Aviso("Cita no encontrada");
       if (String(persona || "").length > 60) throw new Aviso("El nombre de la persona asignada es demasiado largo.");
@@ -323,16 +324,28 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       };
     },
 
-    // Quien la pide primero la lleva; la reserva es atómica, así que dos personas no pueden tener la misma cita.
-    async atenderCita(citaId, por) {
+    // Quien la pide primero la lleva (queda «en cola» para él); la reserva es atómica, así que dos personas no pueden tener la misma cita.
+    async encolarCita(citaId, por) {
       const cita = await almacen.cita(citaId);
       if (!cita) fallo("Cita no encontrada", 404);
-      if (cita.estado !== "confirmada") fallo("Solo se atienden citas confirmadas.", 409);
+      if (cita.estado !== "confirmada") fallo("Solo se llevan citas confirmadas.", 409);
       if (cita.atiendeEmail === por) return { ya: true };
       if (!(await almacen.reservarCita(citaId, { email: por, nombre: await nombreDelEquipo(por), desde: ahora().toISOString() }))) {
         const ahoraDe = await almacen.cita(citaId);
-        fallo(`Ya la atiende ${ahoraDe?.atiendeNombre || "otra persona"}.`, 409);
+        fallo(`Ya la lleva ${ahoraDe?.atiendeNombre || "otra persona"}.`, 409);
       }
+      return { ya: false };
+    },
+
+    // De «en cola» a «atendiendo»: una sola a la vez por persona, para que el panel muestre a quién atiende cada matricero.
+    async iniciarCita(citaId, por) {
+      const cita = await almacen.cita(citaId);
+      if (!cita) fallo("Cita no encontrada", 404);
+      if (cita.atiendeEmail !== por) fallo(cita.atiendeEmail ? `Esta cita la lleva ${cita.atiendeNombre || "otra persona"}.` : "Primero pasa la cita a tu cola.", 409);
+      if (cita.atencionInicio) return { ya: true };
+      const en = (await almacen.enAtencion(por)).find((x) => x.id !== citaId);
+      if (en) fallo(`Ya estás atendiendo a ${en.nombre}. Termínala o devuélvela antes de empezar otra.`, 409);
+      if (!(await almacen.iniciarAtencion(citaId, por, ahora().toISOString()))) fallo("No se pudo iniciar la atención. Actualiza la lista.", 409);
       return { ya: false };
     },
 
@@ -341,14 +354,14 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (!cita) fallo("Cita no encontrada", 404);
       if (cita.estado === "atendida") fallo("Esa cita ya se atendió.", 409);
       if (!cita.atiendeEmail) return;
-      if (cita.atiendeEmail !== por && !["admin", "notario"].includes(await almacen.rolDe(por))) fallo(`Esta cita la atiende ${cita.atiendeNombre || "otra persona"}.`, 403);
+      if (cita.atiendeEmail !== por && !["admin", "notario"].includes(await almacen.rolDe(por))) fallo(`Esta cita la lleva ${cita.atiendeNombre || "otra persona"}.`, 403);
       await almacen.actualizarCita(citaId, { atiendeEmail: "", atiendeNombre: "" });
     },
 
     async terminarCita(citaId, por) {
       await exigirResponsable(por, citaId);
       const cita = await almacen.cita(citaId);
-      if (cita && !cita.atiendeEmail && (await almacen.rolDe(por)) === "matricero") fallo("Primero pulsa Atender en la cita.", 409);
+      if (cita && !cita.atencionInicio && (await almacen.rolDe(por)) === "matricero") fallo("Primero pulsa «Atender ahora» en la cita.", 409);
       return this.decidirCita(citaId, "atendida");
     },
 

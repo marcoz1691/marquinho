@@ -27,7 +27,6 @@
 .ph.ph-file-arrow-up:before{content:"\e61e"}
 .ph.ph-files:before{content:"\e710"}
 .ph.ph-hand-palm:before{content:"\e57e"}
-.ph.ph-hand-waving:before{content:"\e580"}
 .ph.ph-house:before{content:"\e2c2"}
 .ph.ph-info:before{content:"\e2ce"}
 .ph.ph-list:before{content:"\e2f0"}
@@ -41,6 +40,7 @@
 .ph.ph-phone:before{content:"\e3b8"}
 .ph.ph-plus:before{content:"\e3d4"}
 .ph.ph-printer:before{content:"\e3dc"}
+.ph.ph-queue:before{content:"\e6ac"}
 .ph.ph-share-network:before{content:"\e408"}
 .ph.ph-shield-check:before{content:"\e40c"}
 .ph.ph-sidebar-simple:before{content:"\ec24"}
@@ -84,7 +84,6 @@
 .ph-fill.ph-file-arrow-up:before{content:"\e61e"}
 .ph-fill.ph-files:before{content:"\e710"}
 .ph-fill.ph-hand-palm:before{content:"\e57e"}
-.ph-fill.ph-hand-waving:before{content:"\e580"}
 .ph-fill.ph-house:before{content:"\e2c2"}
 .ph-fill.ph-info:before{content:"\e2ce"}
 .ph-fill.ph-list:before{content:"\e2f0"}
@@ -98,6 +97,7 @@
 .ph-fill.ph-phone:before{content:"\e3b8"}
 .ph-fill.ph-plus:before{content:"\e3d4"}
 .ph-fill.ph-printer:before{content:"\e3dc"}
+.ph-fill.ph-queue:before{content:"\e6ac"}
 .ph-fill.ph-share-network:before{content:"\e408"}
 .ph-fill.ph-shield-check:before{content:"\e40c"}
 .ph-fill.ph-sidebar-simple:before{content:"\ec24"}
