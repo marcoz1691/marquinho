@@ -39,7 +39,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-
 /* Textura de grano muy sutil para que las superficies no se vean planas */
 h1,h2,h3{text-wrap:balance}
 /* Etiquetas: Archivo 600 en mayúsculas con tracking amplio */
-.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span{font-family:var(--font);font-weight:600;font-size:12.5px;letter-spacing:.18em;text-transform:uppercase}
+.kicker,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span{font-family:var(--font);font-weight:600;font-size:12.5px;letter-spacing:.18em;text-transform:uppercase}
 p{text-wrap:pretty}
 .ph,.ph-fill{line-height:1;vertical-align:-.12em}
 a{color:var(--accent);text-decoration:none}
@@ -71,7 +71,6 @@ a:hover{text-decoration:underline}
 .nav__links a.on{opacity:1;color:var(--accent)}
 @media (min-width:861px){.nav__links a::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1.5px;border-radius:2px;background:var(--accent);transform:scaleX(0);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
 .nav__links a.on::after{transform:scaleX(1)}}
-.nav__tools{display:flex;gap:4px}
 .icon-btn{background:none;border:0;color:var(--fg);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:22px}
 .icon-btn:hover{background:var(--bg-alt)}
 .nav__burger{display:none}
@@ -89,12 +88,10 @@ a:hover{text-decoration:underline}
 .sello{position:relative;transform:translateY(calc(var(--p) * -4vh)) scale(calc(1 - var(--p) * .12));opacity:calc(1 - var(--p) * .9)}
 .seal{width:clamp(150px,min(30vw,30vh),300px);height:auto;display:block}
 @keyframes in-up{from{opacity:0;transform:translateY(8px)}}
-.eyebrow{color:var(--gold-text);margin:0 0 22px;padding-bottom:18px;border-bottom:1px solid color-mix(in srgb,var(--gold) 45%,transparent);display:inline-block}
 h1{font-family:var(--serif);font-size:clamp(54px,min(8vw,12vh),112px);line-height:.94;letter-spacing:-.018em;font-weight:400;margin:0;color:var(--fg)}
 /* Portada: el nombre del notario es el título; nunca se corta una palabra */
 .hero h1{font-size:clamp(44px,min(5.4vw,9vh),70px);line-height:1.02;text-wrap:balance;overflow-wrap:normal;word-break:normal;hyphens:none}
 .lema{font-size:clamp(22px,2.6vw,34px);font-weight:500;line-height:1.2;letter-spacing:-.012em;color:var(--muted);margin:clamp(12px,2.2vh,20px) auto 0;max-width:30ch;text-wrap:balance}
-.hero .eyebrow{text-wrap:balance}
 .cta{display:flex;gap:28px;align-items:center;margin-top:clamp(22px,4.5vh,40px);flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--radius);font-size:17px;font-weight:500;transition:background .16s var(--ease),border-color .16s var(--ease)}
 .btn:hover{text-decoration:none}
@@ -130,23 +127,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .section>h2{margin-bottom:40px}
 .section>h2+.sub{margin-top:-40px}
 
-/* Servicios: índice editorial */
-.svc__in{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(40px,7vw,110px);align-items:start}
-.svc__head{position:sticky;top:120px}
-.svc .svc__head h2{text-align:left;margin:0 0 22px}
 .kicker{margin:0 0 16px;color:var(--gold-text)}
-.svc__intro{color:var(--muted);font-size:clamp(17px,1.6vw,19px);max-width:400px;margin:0 0 26px}
-.svc__list{border-top:1px solid var(--line)}
-.svc__row{position:relative;width:100%;display:grid;grid-template-columns:1fr auto;grid-template-areas:"name arr" "desc count";gap:6px 24px;align-items:baseline;
-  padding:20px 4px 18px;background:none;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;text-align:left;cursor:pointer}
-.svc__row::after{content:"";position:absolute;left:0;bottom:-1px;height:1px;width:100%;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
-.svc__name{grid-area:name;font-family:var(--serif);font-size:clamp(28px,2.8vw,36px);font-weight:400;line-height:1.1;letter-spacing:-.005em;transition:color .3s}
-.svc__desc{grid-area:desc;color:var(--muted);font-size:16px}
-.svc__count{grid-area:count;font-size:14px;color:var(--muted);white-space:nowrap}
-.svc__arr{grid-area:arr;font-size:22px;color:var(--accent);opacity:0;transform:translateX(-8px);transition:opacity .3s,transform .3s}
-.svc__row:hover .svc__name{color:var(--accent)}
-.svc__row:hover .svc__arr,.svc__row:focus-visible .svc__arr{opacity:1;transform:none}
-.svc__row:hover::after{transform:scaleX(1)}
 
 /* Trámites: búsqueda sin caja y pestañas de texto */
 .tr__head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px 40px;flex-wrap:wrap;margin-bottom:28px}
@@ -202,7 +183,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
 .act{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--line);background:none;color:var(--fg);font:inherit;font-size:14px;cursor:pointer;transition:border-color .2s,background .2s}
 .act:hover{text-decoration:none;border-color:var(--accent)}
-.act:active,.tab:active,.svc__row:active{transform:scale(.98)}
+.act:active,.tab:active{transform:scale(.98)}
 .act i{font-size:17px}
 .act--wa{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .act--wa:hover{opacity:.9}
@@ -303,13 +284,10 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
   .nav__links{position:fixed;inset:60px 0 auto 0;flex-direction:column;gap:0;background:var(--bg);padding:8px 20px 20px;border-bottom:1px solid var(--line);transform:translateY(-8px);opacity:0;visibility:hidden;pointer-events:none;transition:.25s;font-size:19px;margin:0}
   .nav__links.open{opacity:1;visibility:visible;transform:none;pointer-events:auto}
   .nav__links a{padding:14px 0;border-bottom:1px solid var(--line)}
-  .nav__tools{margin-left:auto}
-  .cols,.contact,.svc__in,.calc__wrap,.faq,.tl,.tp__cols{grid-template-columns:1fr}
+  .contact,.calc__wrap,.faq,.tl,.tp__cols{grid-template-columns:1fr}
   .seal{width:clamp(130px,min(44vw,24svh),230px)}
   .hero h1{font-size:clamp(38px,11vw,56px)}
   .foot__in{grid-template-columns:1fr}
-  .svc__head{position:static}
-  .svc__arr{opacity:1;transform:none}
 }
 @media (max-width:520px){
   .hab__btn{width:44px;height:44px}
@@ -341,29 +319,26 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .no-encontrada h1{font-size:clamp(40px,6vw,64px)}
 .no-encontrada p{margin:0;color:var(--muted);font-size:19px}
 
-.ver-todos{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:22px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;font-weight:500;color:var(--accent);cursor:pointer;transition:background .2s}
-.ver-todos:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 @media (max-width:1000px) and (min-width:861px){.faq{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 
 /* ===== Escala tipográfica única: cada nivel se define aquí una sola vez ===== */
 body{font-stretch:100%}
 /* Títulos: Archivo semibold, un poco ensanchado y con tracking negativo */
-h1,h2,h3,.words,.svc__name,.faq__item h3,.tp__nombre,.calc__total strong{font-family:var(--font);font-weight:500;color:var(--fg)}
+h1,h2,h3,.words,.faq__item h3,.tp__nombre,.calc__total strong{font-family:var(--font);font-weight:500;color:var(--fg)}
 h1,.no-encontrada h1,.legal h1{font-size:var(--t-display);line-height:1.02;letter-spacing:-.03em}
 h2,.legal h2{font-size:var(--t-h2);line-height:1.06;letter-spacing:-.025em}
 .words{font-size:var(--t-h2);line-height:1.12;letter-spacing:-.025em;max-width:900px}
-.svc__name,.faq__item h3,.tp__nombre,.legal h2{font-size:var(--t-h3);line-height:1.2;letter-spacing:-.012em}
+.faq__item h3,.tp__nombre,.legal h2{font-size:var(--t-h3);line-height:1.2;letter-spacing:-.012em}
 .legal h2{margin-top:36px}
-.svc__row:hover .svc__name{color:var(--accent)}
 /* Texto: dos tamaños, introducción y cuerpo */
-.sub,.svc__intro,.legal__lead{font-size:var(--t-lead);line-height:1.5}
-.svc__desc,.tp__desc,.faq__item p,.contact__info p,.body p,.legal p{font-size:var(--t-body);line-height:1.6}
+.sub,.legal__lead{font-size:var(--t-lead);line-height:1.5}
+.tp__desc,.faq__item p,.contact__info p,.body p,.legal p{font-size:var(--t-body);line-height:1.6}
 .note,.hint,.estado,.foot{font-size:var(--t-small)}
 /* Etiquetas: un único estilo pequeño en mayúsculas */
-.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span{font-size:var(--t-label);letter-spacing:.12em;font-weight:600}
+.kicker,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span{font-size:var(--t-label);letter-spacing:.12em;font-weight:600}
 /* Cifras con la misma letra, alineadas */
-.tl__precio,.tp__precio strong,.calc__split strong,.calc__total strong,.price,.contact__info a[href^="tel:"]{font-family:var(--font);font-variant-numeric:tabular-nums}
+.tl__precio,.tp__precio strong,.calc__split strong,.calc__total strong,.contact__info a[href^="tel:"]{font-family:var(--font);font-variant-numeric:tabular-nums}
 .tl__precio{font-size:13px}
 .tp__precio strong{font-size:20px;font-weight:600;letter-spacing:-.01em}
 .calc__split strong{font-size:18px;font-weight:600}
@@ -474,15 +449,6 @@ h2,.sub{text-align:left}
 .cita-subida progress{width:100%;accent-color:var(--accent)}
 .chat__msg--tarjeta{max-width:100%;padding:0;width:100%}.ac-msg--tarjeta{min-width:0;width:100%}
 
-/* En pantallas táctiles no hay hover: los servicios hacen su animación (línea, flecha) al aparecer con el scroll. */
-@media (hover:none) and (prefers-reduced-motion:no-preference){
-  .svc__row .svc__arr{opacity:0;transform:translateX(-8px);transition:opacity .4s,transform .4s;transition-delay:calc(.6s + var(--i,0) * 90ms)}
-  .svc__row.in .svc__arr{opacity:1;transform:none}
-  .svc__row::after{transition-delay:calc(.4s + var(--i,0) * 90ms)}
-  .svc__row.in::after{transform:scaleX(1)}
-  .svc__row:active .svc__name{color:var(--accent)}
-}
-
 .servicio-aviso{width:min(100% - 32px,640px);margin:48px auto;padding:24px;overflow-wrap:anywhere}.servicio-aviso h1,.servicio-aviso h2{font-size:clamp(24px,5vw,40px)}
 [hidden]{display:none!important}
 
@@ -581,12 +547,12 @@ h2,.sub{text-align:left}
    Superficies planas en blanco y gris #F5F5F7, sin bordes ni sombras en las tarjetas,
    botones en píldora, títulos semibold con tracking negativo y etiquetas sin mayúsculas. */
 body{line-height:1.47;letter-spacing:-.011em}
-h1,h2,h3,.words,.svc__name,.faq__item h3,.tp__nombre,.calc__total strong,.wa-pasos h3{font-weight:600}
+h1,h2,h3,.words,.faq__item h3,.tp__nombre,.calc__total strong,.wa-pasos h3{font-weight:600}
 h1,.no-encontrada h1,.legal h1{line-height:1.05;letter-spacing:-.028em}
 h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 .words{line-height:1.1;letter-spacing:-.022em}
 .words span{opacity:.22}
-.kicker,.eyebrow,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span,.calc__hab legend{letter-spacing:-.005em;text-transform:none}
+.kicker,.tp__cat,.tp h4,.contact__info h3,.calc label,.calc__out div>span,.tp__precio span,.calc__hab legend{letter-spacing:-.005em;text-transform:none}
 .kicker{font-size:17px;color:var(--accent)}
 .tp__cat,.contact__info h3{color:var(--muted)}
 .calc label{font-weight:500}
@@ -610,7 +576,6 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 
 /* Inicio */
 .hero__pin::after{display:none}
-.eyebrow{color:var(--accent);border-bottom:0;padding-bottom:0;margin-bottom:14px;font-size:clamp(17px,1.5vw,21px);font-weight:600}
 .hero h1{font-weight:600;letter-spacing:-.03em}
 .lema{font-weight:400;color:var(--muted)}
 .statement{box-shadow:0 -24px 60px -48px rgba(0,0,0,.35)}
