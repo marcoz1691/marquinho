@@ -2,3 +2,28 @@
 @media(max-width:780px){.portal-cabecera{height:72px;padding:0 18px}.portal-cabecera img{width:145px}.acceso__contenido{grid-template-columns:1fr;padding:55px 20px}.acceso__presentacion h1{font-size:clamp(43px,12vw,64px)}.acceso__presentacion ul{display:none}.portal{padding:45px 18px 70px}.portal__intro{align-items:start;flex-direction:column}.tramites,.aviso-perfil,.cuenta-panel,.detalle__grid{grid-template-columns:1fr}.detalle__bloque{border-right:0}.portal-cabecera--panel nav{gap:2px}.portal-cabecera--panel .boton-texto{font-size:12px}.portal-pie{padding:18px}}
 @media(max-width:480px){.portal-cabecera>span{display:none}.acceso__contenido{gap:35px}.acceso__tarjeta{padding:26px 21px}.portal__intro h1{font-size:52px}.boton-secundario{width:100%}.tramite{padding:22px}.detalle__cab{flex-direction:column}.detalle__volver{order:-1}.detalle__bloque{padding:24px 22px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.tramite:hover{transform:none}}
+/* Marca de la Notaría 41: mismos colores y letra que su página. */
+:root{--noche:#0A3B2E;--noche2:#0E6B4F;--violeta:#0E6B4F;--azul:#0E6B4F;--menta:#5FD3A2;--papel:#F5F5F7;--tinta:#1D1D1F;--muted:#5f6b66;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Archivo,"Segoe UI",Roboto,Arial,sans-serif}
+body{background:var(--papel)}
+a{color:#0E6B4F}
+.portal-marca{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none;font-weight:600;font-size:16px}
+.portal-marca img{width:40px;height:40px;background:none;padding:0;border-radius:0}
+.portal-cabecera .portal-marca img{width:40px;background:none;padding:0}
+button,.acceso__tarjeta form button,.aviso-perfil form button,.cuenta-panel form button,.subir-form button{background:#0E6B4F}
+.boton-texto,.boton-peligro{background:transparent}
+.linea-tiempo li::before{background:#0E6B4F}
+.detalle__cab{background:linear-gradient(135deg,#fff,#E6F2EC)}
+.tramite:hover{border-color:rgba(14,107,79,.5)}
+@media(max-width:780px){.portal-marca span{font-size:14px}}
+/* Estilo claro, como la página de la notaría: encabezado blanco, fondo gris claro y acentos verdes. */
+.portal-cabecera{background:#fff;color:var(--tinta);border-bottom:1px solid var(--linea)}
+.portal-marca{color:var(--tinta)}
+.portal-cabecera>span{color:var(--muted)}
+.portal-cabecera .boton-texto{color:var(--tinta)}
+.acceso{background:var(--papel);color:var(--tinta)}
+.sobrelinea,.paso{color:#0E6B4F}
+.acceso__presentacion>p:not(.sobrelinea),.acceso__presentacion ul{color:var(--muted)}
+.acceso__presentacion i{color:#0E6B4F}
+.acceso__tarjeta{box-shadow:0 20px 60px rgba(10,59,46,.1);border:1px solid var(--linea)}
+.portal-pie{background:#fff;color:var(--muted);border-top:1px solid var(--linea)}
+.portal-pie a{color:#0E6B4F}

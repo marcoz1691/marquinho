@@ -297,3 +297,8 @@ body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden]))
   .precios-top input{width:100%}
 }
 header .ver-como select{max-width:none}
+/* La columna de citas y documentos no se ensancha con textos largos (nombres de archivo sin espacios): todo se ajusta a su ancho. */
+.lado{grid-template-columns:minmax(0,1fr)}
+.lado>div,.ficha{min-width:0}
+.ficha b,.ficha span,.ficha small{overflow-wrap:anywhere}
+.funcion-falta{margin:0;padding:8px 10px;border-radius:8px;background:#FFF6E5;color:#7A4B00;font-size:13px}

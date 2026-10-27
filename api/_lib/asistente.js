@@ -182,6 +182,12 @@ function contexto(conv, t, C, funciones) {
     canal,
     !funciones.agenda ? "La agenda está desactivada por ahora: no ofrezcas ni agendes citas; si piden una, indica que llamen o escriban en horario de atención." : "",
     !funciones.documentos ? "Por ahora no recibimos documentos: si el cliente envía uno, agradécele y pídele traerlo a su cita; no lo revises." : "",
+    funciones.portal
+      ? `Mis trámites está disponible: el cliente puede crear una cuenta sin contraseña, solo con su correo (recibe un código de seis dígitos), en ${SITIO}/cuenta.html o con «Mis trámites» en el menú de la página. Si agendó en la web, el botón «Guardar en Mis trámites» de la tarjeta de su cita guarda ese trámite en su cuenta. Ahí ve el estado de sus citas, los documentos aprobados u observados y lo que le falta; si un documento es observado, también le llega un correo. Ofrécelo cuando pregunte por el estado de su trámite o de sus documentos.`
+      : "Las cuentas de cliente («Mis trámites») no están disponibles por ahora: no las ofrezcas. Para saber el estado de su trámite, usa estado_de_mi_tramite con su ticket.",
+    funciones.portal && funciones.pagosEnLinea
+      ? "Pago en línea disponible: desde Mis trámites el cliente puede pagar con tarjeta los trámites de valor fijo; los de cuantía o «según el caso» se pagan en la notaría. Nunca pidas ni recibas datos de tarjeta por el chat."
+      : "No hay pago en línea por ahora: el trámite se paga en la notaría el día de la firma. No pidas ni recibas datos de tarjeta por el chat.",
     `Cliente: ${conv.nombre || "sin nombre"}${esWeb(conv) ? "" : " (" + conv.telefono + ")"}. Consentimiento de datos: ${conv.consentimiento ? "sí" : "no"}.`,
     avisos.length ? "Avisos vigentes: " + avisos.join(" | ") : ""].filter(Boolean).join("\n");
 }

@@ -9,9 +9,20 @@ export const FUNCIONES = [
   { id: "portal", porDefecto: false, nombre: "Mis trámites (cuenta del cliente)", descripcion: "Cuenta opcional para que el cliente guarde sus trámites y vea sus citas, documentos y pendientes. Necesita el envío de correos configurado.", efectoAlApagar: "Desaparece «Guardar este trámite en mi cuenta» y las páginas de la cuenta muestran que no están disponibles. Los trámites siguen funcionando sin cuenta." },
   { id: "pagosEnLinea", porDefecto: false, nombre: "Pagos en línea", descripcion: "Pago de trámites con tarjeta desde la cuenta del cliente. Solo funciona con una pasarela de pagos contratada y configurada.", efectoAlApagar: "No se muestra la opción de pagar en línea: el pago se hace en la notaría." }
 ];
+// Funciones que necesitan configuración del servidor para funcionar. En un despliegue (VERCEL_ENV) no pueden quedar
+// encendidas sin ella: la web no ofrece una cuenta cuyo código nunca llegaría ni un pago sin pasarela.
+const REQUISITOS = {
+  portal: { variables: ["CUENTA_SECRETO", "RESEND_API_KEY", "CORREO_REMITENTE"], falta: "Falta configurar el envío de correos y la clave de las cuentas en el servidor." },
+  pagosEnLinea: { variables: ["PAGOS_PROVEEDOR"], falta: "Falta contratar y configurar la pasarela de pagos." }
+};
+export function faltaConfiguracion(id, env = process.env) {
+  const r = REQUISITOS[id];
+  if (!r || !env.VERCEL_ENV) return null;
+  return r.variables.every((k) => env[k]) ? null : r.falta;
+}
 // Las funciones de siempre están encendidas salvo que se apaguen ("0"); las de porDefecto:false, solo si se encienden ("1").
-export function leerFunciones(ajustes = {}) {
-  return Object.fromEntries(FUNCIONES.map(({ id, porDefecto = true }) => [id, porDefecto ? ajustes["funcion." + id] !== "0" : ajustes["funcion." + id] === "1"]));
+export function leerFunciones(ajustes = {}, env = process.env) {
+  return Object.fromEntries(FUNCIONES.map(({ id, porDefecto = true }) => [id, (porDefecto ? ajustes["funcion." + id] !== "0" : ajustes["funcion." + id] === "1") && !faltaConfiguracion(id, env)]));
 }
 export function funcionActiva(ajustes, id) { return leerFunciones(ajustes)[id] === true; }
 export const funcionWebActiva = (f, id) => f.sitio && f[id];

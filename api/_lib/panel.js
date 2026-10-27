@@ -1,4 +1,4 @@
-import { FUNCIONES, leerFunciones } from "./funciones.js";
+import { FUNCIONES, leerFunciones, faltaConfiguracion } from "./funciones.js";
 import { registrar, canalDeTelefono, CLAVES, PRECIOS } from "./metricas.js";
 import { reglasCitas, fechaQuito, fechaValida } from "./citas.js";
 import { minutos } from "../../js/nucleo.js";
@@ -20,7 +20,21 @@ const legible = (historial) => historial.map(textoVisible).filter(Boolean);
 const limpio = (v, max) => String(v ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, max);
 export const canalDe = canalDeTelefono;
 
-export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)), plantillas = {} }) {
+export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Date(), esperar = (ms) => new Promise((r) => setTimeout(r, ms)), plantillas = {}, enviarCorreo = null }) {
+  // Aviso por correo al cliente con cuenta cuando el personal revisa un documento de su trámite.
+  async function avisarPorCorreo(notariaId, cita, estado, observacion) {
+    try {
+      const cliente = await almacen.clientePorId(notariaId, cita.clienteId);
+      if (!cliente?.email || cliente.estado === "bloqueada") return false;
+      const sitio = String(process.env.SITIO_URL || "").replace(/\/$/, "");
+      const aprobado = estado === "aprobado";
+      const texto = (aprobado ? "La notaría revisó tu documento y está correcto." : "La notaría revisó tu documento y necesita una corrección." + (observacion ? "\n\nObservación: " + observacion : ""))
+        + (cita.codigo ? `\n\nTrámite con ticket ${cita.codigo}.` : "")
+        + (sitio ? `\n\nRevísalo en Mis trámites: ${sitio}/mis-tramites.html` : "\n\nRevísalo en Mis trámites, en la página de la notaría.");
+      await enviarCorreo.enviar({ para: cliente.email, asunto: aprobado ? "Tu documento fue revisado" : "Tu documento necesita una corrección", texto });
+      return true;
+    } catch (e) { console.error("No se pudo avisar por correo:", e?.message || e); return false; }
+  }
   async function dentroDeVentana(conversacionId) {
     const c = await almacen.conversacionPorId(conversacionId);
     if (c && canalDe(c.telefono) !== "whatsapp") return false;   // el chat web y el formulario no tienen canal para responder
@@ -117,11 +131,13 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const f = leerFunciones(Object.fromEntries(detalles.map(r => [r.clave, r.valor])));
       return { funciones: FUNCIONES.map(x => {
         const d = detalles.find(r => r.clave === "funcion." + x.id);
-        return { ...x, activa: f[x.id], actualizadoPor: d?.actualizadoPor || "", actualizadoEn: d?.actualizadoEn || "" };
+        return { ...x, activa: f[x.id], falta: faltaConfiguracion(x.id), actualizadoPor: d?.actualizadoPor || "", actualizadoEn: d?.actualizadoEn || "" };
       }) };
     },
     async guardarFuncion({ id, activa }, por) {
       if (!FUNCIONES.some(f => f.id === id) || typeof activa !== "boolean") throw new Aviso("Elige una función y un estado válidos.");
+      const falta = activa && faltaConfiguracion(id);
+      if (falta) throw new Aviso("No se puede encender todavía. " + falta);
       await almacen.guardarAjuste("funcion." + id, activa ? "1" : "0", por);
       return { ok: true, ...await this.funciones() };
     },
@@ -327,10 +343,11 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       await almacen.revisarDocumento(id, { estado, nota, ...(conObservacion ? { observacionCliente: observacion } : {}) });
       // Documentos antiguos sin trámite (solicitudId nulo) no tienen línea de tiempo. La nota interna nunca va al evento.
       if (estado !== "recibido" && d.solicitudId) {
-        let notariaId = NOTARIA_POR_DEFECTO;
-        try { notariaId = (await almacen.cita(d.solicitudId))?.notariaId || notariaId; } catch { /* sin la cita, la notaría por defecto */ }
+        let notariaId = NOTARIA_POR_DEFECTO, cita = null;
+        try { cita = await almacen.cita(d.solicitudId); notariaId = cita?.notariaId || notariaId; } catch { /* sin la cita, la notaría por defecto */ }
         await registrarEvento(almacen, { notariaId, solicitudId: d.solicitudId, tipo: "documento_" + estado, actor: "personal",
           textoCliente: estado === "observado" && observacion ? observacion : TEXTOS["documento_" + estado] });
+        if (enviarCorreo && cita?.clienteId && ["aprobado", "observado"].includes(estado)) await avisarPorCorreo(notariaId, cita, estado, estado === "observado" ? observacion : "");
       }
       if (estado === "recibido") return { avisado: false };
       const c = await conversacion(d.conversacionId);
