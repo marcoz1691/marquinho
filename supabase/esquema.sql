@@ -419,3 +419,6 @@ alter table personal add constraint personal_rol_check check (rol in ('admin','n
 alter table solicitudes_cita add column if not exists atiende_email text not null default '';
 alter table solicitudes_cita add column if not exists atiende_nombre text not null default '';
 alter table solicitudes_cita add column if not exists atiende_desde timestamptz;
+
+-- 2026-10-27: inicio de atención (cita «en cola» frente a «atendiendo»)
+alter table solicitudes_cita add column if not exists atencion_inicio timestamptz;

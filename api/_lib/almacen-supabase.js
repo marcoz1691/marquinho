@@ -12,7 +12,7 @@ export function crearAlmacenSupabase({ url, clave, cliente, notariaId = "notaria
   const ok = ({ data, error }) => { if (error) throw new Error(`Supabase: ${error.message}`); return data; };
   const conv = (r) => r && { id: r.id, telefono: r.telefono, nombre: r.nombre, consentimiento: r.consentimiento, derivada: r.derivada,
     consentimientoTexto: r.consentimiento_texto || "", consentimientoAviso: r.consentimiento_aviso || "" };
-  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, codigo: r.codigo ?? null, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "", atiendeEmail: r.atiende_email || "", atiendeNombre: r.atiende_nombre || "", atiendeDesde: r.atiende_desde || null, notariaId: r.notaria_id || "notaria41", clienteId: r.cliente_id ?? null };
+  const cita = (r) => r && { id: r.id, conversacionId: r.conversacion_id, codigo: r.codigo ?? null, tramiteId: r.tramite_id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nota: r.nota, estado: r.estado, motivo: r.motivo, contacto: r.contacto || null, asignadaA: r.asignada_a || "", atiendeEmail: r.atiende_email || "", atiendeNombre: r.atiende_nombre || "", atiendeDesde: r.atiende_desde || null, atencionInicio: r.atencion_inicio || null, notariaId: r.notaria_id || "notaria41", clienteId: r.cliente_id ?? null };
   const doc = (r) => ({ id: r.id, conversacionId: r.conversacion_id, mediaId: r.media_id, nombre: r.nombre, mime: r.mime, descripcion: r.descripcion, tramiteId: r.tramite_id,
     estado: r.estado, nota: r.nota, observacionCliente: r.observacion_cliente || "", solicitudId: r.solicitud_id ?? null, creado: Date.parse(r.creado) });
   const mensajesDe = async (filtro, valor) => ok(await db.from("mensajes").select("contenido").eq(filtro, valor).order("id")).map((m) => m.contenido);
@@ -171,13 +171,21 @@ export function crearAlmacenSupabase({ url, clave, cliente, notariaId = "notaria
       if ("estado" in cambios) fila.estado = cambios.estado;
       if ("motivo" in cambios) fila.motivo = cambios.motivo;
       if ("asignadaA" in cambios) fila.asignada_a = cambios.asignadaA;
-      if ("atiendeEmail" in cambios) { fila.atiende_email = cambios.atiendeEmail; fila.atiende_nombre = cambios.atiendeNombre || ""; fila.atiende_desde = cambios.atiendeEmail ? (cambios.atiendeDesde || new Date().toISOString()) : null; }
+      if ("atiendeEmail" in cambios) { fila.atiende_email = cambios.atiendeEmail; fila.atiende_nombre = cambios.atiendeNombre || ""; fila.atiende_desde = cambios.atiendeEmail ? (cambios.atiendeDesde || new Date().toISOString()) : null; fila.atencion_inicio = null; }
       ok(await db.from("solicitudes_cita").update(fila).eq("id", id));
     },
 
     // Una sola sentencia: solo una persona gana la cita si dos la piden a la vez.
     async reservarCita(id, { email, nombre, desde }) {
       return ok(await db.from("solicitudes_cita").update({ atiende_email: email, atiende_nombre: nombre, atiende_desde: desde }).eq("id", id).eq("estado", "confirmada").eq("atiende_email", "").select("id")).length > 0;
+    },
+
+    // Pasa de «en cola» a «atendiendo»; solo quien la lleva y solo una vez.
+    async iniciarAtencion(id, email, desde) {
+      return ok(await db.from("solicitudes_cita").update({ atencion_inicio: desde }).eq("id", id).eq("estado", "confirmada").eq("atiende_email", email).is("atencion_inicio", null).select("id")).length > 0;
+    },
+    async enAtencion(email) {
+      return ok(await db.from("solicitudes_cita").select("*").eq("atiende_email", email).eq("estado", "confirmada").not("atencion_inicio", "is", null)).map(cita);
     },
 
     async marcarRecordada(id) { ok(await db.from("solicitudes_cita").update({ recordada: true }).eq("id", id)); },
