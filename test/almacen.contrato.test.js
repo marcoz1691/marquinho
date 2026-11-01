@@ -16,8 +16,8 @@ describe.each(adaptadores)("almacén %s", (_, crear) => {
     const a = crear(), email = `contrato-${Date.now()}-${Math.random()}@example.test`;
     expect(await a.rolDe(email)).toBeNull();
     try {
-      await a.agregarMiembro({ email, nombre: "Contrato", rol: "personal" });
-      expect(await a.rolDe(email.toUpperCase())).toBe("personal");
+      await a.agregarMiembro({ email, nombre: "Contrato", rol: "matricero" });
+      expect(await a.rolDe(email.toUpperCase())).toBe("matricero");
       expect(await a.esPersonal(email)).toBe(true);
       expect(await a.esAdmin(email)).toBe(false);
       expect(await a.equipo()).toContainEqual(expect.objectContaining({ email, nombre: "Contrato", dosPasos: false, creado: expect.any(String) }));

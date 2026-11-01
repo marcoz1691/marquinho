@@ -8,7 +8,7 @@ async function panel(page, admin = true) {
     const req = r.request(), p = new URL(req.url()).searchParams, body = req.method() === "POST" ? req.postDataJSON() : null;
     if (body) { pedidos.push(body); activa = body.activa; }
     const accion = body?.accion || p.get("accion");
-    if (accion === "yo") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", rol: admin ? "admin" : "personal" } });
+    if (accion === "yo") return r.fulfill({ json: { email: "yo@test.ec", nombre: "Yo", rol: admin ? "admin" : "matricero" } });
     if (accion === "funciones" || accion === "guardarFuncion") return r.fulfill({ json: { esAdmin: admin, funciones: [{ id: "agenda", nombre: "Agendar citas", descripcion: "Agenda en línea", efectoAlApagar: "Se ocultan los botones de agenda.", activa }] } });
     if (accion === "metricas") {
       pedidos.push(Object.fromEntries(p));

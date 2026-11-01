@@ -121,7 +121,7 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
       for (let intento = 0; intento < 8; intento++) {
         const ticket = codigo();
         if (citas.some((x) => x.fecha === c.fecha && x.codigo === ticket)) continue;
-        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", notariaId: "notaria41", clienteId: null, ...c, codigo: ticket };
+        const x = { id: nuevoId(), estado: "pendiente", asignadaA: "", atiendeEmail: "", atiendeNombre: "", atiendeDesde: null, notariaId: "notaria41", clienteId: null, ...c, codigo: ticket };
         citas.push(x);
         return { id: x.id, codigo: ticket };
       }
@@ -134,7 +134,17 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
     },
     async solicitudesCita(conversacionId) { return citas.filter((c) => c.conversacionId === conversacionId).map(copia); },
     async cita(id) { return copia(citas.find((c) => c.id === id) || null); },
-    async actualizarCita(id, cambios) { Object.assign(citas.find((c) => c.id === id), cambios); },
+    async actualizarCita(id, cambios) {
+      const c = citas.find((x) => x.id === id);
+      Object.assign(c, cambios);
+      if ("atiendeEmail" in cambios) { c.atiendeNombre = cambios.atiendeNombre || ""; c.atiendeDesde = cambios.atiendeEmail ? (cambios.atiendeDesde || new Date().toISOString()) : null; }
+    },
+    async reservarCita(id, { email, nombre, desde }) {
+      const c = citas.find((x) => x.id === id);
+      if (!c || c.estado !== "confirmada" || c.atiendeEmail) return false;
+      Object.assign(c, { atiendeEmail: email, atiendeNombre: nombre, atiendeDesde: desde });
+      return true;
+    },
     async marcarRecordada(id) { citas.find((c) => c.id === id).recordada = true; },
     async citasEntre(desde, hasta) {
       const fechas = [...new Set(citas.filter(c => c.fecha >= desde && c.fecha <= hasta).map(c => c.fecha))].sort();
@@ -144,7 +154,7 @@ export function crearAlmacenMemoria({ personal = [], codigo = nuevoCodigo } = {}
       return citas.filter((c) => c.fecha === fecha).sort((a, b) => a.hora.localeCompare(b.hora))
         .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono, telefonoConversacion: (porId(c.conversacionId) || {}).telefono }));
     },
-    async listaPersonal() { return []; },
+    async listaPersonal() { return personal.map(({ email, nombre, rol }) => ({ email, nombre: nombre || "", rol })); },
     async citasDelDia(fecha) {
       return citas.filter((c) => c.fecha === fecha && c.estado === "confirmada" && !c.recordada)
         .map((c) => ({ ...copia(c), telefono: c.contacto || (porId(c.conversacionId) || {}).telefono, telefonoConversacion: (porId(c.conversacionId) || {}).telefono }));
