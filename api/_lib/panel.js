@@ -254,7 +254,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (p.tipo === "pct" && !(typeof p.valor === "number" && p.valor >= 0.001 && p.valor <= 5)) throw new Aviso("El porcentaje del SBU debe estar entre 0,1 % y 500 %.");
       if (p.tipo === "fija" && !(typeof p.valor === "number" && p.valor >= 0.01 && p.valor <= 1000)) throw new Aviso("El valor fijo debe estar entre $0,01 y $1000.");
       // En un trámite por unidad, la unidad puede quedar en blanco (precio único) o decir «por…»: otro texto parecería por unidad, pero la cantidad no multiplicaría.
-      if (["pct", "fija"].includes(p.tipo) && /por/.test(oficial?.tarifa?.unidad || "") && (p.unidad || "").trim() && !/por/.test(p.unidad)) throw new Aviso("Este trámite se cobra por unidad: deja la unidad en blanco o escríbela con «por» (por hoja, por firma…).");
+      if (["pct", "fija"].includes(p.tipo) && /por/.test(oficial?.tarifa?.unidad || "") && String(p.unidad ?? "").trim() && !/por/.test(p.unidad)) throw new Aviso("Este trámite se cobra por unidad: deja la unidad en blanco o escríbela con «por» (por hoja, por firma…).");
       if (p.tipo === "cuantia" && !Object.hasOwn(C.tarifas.tablas || {}, p.tabla)) throw new Aviso("Tabla de cuantía inválida.");
       if (typeof (p.unidad ?? "") !== "string" || !/^[\p{L}\p{N} .,/-]{0,30}$/u.test(p.unidad || "")) throw new Aviso("La unidad puede tener hasta 30 letras, números o signos simples (por ejemplo «por hoja»).");
       await almacen.guardarPrecio({ tramiteId: p.tramiteId, tipo: p.tipo, valor: ["pct", "fija"].includes(p.tipo) ? p.valor : null,

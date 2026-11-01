@@ -24,7 +24,7 @@ const guardar = (p) => panel.guardarPrecio({ tramiteId: "copias-certificadas", t
 
 describe("guardarPrecio: no deja romper el cobro por unidad", () => {
   it("la unidad de un trámite por unidad puede quedar en blanco, pero otro texto debe decir «por»", async () => {
-    for (const unidad of ["hoja", "c/u"]) await expect(guardar({ unidad })).rejects.toThrow(/por/);
+    for (const unidad of ["hoja", "c/u", 5]) await expect(guardar({ unidad })).rejects.toThrow(/por/);
     for (const unidad of ["", "  "]) {
       await expect(guardar({ unidad })).resolves.toBeUndefined();
       expect((await almacen.precios())[0]).toMatchObject({ unidad: "" });
