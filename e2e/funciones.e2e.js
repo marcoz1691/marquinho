@@ -33,6 +33,16 @@ test("catálogo apagado: un enlace directo a un trámite no abre su detalle", as
   await page.waitForTimeout(200);
   await expect(page.locator("html.hoja-abierta, .tp--abierto")).toHaveCount(0);
 });
+test("un trámite borrado desaparece del catálogo y de la calculadora, y su categoría vacía también", async ({ page }) => {
+  const { tramites, categorias } = await (await page.request.get("/data/tramites.json")).json();
+  const cat = categorias.find((c) => tramites.filter((t) => t.cat === c.id).length > 0);
+  const borrados = tramites.filter((t) => t.cat === cat.id).map((t) => t.id);
+  await page.route("**/api/precios", r => r.fulfill({ json: { precios: {}, funciones: {}, borrados } }));
+  await abrirPortada(page);
+  await expect(page.locator("#chips").getByRole("button", { name: cat.nombre, exact: true })).toHaveCount(0);
+  await expect(page.locator(`[data-sel="${borrados[0]}"]`)).toHaveCount(0);
+  await expect(page.locator(`#calcTramite option[value="${borrados[0]}"]`)).toHaveCount(0);
+});
 test("agenda apagada oculta accesos y ofrece contacto", async ({ page }) => {
   await configurar(page, { agenda: false });
   await abrirPortada(page);

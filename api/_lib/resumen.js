@@ -1,8 +1,9 @@
 // Resumen compartido por la tarjeta web y el mensaje de WhatsApp.
 import { calcularTarifa, money, AVISO_HABILITANTES } from "../../js/nucleo.js";
+import { buscarTramite } from "../../js/precios.js";
 
 export function construirResumen(cita, C, { subirDocumentos = false } = {}) {
-  const tramite = C.data.tramites.find((t) => t.id === cita.tramiteId);
+  const tramite = buscarTramite(C, cita.tramiteId);
   const tarifa = tramite ? calcularTarifa(tramite, C.tarifas) : null;
   const costo = tarifa?.total != null ? { total: money(tarifa.total), detalle: `Tarifa ${money(tarifa.base)} + IVA ${money(tarifa.iva)}` } : null;
   const fechaTexto = new Intl.DateTimeFormat("es-EC", { timeZone: "America/Guayaquil", weekday: "long", day: "numeric", month: "long" })

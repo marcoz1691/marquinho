@@ -23,8 +23,12 @@ beforeEach(() => {
 const guardar = (p) => panel.guardarPrecio({ tramiteId: "copias-certificadas", tipo: "fija", valor: 2, unidad: "por hoja", ...p }, "admin@x.ec");
 
 describe("guardarPrecio: no deja romper el cobro por unidad", () => {
-  it("rechaza quitar el «por» a un trámite que se cobra por unidad (200 copias pasarían a costar 1)", async () => {
-    for (const unidad of ["", "  ", "hoja", "c/u"]) await expect(guardar({ unidad })).rejects.toThrow(/por/);
+  it("la unidad de un trámite por unidad puede quedar en blanco, pero otro texto debe decir «por»", async () => {
+    for (const unidad of ["hoja", "c/u"]) await expect(guardar({ unidad })).rejects.toThrow(/por/);
+    for (const unidad of ["", "  "]) {
+      await expect(guardar({ unidad })).resolves.toBeUndefined();
+      expect((await almacen.precios())[0]).toMatchObject({ unidad: "" });
+    }
     await expect(guardar({ unidad: "por página" })).resolves.toBeUndefined();
     expect((await almacen.precios())[0]).toMatchObject({ unidad: "por página" });
   });

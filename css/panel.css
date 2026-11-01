@@ -204,6 +204,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0;border
 #metricasV #inicioPilotoForm label{flex-basis:100%;font-size:14px;font-weight:600}
 #metricasV #inicioPilotoForm .btn{width:auto}
 /* Trámites y precios: lápiz junto al nombre y editor de texto debajo de la fila */
+.precio-fila--borrada h3{color:var(--muted);text-decoration:line-through}
+.precio-fila .borrar-tramite{margin-top:8px;min-height:36px;padding:0 14px;font-size:13px}
 .precio-titulo{display:flex;align-items:center;gap:6px}
 .precio-titulo h3{margin:0}
 .lapiz{flex:none;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:none;color:var(--acc)}
@@ -211,6 +213,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0;border
 .texto-estado{color:var(--acc)!important;font-weight:600}
 .precio-acciones{display:flex;flex-direction:column;gap:6px}
 .precio-acciones button{width:100%}
+.precio-fila--editando>.precio-acciones{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:8px}
+.precio-fila--editando>.precio-acciones button{width:auto}
 .precio-campos input,.precio-campos select{min-height:var(--alto-boton)}
 .precio-fila--editando{border-color:var(--acc)}
 .texto-editor{grid-column:1/-1;display:grid;gap:14px;margin-top:6px;padding-top:16px;border-top:1px solid var(--line)}
@@ -270,7 +274,8 @@ body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden]))
   header .tabs{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding-right:24px}
   /* Trámites: cada trámite muestra nombre y total; los campos de precio se abren con «Editar precio» */
   .abrir-precio{display:inline-flex;margin-top:8px;min-height:36px;padding:0 14px;font-size:13px}
-  .precio-fila:not(.precio-fila--abierta):not(.precio-fila--cambiada) .precio-campos>:not(output){display:none}
+  .precio-fila:not(.precio-fila--abierta):not(.precio-fila--cambiada) .precio-campos>:not(output),
+  .precio-fila:not(.precio-fila--abierta):not(.precio-fila--cambiada):not(.precio-fila--editando)>.precio-acciones{display:none}
   .precio-fila{padding:14px}
   .precios-top{padding:14px}
   /* Métricas: dos tarjetas por fila, más compactas */

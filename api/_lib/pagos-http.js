@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { leerAjustes, leerFunciones, funcionWebActiva } from "./funciones.js";
 import { leerSesion, mismoOrigen } from "./sesion-cliente.js";
 import { notariaDe } from "./notaria.js";
-import { calcularTarifa, money } from "../../js/nucleo.js";
+import { calcularTarifa, cobraPorCantidad, money } from "../../js/nucleo.js";
 import { ESTADOS, puedePasar } from "./pagos/proveedor.js";
 import { registrarEvento } from "./eventos.js";
 
@@ -21,7 +21,7 @@ const sha256 = (datos) => createHash("sha256").update(datos).digest("hex");
 // Solo tarifas con un valor único: porcentaje del SBU o valor fijo, sin unidades («por hoja», «por firma»…) ni cuantía.
 export function montoCentavosDe(tramite, tarifas) {
   const f = tramite?.tarifa;
-  if (!f || !["pct", "fija"].includes(f.tipo) || (f.unidad && /por/.test(f.unidad))) return null;
+  if (!f || !["pct", "fija"].includes(f.tipo) || cobraPorCantidad(tramite)) return null;
   const { total } = calcularTarifa(tramite, tarifas);
   return total > 0 ? Math.round(total * 100) : null;
 }
