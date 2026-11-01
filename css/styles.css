@@ -429,7 +429,7 @@ h2,.sub{text-align:left}
 /* Sofía/WhatsApp: cabecera y pasos a la izquierda, conversación a la derecha */
 .wa{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(40px,5vw,72px) clamp(40px,6vw,96px);align-items:start}
 .wa__cab,.wa-pasos{grid-column:1}
-.wa-ejemplo{grid-column:2;grid-row:1 / span 2;top:96px;min-width:0}
+.wa-ejemplo{grid-column:2;grid-row:1 / span 2;min-width:0}
 .wa-cierre{grid-column:1 / -1}
 .wa__cab h2,.wa__cab .sub{text-align:left}
 .wa__cab .sub{margin-bottom:32px}
