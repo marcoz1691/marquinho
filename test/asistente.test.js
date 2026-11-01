@@ -548,6 +548,14 @@ describe("errores de la API", () => {
 });
 
 describe("horario escrito de distintas formas en la hoja", () => {
+  it("Sofía conoce la nota del horario sobre fines de semana y feriados", async () => {
+    const otro = structuredClone(contenido);
+    otro.notaria.horario.nota = "Pregúntanos por disponibilidad en fin de semana o feriados.";
+    const claude = claudeFalso([texto("ok")]);
+    await crearAsistente({ claude, almacen, whatsapp, contenido: async () => otro, avisar, ahora: () => new Date("2026-10-06T15:00:00Z"), esperar: async () => {} }).atender(mensaje());
+    expect(claude.llamadas[0].system[0].text).toContain("Lunes a viernes, 08:00 – 17:00. Pregúntanos por disponibilidad en fin de semana o feriados.");
+  });
+
   it("acepta una cita a las 09:00 cuando la hoja dice que abre a las 8:00", async () => {
     const otro = structuredClone(contenido);
     otro.notaria.horario.abre = "8:00"; otro.notaria.horario.cierra = "17:00:00";

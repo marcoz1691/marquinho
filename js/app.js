@@ -256,11 +256,13 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     $("#heroNotario").textContent = N.cargo || "";
     tituloPortada(N.notario || N.nombre);
     if (N.eslogan) $("#heroLema").textContent = N.eslogan;
+    // Antes de scenes(): esa función parte la frase en palabras para iluminarlas al hacer scroll.
+    if (N.frasePortada) $("#words").textContent = N.frasePortada;
     document.title = corto + " · " + N.nombre;
     rows += "<div><h3>Dirección</h3><p>" + esc(N.direccion) + "</p></div>";
     if (tels.length) rows += "<div><h3>Teléfonos</h3><p>" + tels.map(function (t) { return '<a href="tel:+593' + esc(t.replace(/\D/g, "").replace(/^0/, "")) + '">' + esc(t) + "</a>"; }).join("<br>") + "</p></div>";
     if (N.correo) rows += '<div><h3>Correo</h3><p><a href="mailto:' + esc(N.correo) + '">' + esc(N.correo) + "</a></p></div>";
-    rows += "<div><h3>Horario</h3><p>" + esc(N.horario.texto) + "</p></div>";
+    rows += "<div><h3>Horario</h3><p>" + esc(N.horario.texto) + "</p>" + (N.horario.nota ? '<p class="contact__nota">' + esc(N.horario.nota) + "</p>" : "") + "</div>";
     var m = N.mapa, acts = [];
     acts.push('<a class="act act--wa" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + m.lat + "," + m.lng + '"><i class="ph ph-navigation-arrow" aria-hidden="true"></i>Cómo llegar</a>');
     acts.push('<a class="act" target="_blank" rel="noopener" href="https://waze.com/ul?ll=' + m.lat + "," + m.lng + '&navigate=yes">Abrir en Waze</a>');
@@ -404,7 +406,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   function rotarLema() {
     var fija = $("#heroLema"), rota = $("#heroRota");
     if (!fija || !rota) return;
-    var frases = ["Poderes.", "Escrituras.", "Herencias.", "Declaraciones."], i = 0;
+    var frases = ["Poderes especiales y generales", "Escrituras públicas", "Declaraciones juramentadas, herencias y legados"], i = 0;
     function entrar(el) { el.classList.remove("fuera"); el.classList.add("antes"); void el.offsetWidth; el.classList.remove("antes"); }
     rota.textContent = frases[0];
     fija.classList.add("fuera");

@@ -138,11 +138,13 @@ export function desdeHoja(tabs, base) {
   // Si cambia el notario y la hoja no trae su nombre corto, no se conserva el nombre corto del anterior.
   set("notario", function (v) { if (v !== N.notario) delete N.notarioCorto; N.notario = v; });
   set("eslogan", function (v) { N.eslogan = v; });
+  set("frasedeportada", function (v) { N.frasePortada = v; });
   set("direccion", function (v) { N.direccion = v; });
   set("telefonos", function (v) { N.telefonos = v.split(/[,;\/]+/).map(function (s) { return s.trim(); }).filter(Boolean); });
   set("whatsapp", function (v) { N.whatsapp = v; });
   set("correo", function (v) { N.correo = v; });
   set("horario", function (v) { N.horario.texto = v; });
+  set("notadelhorario", function (v) { N.horario.nota = v; });
   set("abre", function (v) { N.horario.abre = hhmm(v); });
   set("cierra", function (v) { N.horario.cierra = hhmm(v); });
   set("diasdeatencion", function (v) { N.horario.dias = v.split(/[^\d]+/).filter(Boolean).map(Number); });

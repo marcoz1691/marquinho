@@ -112,7 +112,7 @@ button:disabled{cursor:default}
 .tag--canal{background:var(--alt);color:var(--muted)}.ag-cita--atendida .tag{background:var(--alt);color:var(--muted)}
 .ag-resumen{display:flex;flex-wrap:wrap;gap:8px;margin:0 auto 16px}.ag-resumen button[aria-pressed=true]{background:var(--soft);border-color:var(--acc)}.ag-pendientes{color:var(--gold);font-weight:700}
 .ag-config{margin:24px auto;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:12px}.ag-config summary{cursor:pointer;font-weight:700}.config-fila{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-top:16px}.config-fila label{display:grid;gap:4px}.bloqueos{padding:0;list-style:none}.bloqueos li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-.precios-top{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:20px 0 24px}.precios-top h3{flex-basis:100%;margin:0}.precios-filtros{display:flex;align-items:end;gap:24px;margin-bottom:16px}.precios-filtros>label:first-child{display:grid;gap:4px;max-width:420px;flex:1}.solo-editados{display:flex;align-items:center;gap:8px}.solo-editados input{width:18px;height:18px}
+.precios-top{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:20px 0 24px}.precios-top h3{flex-basis:100%;margin:0}.precios-top h3:not(:first-child){margin-top:12px}.precios-top .frase-portada{flex-basis:100%;max-width:640px}.frase-portada textarea{width:100%;font:inherit;resize:vertical}.precios-filtros{display:flex;align-items:end;gap:24px;margin-bottom:16px}.precios-filtros>label:first-child{display:grid;gap:4px;max-width:420px;flex:1}.solo-editados{display:flex;align-items:center;gap:8px}.solo-editados input{width:18px;height:18px}
 #preciosLista{--precio-columnas:minmax(210px,2fr) minmax(130px,1fr) minmax(110px,1fr) minmax(100px,1fr) minmax(120px,1fr) 160px}
 .precios-cabecera,.precio-fila{display:grid;grid-template-columns:var(--precio-columnas);gap:12px;align-items:center}.precios-cabecera{font-weight:700;padding:12px;background:var(--alt);border-radius:10px;position:sticky;top:-20px;z-index:1}
 .precio-fila{padding:12px;margin-top:6px}.precio-campos,.precio-consulta{display:contents}.precio-campos label{max-width:none;min-width:0}.precio-campos input,.precio-campos select{width:100%;min-width:0;padding:8px}.precio-campos label{font-size:12px}.precio-campos label>span{white-space:nowrap;font-size:11px}.precio-valor{min-width:0}.precio-valor label{display:grid;gap:4px}.precio-acciones{display:grid;gap:6px}.precio-acciones button{padding:6px 10px;font-size:12px}.precio-fila h3{font-size:15px;margin:0 0 4px}.precio-fila output{font-size:14px;margin:0}.precio-fila small{font-size:12px}.precio-categoria{font-size:16px;margin:20px 0 8px;text-transform:capitalize}.precio-fila--cambiada{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 5%,var(--card))}.precio-pendiente{display:block;color:var(--gold);font-size:12px;font-weight:700}
@@ -292,7 +292,7 @@ body:has(.vista-previa:not([hidden])) main,body:has(.vista-previa:not([hidden]))
 @media(max-width:900px){.top .btn,.top .tag{margin-left:0}}
 @media(max-width:600px){
   .precios-top{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .precios-top h3,.precios-top .btn,.precios-top .aviso-sbu{grid-column:1/-1}
+  .precios-top h3,.precios-top .btn,.precios-top .aviso-sbu,.precios-top .frase-portada{grid-column:1/-1}
   .precios-top label{max-width:none}
   .precios-top input{width:100%}
 }

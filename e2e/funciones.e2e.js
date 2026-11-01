@@ -63,3 +63,12 @@ test("aviso del asistente cabe a 390 px", async ({ page }) => {
   await expect(page.locator("#asistenteContacto")).toContainText("02 600 1141");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+test("frase de la portada: la de los datos y la editada en el panel", async ({ page }) => {
+  const notaria = await (await page.request.get("/data/notaria.json")).json();
+  const palabras = () => page.locator("#words span").allTextContents().then(p => p.join(" "));
+  await abrirPortada(page);
+  await expect.poll(palabras).toBe(notaria.frasePortada);
+  await page.route("**/api/precios", r => r.fulfill({ json: { precios: {}, frasePortada: "Tu trámite, claro desde el primer día." } }));
+  await abrirPortada(page);
+  await expect.poll(palabras).toBe("Tu trámite, claro desde el primer día.");
+});

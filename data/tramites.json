@@ -1146,11 +1146,11 @@
   },
   {
    "q": "¿Necesito abogado?",
-   "a": "Para escrituras, poderes, divorcios y posesiones efectivas se necesita una minuta o petición firmada por un abogado. Para declaraciones juramentadas, reconocimiento de firmas y copias certificadas no."
+   "a": "Para escrituras, poderes, posesiones efectivas, entre otros trámites, se necesita una minuta o petición firmada por un abogado. Para declaraciones juramentadas, reconocimientos de firmas y copias certificadas no."
   },
   {
    "q": "¿Cómo se calculan los costos?",
-   "a": "Las tarifas las fija el Consejo de la Judicatura como porcentaje del Salario Básico Unificado (SBU) o según la cuantía del acto, más IVA. Son iguales en todas las notarías del país."
+   "a": "Los valores a pagar los fija el Consejo de la Judicatura como porcentaje del Salario Básico Unificado (SBU) o según la cuantía del acto, más IVA. Son iguales en todas las notarías del país."
   },
   {
    "q": "¿Qué documentos debo llevar siempre?",
@@ -1158,11 +1158,11 @@
   },
   {
    "q": "¿Hay descuentos para adultos mayores o personas con discapacidad?",
-   "a": "Sí. La ley establece exoneraciones en algunos trámites. Pregunta en la notaría con tu cédula."
+   "a": "Sí. La ley establece exoneraciones y deducciones en varios trámites. Pregunta en la notaría con tu cédula."
   },
   {
    "q": "¿Cuántas copias recibo?",
-   "a": "La tarifa incluye dos copias certificadas (tres en actos de compañías). Desde la tercera copia se cobra USD 1,79 por hoja."
+   "a": "En escrituras públicas, la tarifa incluye dos copias certificadas (tres en actos de compañías)."
   }
  ],
  "avisos": []

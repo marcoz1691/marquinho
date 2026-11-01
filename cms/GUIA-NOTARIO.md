@@ -29,7 +29,7 @@ Abre el enlace de la hoja «Notaría 41 – Contenido web» con tu cuenta de Gma
 
 **Cupo y feriados.** En «Configuración», «Citas por hora» es cuántas citas se aceptan en cada hora (por ejemplo, 2). En «Feriados» escribe las fechas en que no se atiende, separadas por comas (por ejemplo, 2/11/2026, 3/11/2026): ese día Sofía no agenda citas.
 
-**Nombre y cargo en la portada.** En «Configuración», «Notario» es el nombre grande de la portada, «Cargo del notario» es la línea pequeña que va encima (por ejemplo, Notario Cuadragésimo Primero del Cantón Quito) «Nombre corto del notario» es el que aparece en el menú de arriba, y «Eslogan» es la frase que va debajo del nombre.
+**Nombre y cargo en la portada.** En «Configuración», «Notario» es el nombre grande de la portada, «Cargo del notario» es la línea pequeña que va encima (por ejemplo, Notario Cuadragésimo Primero del Cantón Quito) «Nombre corto del notario» es el que aparece en el menú de arriba, y «Eslogan» es la frase que va debajo del nombre. «Nota del horario» es el texto que sale debajo del horario (por ejemplo, «Pregúntanos por disponibilidad en fin de semana o feriados.»); Sofía también lo usa. «Frase de portada» es la frase grande que aparece al bajar, encima de los trámites; también la puedes cambiar en el panel, en «Trámites y precios».
 
 **Cambiar una tarifa.** En «Tipo de tarifa» elige de la lista:
 - *Porcentaje del SBU*: en «Valor» escribe solo el número (12 = 12% del SBU).
