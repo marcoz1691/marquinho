@@ -406,7 +406,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   function rotarLema() {
     var fija = $("#heroLema"), rota = $("#heroRota");
     if (!fija || !rota) return;
-    var frases = ["Poderes especiales y generales", "Escrituras públicas", "Declaraciones juramentadas, herencias y legados"], i = 0;
+    var frases = ["Poderes especiales y generales", "Escrituras públicas", "Declaraciones juramentadas", "Herencias y legados"], i = 0;
     function entrar(el) { el.classList.remove("fuera"); el.classList.add("antes"); void el.offsetWidth; el.classList.remove("antes"); }
     rota.textContent = frases[0];
     fija.classList.add("fuera");
