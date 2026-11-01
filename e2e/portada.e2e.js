@@ -202,7 +202,7 @@ test.describe("Carga de datos", () => {
 test.describe("Navegación", () => {
   test("CF-90 cada enlace del menú lleva a su sección", async ({ page }) => {
     await abrirPortada(page);
-    for (const id of ["tramites", "calculadora", "faq", "contacto"]) {
+    for (const id of ["tramites", "catalogo", "faq", "contacto"]) {
       await page.locator(`#menu a[href="#${id}"]`).click();
       await expect(page.locator("#" + id)).toBeInViewport();
     }

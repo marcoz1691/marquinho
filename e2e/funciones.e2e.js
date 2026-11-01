@@ -2,6 +2,37 @@ import { test, expect, abrirPortada } from "./fixtures.js";
 async function configurar(page, funciones) {
   await page.route("**/api/precios", r => r.fulfill({ json: { precios: {}, funciones } }));
 }
+test("catálogo encendido: «Tarifas» deja el catálogo a la vista", async ({ page }) => {
+  await configurar(page, {});
+  await abrirPortada(page);
+  await page.locator("#menuTarifas").click();
+  await expect(page).toHaveURL(/#catalogo$/);
+  await expect(page.locator("#catalogo")).toBeInViewport();
+});
+test("catálogo apagado: se oculta con sus accesos y quedan la frase y la calculadora", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await configurar(page, { catalogo: false });
+  await page.goto("/");
+  await expect(page.locator("#lista .tl__item").first()).toBeAttached();
+  await expect(page.locator("#catalogo")).toBeHidden();
+  await expect(page.locator("#menu").getByRole("link", { name: "Trámites", exact: true })).toBeHidden();
+  await expect(page.getByRole("link", { name: "Ver trámites", exact: true })).toBeHidden();
+  await expect(page.locator("#words")).toBeVisible();
+  await expect(page.locator("#menuTarifas")).toHaveAttribute("href", "#calculadora");
+  await expect(page.locator("#calcTramite option").first()).toBeAttached();
+  await expect(page.locator("#rTotal")).not.toBeEmpty();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test("catálogo apagado: un enlace directo a un trámite no abre su detalle", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await configurar(page, { catalogo: false });
+  const { tramites } = await (await page.request.get("/data/tramites.json")).json();
+  await page.goto("/#t-" + tramites[0].id);
+  await expect(page.locator("#lista .tl__item").first()).toBeAttached();
+  await expect(page.locator("#detalleTramite")).toBeHidden();
+  await page.waitForTimeout(200);
+  await expect(page.locator("html.hoja-abierta, .tp--abierto")).toHaveCount(0);
+});
 test("agenda apagada oculta accesos y ofrece contacto", async ({ page }) => {
   await configurar(page, { agenda: false });
   await abrirPortada(page);

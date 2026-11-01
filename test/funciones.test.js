@@ -29,3 +29,9 @@ it("portal y pagos en línea se encienden solo con \"1\"; las demás se apagan s
   expect(leerFunciones({ "funcion.portal": "1", "funcion.pagosEnLinea": "x" })).toMatchObject({ portal: true, pagosEnLinea: false, agenda: true });
   expect(leerFunciones({ "funcion.portal": "0", "funcion.agenda": "x" })).toMatchObject({ portal: false, agenda: true });
 });
+
+it("el catálogo está encendido por defecto y se apaga solo con \"0\"", () => {
+  expect(leerFunciones()).toMatchObject({ catalogo: true });
+  expect(leerFunciones({ "funcion.catalogo": "x" })).toMatchObject({ catalogo: true });
+  expect(leerFunciones({ "funcion.catalogo": "0" })).toMatchObject({ catalogo: false });
+});

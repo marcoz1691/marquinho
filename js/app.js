@@ -11,7 +11,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   };
 
-  var funcionesLista = cargarFunciones().then(function (f) { state.funciones = f; if (!f.sitio) location.replace("mantenimiento.html"); aplicarFunciones(f); if (f.chatWeb && $("#chatAbrir").getAttribute("aria-expanded") !== "true") $("#chat").hidden = true; });
+  var funcionesLista = cargarFunciones().then(function (f) { state.funciones = f; if (!f.sitio) location.replace("mantenimiento.html"); aplicarFunciones(f); if (!f.catalogo) $("#menuTarifas").setAttribute("href", "#calculadora"); if (f.chatWeb && $("#chatAbrir").getAttribute("aria-expanded") !== "true") $("#chat").hidden = true; });
   var state = { funciones: {}, cat: "destacados", q: "", sel: null, data: null, tarifas: null, notaria: null };
   // La pestaña inicial "Más pedidos": la lista de los trámites más pedidos que dio el notario, en su orden.
   var DESTACADOS = ["compraventa-vehiculo", "declaracion-natural", "poder-natural", "salida-pais", "copias-certificadas", "certificacion-electronica", "posesion-efectiva", "disolucion-sociedad-conyugal", "divorcio"];
@@ -372,6 +372,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
     // Enlace directo: notaria/#t-compraventa muestra ese trámite en su categoría.
     var abrirHash = function () {
+      if (!state.funciones.catalogo) return;
       var m = location.hash.match(/^#t-([\w-]+)/), t = m && tramite(m[1]); if (!t) return;
       state.q = ""; $("#buscar").value = ""; state.cat = DESTACADOS.indexOf(t.id) > -1 ? "destacados" : t.cat; state.sel = t.id;
       renderChips(); renderLista();
