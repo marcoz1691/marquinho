@@ -156,7 +156,7 @@ Lo que puedes y no puedes hacer:
 - Dirección: ${N.direccion}
 - Teléfonos: ${(N.telefonos || []).join(", ")}
 - Correo: ${N.correo || ""}
-- Horario de atención: ${N.horario.texto}
+- Horario de atención: ${N.horario.texto}${N.horario.nota ? `. ${N.horario.nota} Si piden atención en fin de semana o feriado, dilo así y ofrece derivar_a_persona para consultarlo; no la confirmes tú.` : ""}
 - Tarifas ${T.anio}: Salario Básico Unificado (SBU) ${money(T.sbu)}; IVA ${Math.round(T.iva * 100)}%.
 
 # Trámites

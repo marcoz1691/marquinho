@@ -33,6 +33,14 @@ export function textosDeAjustes(ajustes) {
   return textos;
 }
 
+// Frase grande de la portada («Cada trámite, explicado…»), editable en el panel.
+export const LIMITES_FRASE = { min: 10, max: 200 };
+export function fraseValida(v) {
+  if (typeof v !== "string") return null;
+  const f = v.replace(/\s+/g, " ").trim();
+  return f.length >= LIMITES_FRASE.min && f.length <= LIMITES_FRASE.max ? f : null;
+}
+
 export function aplicarPrecios(contenido, cambios) {
   const precios = cambios?.precios || {};
   const textos = { ...textosDeAjustes(cambios), ...(cambios?.textos || {}) };
@@ -46,6 +54,8 @@ export function aplicarPrecios(contenido, cambios) {
   const sbu = Number(cambios?.sbu);
   if (cambios?.sbu != null && Number.isFinite(sbu) && sbu > 0) contenido.tarifas.sbu = sbu;
   if (cambios?.anio != null && /^\d{4}$/.test(String(cambios.anio))) contenido.tarifas.anio = String(cambios.anio);
+  const frase = fraseValida(cambios?.frasePortada);
+  if (frase && contenido.notaria) contenido.notaria.frasePortada = frase;
   return contenido;
 }
 const configuraciones = new WeakMap();
@@ -59,7 +69,7 @@ export function configPublica(fetch = globalThis.fetch) {
 export async function cargarFunciones(fetch = globalThis.fetch) {
   const c = await configPublica(fetch);
   // Encendidas salvo que el servidor diga false; portal y pagosEnLinea, apagadas salvo que diga true.
-  return { ...Object.fromEntries(["sitio", "chatWeb", "whatsappBot", "agenda", "documentos", "recordatorios"].map(id => [id, c?.funciones?.[id] !== false])),
+  return { ...Object.fromEntries(["sitio", "catalogo", "chatWeb", "whatsappBot", "agenda", "documentos", "recordatorios"].map(id => [id, c?.funciones?.[id] !== false])),
     ...Object.fromEntries(["portal", "pagosEnLinea"].map(id => [id, c?.funciones?.[id] === true])) };
 }
 export async function cargarPrecios(contenido, fetch = globalThis.fetch) {

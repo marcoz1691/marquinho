@@ -8,7 +8,7 @@ import { Aviso } from "./errores.js";
 import { registrarEvento, TEXTOS } from "./eventos.js";
 import { NOTARIA_POR_DEFECTO } from "./notaria.js";
 import { esHabilitante } from "../../js/nucleo.js";
-import { textoValido, textosDeAjustes } from "../../js/precios.js";
+import { textoValido, textosDeAjustes, fraseValida, LIMITES_FRASE } from "../../js/precios.js";
 
 const VENTANA_MS = 24 * 60 * 60 * 1000;
 const ESTADOS_CITA = ["confirmada", "rechazada", "atendida"];
@@ -213,7 +213,9 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       const C = await contenido({ oficial: true });
       const [filas, ajustes, detalles] = await Promise.all([almacen.precios(), almacen.ajustes(), almacen.ajustesConDetalle()]);
       const textos = textosDeAjustes(ajustes);
-      return { tarifas: { ...C.tarifas, ...ajustes }, sbuEditado: ajustes.sbu !== undefined || ajustes.anio !== undefined, sbuOficial: C.tarifas.sbu, anioOficial: C.tarifas.anio, tramites: C.data.tramites.map((t) => {
+      const frase = fraseValida(ajustes["portada.frase"]), dFrase = frase && detalles.find((x) => x.clave === "portada.frase");
+      return { tarifas: { ...C.tarifas, ...ajustes }, sbuEditado: ajustes.sbu !== undefined || ajustes.anio !== undefined, sbuOficial: C.tarifas.sbu, anioOficial: C.tarifas.anio,
+        frasePortada: { valor: frase || C.notaria?.frasePortada || "", oficial: C.notaria?.frasePortada || "", editada: !!frase, por: dFrase?.actualizadoPor || "", en: dFrase?.actualizadoEn || "" }, tramites: C.data.tramites.map((t) => {
         const p = filas.find((p) => p.tramiteId === t.id);
         // El texto editado se muestra en lugar del de la hoja; «oficial» guarda el de la hoja para poder volver a él.
         const texto = Object.hasOwn(textos, t.id) ? textoValido(textos[t.id]) : null, d = texto && detalles.find((x) => x.clave === "tramite." + t.id);
@@ -256,6 +258,13 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       await almacen.guardarAjuste("sbu", sbu, por);
       await almacen.guardarAjuste("anio", String(anio), por);
     },
+    // Frase grande de la portada: se ve en la web sobre lo que dice la hoja (o data/notaria.json).
+    async guardarFrase({ frase }, por) {
+      const f = fraseValida(frase);
+      if (!f) throw new Aviso(`La frase de la portada debe tener entre ${LIMITES_FRASE.min} y ${LIMITES_FRASE.max} caracteres.`);
+      await almacen.guardarAjuste("portada.frase", f, por);
+    },
+    async restaurarFrase() { await almacen.restaurarAjuste("portada.frase"); },
     async conversaciones() {
       const filas = (await almacen.resumenConversaciones()).map(({ ultimoTexto, ...c }) => ({ ...c, ultimo: ultimoTexto, canal: canalDe(c.telefono) }));
       return filas.sort((a, b) => (b.derivada - a.derivada) || (b.ultimaActividad - a.ultimaActividad));

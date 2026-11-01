@@ -20,7 +20,7 @@ test.describe("Contacto y datos de la notaría", () => {
     await page.route("**/data/notaria.json", () => {});
     await page.goto("/");
     await expect(page.locator("#heroNotario")).toHaveText("Notario Cuadragésimo Primero del Cantón Quito");
-    await expect(page.locator("#heroTitle .hero__nombre")).toHaveText("Dr. Dobri Miguel Albornoz Donoso");
+    await expect(page.locator("#heroTitle .hero__nombre")).toHaveText("Dr. Dobri Albornoz Donoso");
     await expect(page.locator("#heroLema")).toHaveText("Fe pública al servicio de la comunidad.");
     await expect(page.locator("#brandName")).toHaveCount(0);
     await expect(page).toHaveTitle("Dr. Dobri Albornoz Donoso · Notaría 41 de Quito");
@@ -79,6 +79,7 @@ test.describe("Contacto y datos de la notaría", () => {
     await expect(info.getByRole("link", { name: notaria.correo })).toHaveAttribute("href", "mailto:" + notaria.correo);
     await expect(info).toContainText(notaria.direccion);
     await expect(info).toContainText(notaria.horario.texto);
+    await expect(info.locator(".contact__nota")).toHaveText("Pregúntanos por disponibilidad en fin de semana o feriados.");
   });
 
   test("CF-72 'Cómo llegar', Waze y el mapa apuntan a la ubicación de la notaría", async ({ page }) => {
@@ -201,7 +202,7 @@ test.describe("Carga de datos", () => {
 test.describe("Navegación", () => {
   test("CF-90 cada enlace del menú lleva a su sección", async ({ page }) => {
     await abrirPortada(page);
-    for (const id of ["tramites", "calculadora", "faq", "contacto"]) {
+    for (const id of ["tramites", "catalogo", "faq", "contacto"]) {
       await page.locator(`#menu a[href="#${id}"]`).click();
       await expect(page.locator("#" + id)).toBeInViewport();
     }

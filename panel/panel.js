@@ -484,10 +484,14 @@ async function cargarPreciosPanel() {
     preciosPanel = await api("GET", { accion: "precios" });
     const T = preciosPanel.tarifas;
     $("#preciosAjustes").innerHTML = preciosPanel.esAdmin
-      ? `<h3>Salario básico (SBU) y año</h3><label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}`
-      : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>`;
+      ? `<h3>Salario básico (SBU) y año</h3><label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}${editorFrase(preciosPanel.frasePortada)}`
+      : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>${preciosPanel.frasePortada ? `<p>Frase de la portada: «${esc(preciosPanel.frasePortada.valor)}» · Solo lectura</p>` : ""}`;
     pintarPrecios();
   } catch (e) { $("#preciosMensaje").textContent = e.message; }
+}
+function editorFrase(f) {
+  if (!f) return "";
+  return `<h3>Frase de la portada</h3><label class="frase-portada">La frase grande que aparece al bajar de la portada, encima de los trámites<textarea id="fraseTexto" rows="3" maxlength="200">${esc(f.valor)}</textarea></label><button class="btn" id="guardarFrase">Guardar frase</button>${f.editada ? `<p class="aviso-sbu">Frase cambiada por ${esc(f.por)} el ${esc(fechaLegible(f.en))}. La hoja de Google dice: «${esc(f.oficial)}». <button class="btn btn--line" id="restaurarFrase">Volver a la frase de la hoja</button></p>` : ""}`;
 }
 function tarifasEnPantalla() {
   return { ...preciosPanel.tarifas, sbu: $("#precioSbu") ? Number($("#precioSbu").value) : preciosPanel.tarifas.sbu };
@@ -593,6 +597,13 @@ $("#preciosV").addEventListener("click", async (e) => {
     } else if (b.id === "restaurarSbu") {
       if (!confirm("¿Volver al SBU y al año de la hoja de Google?")) return;
       pedido = { accion: "restaurarSBU" };
+    } else if (b.id === "guardarFrase") {
+      const frase = $("#fraseTexto").value.replace(/\s+/g, " ").trim();
+      if (frase.length < 10) { $("#preciosMensaje").textContent = "La frase debe tener al menos 10 caracteres."; return $("#fraseTexto").focus(); }
+      pedido = { accion: "guardarFrase", frase };
+    } else if (b.id === "restaurarFrase") {
+      if (!confirm("¿Volver a la frase de la hoja de Google?")) return;
+      pedido = { accion: "restaurarFrase" };
     } else {
       const fila = b.closest(".precio-fila"), p = precioDeFila(fila);
       if (b.dataset.precio === "restaurar") {
@@ -607,7 +618,7 @@ $("#preciosV").addEventListener("click", async (e) => {
     b.disabled = true;
     await api("POST", pedido);
     if (pedido.tramiteId) borradoresPrecio.delete(pedido.tramiteId);
-    $("#preciosMensaje").textContent = "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
+    $("#preciosMensaje").textContent = /Frase/.test(pedido.accion) ? "Guardado. La web muestra la frase en 1 minuto." : "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
     await cargarPreciosPanel();
   } catch (err) { $("#preciosMensaje").textContent = err.message; }
   finally { if (b.isConnected && b.closest(".precio-fila")) actualizarPrecio(b.closest(".precio-fila")); else b.disabled = false; }
