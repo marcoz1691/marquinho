@@ -619,7 +619,7 @@ h2,.legal h2{line-height:1.08;letter-spacing:-.022em}
 /* Frase que rota una sola vez y termina en el lema */
 .lema{display:grid}
 .lema>p{grid-area:1/1;margin:0;transition:opacity .3s ease-out,transform .3s ease-out,filter .3s ease-out}
-.lema__rota{color:var(--accent)}
+.lema__rota{color:var(--fg)}
 .lema__rota:empty{display:none}
 .lema>p.fuera{opacity:0;transform:translateY(-8px);filter:blur(2px)}
 .lema>p.antes{opacity:0;transform:translateY(8px);filter:blur(2px);transition:none}
