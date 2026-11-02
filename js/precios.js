@@ -33,6 +33,15 @@ export function textosDeAjustes(ajustes) {
   return textos;
 }
 
+// Cada trámite borrado en el panel se guarda como «borrado.<id>»: deja de ofrecerse y se puede restaurar.
+export function borradosDeAjustes(ajustes) {
+  return Object.keys(ajustes || {}).filter((clave) => clave.startsWith("borrado.")).map((clave) => clave.slice(8));
+}
+// Para lo que ya existe (citas, documentos): un trámite borrado conserva su nombre aunque ya no se ofrezca.
+export function buscarTramite(C, id) {
+  return C.data.tramites.find((t) => t.id === id) || C.data.borrados?.find((t) => t.id === id);
+}
+
 // Frase grande de la portada («Cada trámite, explicado…»), editable en el panel.
 export const LIMITES_FRASE = { min: 10, max: 200 };
 export function fraseValida(v) {
@@ -51,6 +60,9 @@ export function aplicarPrecios(contenido, cambios) {
     const texto = Object.hasOwn(textos, t.id) ? textoValido(textos[t.id]) : null;
     if (texto) Object.assign(t, texto);
   });
+  const borrados = new Set([...borradosDeAjustes(cambios), ...(Array.isArray(cambios?.borrados) ? cambios.borrados : [])]);
+  contenido.data.borrados = contenido.data.tramites.filter((t) => borrados.has(t.id));
+  contenido.data.tramites = contenido.data.tramites.filter((t) => !borrados.has(t.id));
   const sbu = Number(cambios?.sbu);
   if (cambios?.sbu != null && Number.isFinite(sbu) && sbu > 0) contenido.tarifas.sbu = sbu;
   if (cambios?.anio != null && /^\d{4}$/.test(String(cambios.anio))) contenido.tarifas.anio = String(cambios.anio);

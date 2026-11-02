@@ -133,7 +133,8 @@ test("trámites: con el lápiz se edita el texto y se envía cada requisito y pa
   await expect(editor.getByLabel("Nombre")).toHaveValue("Poder general");
   await editor.getByLabel("Nombre").fill("Poder general o especial");
   await editor.getByLabel("Requisitos").fill("Minuta firmada por un abogado\n\nCédula del poderdante");
-  await page.getByRole("button", { name: "Guardar texto" }).click();
+  await expect(fila.getByRole("button", { name: /Guardar/ })).toHaveCount(1);
+  await fila.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect.poll(() => pedidos.length).toBe(1);
   expect(pedidos[0]).toMatchObject({ accion: "guardarTexto", tramiteId: "poder", nombre: "Poder general o especial", req: ["Minuta firmada por un abogado", "Cédula del poderdante"], pasos: ["Firma"] });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -148,4 +149,59 @@ test("el panel muestra una pantalla de carga hasta saber qué vista abrir", asyn
   soltar();
   await expect(page.locator("#vEntrar")).toBeVisible();
   await expect(page.locator("#cargando")).toBeHidden();
+});
+
+test("trámites: un solo Guardar envía el texto y el precio, y se activa solo con cambios", async ({ page }) => {
+  const pedidos = await preparar(page, true, { desc: "D", req: ["Minuta"], pasos: ["Firma"], nota: "" });
+  page.on("dialog", (d) => d.accept());
+  const fila = page.locator(".precio-fila"), guardar = fila.getByRole("button", { name: "Guardar", exact: true });
+  await fila.getByRole("button", { name: "Editar el texto de Poder general" }).click();
+  await expect(guardar).toBeDisabled();
+  await page.locator(".texto-editor").getByLabel("Descripción").fill("Otra descripción");
+  await fila.locator('[data-campo="valor"]').fill("20");
+  await guardar.click();
+  await expect.poll(() => pedidos.map((p) => p.accion)).toEqual(["guardarTexto", "guardarPrecio"]);
+  expect(pedidos[0]).toMatchObject({ desc: "Otra descripción" });
+  expect(pedidos[1]).toMatchObject({ tramiteId: "poder", valor: 0.2 });
+});
+
+test("trámites: la unidad se puede dejar en blanco y guardar", async ({ page }) => {
+  const pedidos = await preparar(page, true, { tarifa: { tipo: "fija", valor: 2, unidad: "por hoja", tabla: "" } });
+  page.on("dialog", (d) => d.accept());
+  const fila = page.locator(".precio-fila");
+  await fila.locator('[data-campo="unidad"]').fill("");
+  await fila.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect.poll(() => pedidos[0]).toMatchObject({ accion: "guardarPrecio", tramiteId: "poder", unidad: "" });
+});
+
+test("trámites: borrar pide confirmación antes de enviar @movil", async ({ page }) => {
+  const pedidos = await preparar(page, true);
+  const fila = page.locator(".precio-fila");
+  page.once("dialog", (d) => d.dismiss());
+  await fila.getByRole("button", { name: "Borrar Poder general" }).click();
+  expect(pedidos).toHaveLength(0);
+  page.once("dialog", (d) => { expect(d.message()).toContain("Poder general"); d.accept(); });
+  await fila.getByRole("button", { name: "Borrar Poder general" }).click();
+  await expect.poll(() => pedidos[0]).toMatchObject({ accion: "borrarTramite", tramiteId: "poder" });
+});
+
+test("trámites: una fila borrada solo muestra su estado y Restaurar", async ({ page }) => {
+  const pedidos = await preparar(page, true, { borrado: true, borradoPor: "yo@test.ec", borradoEn: "2026-11-01T10:00:00Z" });
+  const fila = page.locator(".precio-fila");
+  await expect(fila).toContainText("Borrado por yo@test.ec");
+  await expect(fila.getByRole("button", { name: "Guardar", exact: true })).toHaveCount(0);
+  await expect(fila.getByRole("button", { name: "Editar el texto de Poder general" })).toHaveCount(0);
+  await fila.getByRole("button", { name: "Restaurar Poder general" }).click();
+  await expect.poll(() => pedidos[0]).toMatchObject({ accion: "restaurarTramite", tramiteId: "poder" });
+});
+
+test("trámites: copias no se pueden borrar y el personal no ve el botón", async ({ page }) => {
+  await preparar(page, true, { protegido: true });
+  await expect(page.locator(".precio-fila").getByRole("button", { name: /^Borrar/ })).toHaveCount(0);
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await preparar(page, false, { borrado: false });
+  await expect(page.locator(".precio-fila").getByRole("button", { name: /^Borrar/ })).toHaveCount(0);
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await preparar(page, false, { borrado: true });
+  await expect(page.locator(".precio-fila")).toHaveCount(0);
 });

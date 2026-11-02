@@ -1,6 +1,6 @@
 // Precios y textos de trámites públicos: únicamente lo editado en el panel.
 import { leerFunciones } from "./_lib/funciones.js";
-import { textosDeAjustes } from "../js/precios.js";
+import { textosDeAjustes, borradosDeAjustes } from "../js/precios.js";
 import { obtenerServicios } from "./_lib/servicios.js";
 export function crearManejadorPrecios({ almacen }) {
   return async () => {
@@ -11,6 +11,8 @@ export function crearManejadorPrecios({ almacen }) {
       // De los ajustes solo se publican el SBU, el año y la frase de la portada: los cupos y bloqueos de la agenda (con sus motivos) son internos.
       const publicos = Object.fromEntries(["sbu", "anio"].filter((k) => ajustes[k] !== undefined).map((k) => [k, ajustes[k]]));
       if (ajustes["portada.frase"] !== undefined) publicos.frasePortada = ajustes["portada.frase"];
+      const borrados = borradosDeAjustes(ajustes);
+      if (borrados.length) publicos.borrados = borrados;
       return Response.json({ precios, textos: textosDeAjustes(ajustes), ...publicos, funciones: leerFunciones(ajustes) }, { headers: { "Cache-Control": "public, s-maxage=60" } });
     } catch { return Response.json({ error: "No se pudieron cargar los precios." }, { status: 503, headers: { "Cache-Control": "no-store" } }); }
   };

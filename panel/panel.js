@@ -460,11 +460,13 @@ function editorTexto(t) {
       <div class="campo"><label for="tx-pasos">Cómo es el trámite</label><textarea id="tx-pasos" name="pasos" rows="6">${esc(x.pasos)}</textarea><small>Un paso por línea.</small></div>
     </div>
     <div class="campo"><label for="tx-nota">Nota</label><textarea id="tx-nota" name="nota" rows="2" maxlength="500">${esc(x.nota)}</textarea><small>Opcional. Aparece debajo de los requisitos.</small></div>
-    <div class="texto-acciones"><button class="btn" type="submit">Guardar texto</button><button class="btn btn--line" type="button" data-texto="cerrar">Cancelar</button>${t.textoEditado ? '<button class="btn btn--line" type="button" data-texto="restaurar">Volver al texto de la hoja</button>' : ""}</div>
+    <div class="texto-acciones"><button class="btn btn--line" type="button" data-texto="cerrar">Cancelar</button>${t.textoEditado ? '<button class="btn btn--line" type="button" data-texto="restaurar">Volver al texto de la hoja</button>' : ""}</div>
   </form>`;
 }
 const textoDeForm = (form) => { const d = Object.fromEntries(new FormData(form)); return { nombre: d.nombre, desc: d.desc, req: d.req, pasos: d.pasos, nota: d.nota }; };
 const lineas = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
+const claveTexto = (x) => JSON.stringify([x.nombre.trim(), (x.desc || "").trim(), lineas(x.req), lineas(x.pasos), (x.nota || "").trim()]);
+const textoCambiado = (form, t) => claveTexto(textoDeForm(form)) !== claveTexto({ ...t, req: (t.req || []).join("\n"), pasos: (t.pasos || []).join("\n") });
 const ETIQUETA_VALOR = { pct: "Porcentaje del SBU (%)", fija: "Valor en dólares (USD)" };
 // "2026-10-07T15:00:00Z" → "7 oct 2026, 10:00" (hora de Quito).
 function fechaLegible(iso) {
@@ -500,14 +502,16 @@ function pintarPrecios() {
   if (!preciosPanel) return;
   const buscar = $("#preciosBuscar").value.toLocaleLowerCase();
   let categoriaPrecio;
-  $("#preciosLista").innerHTML = `<div class="precios-cabecera"><span>Trámite</span><span>Tipo</span><span>Valor</span><span>Unidad</span><span>Total con IVA</span><span>Acciones</span></div>` + preciosPanel.tramites.toSorted((a,b) => String(a.cat || "").localeCompare(String(b.cat || ""))).filter((t) => t.nombre.toLocaleLowerCase().includes(buscar) && (!$("#preciosEditados").checked || t.editada || t.textoEditado)).map((t) => {
+  $("#preciosLista").innerHTML = `<div class="precios-cabecera"><span>Trámite</span><span>Tipo</span><span>Valor</span><span>Unidad</span><span>Total con IVA</span><span>Acciones</span></div>` + preciosPanel.tramites.toSorted((a,b) => String(a.cat || "").localeCompare(String(b.cat || ""))).filter((t) => (preciosPanel.esAdmin || !t.borrado) && t.nombre.toLocaleLowerCase().includes(buscar) && (!$("#preciosEditados").checked || t.editada || t.textoEditado || t.borrado)).map((t) => {
     const f = borradoresPrecio.get(t.id) || t.tarifa;
-    const campos = preciosPanel.esAdmin ? `<div class="precio-campos">
+    const campos = t.borrado ? "" : preciosPanel.esAdmin ? `<div class="precio-campos">
       <label><span class="rotulo">Tipo</span><select data-campo="tipo">${Object.entries(TIPOS_PRECIO).map(([k, v]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
       <div class="precio-valor"><label><span class="rotulo" data-etiqueta-valor>Valor</span><input data-campo="valor" type="number" step="any" min="0" value="${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) : f.valor ?? "")}"></label>
       <label><span class="rotulo">Tabla</span><select data-campo="tabla">${Object.keys(preciosPanel.tarifas.tablas || {}).map((k) => `<option value="${esc(k)}" ${f.tabla === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
-      </div><label><span class="rotulo">Unidad</span><input data-campo="unidad" placeholder="Ej.: por firma" maxlength="30" value="${esc(f.unidad)}"></label><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output><div class="precio-acciones"><button class="btn" disabled data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div></div>` : `<div class="precio-consulta"><span>${esc(TIPOS_PRECIO[f.tipo])}</span><span>${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) + " %" : f.valor ?? "—")}</span><span>${esc(f.unidad || "—")}</span><output>${esc(finalPrecio(t, tarifasEnPantalla()))}</output><span>Solo lectura</span></div>`;
-    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila${editandoTexto === t.id ? " precio-fila--editando" : ""}${preciosAbiertos.has(t.id) ? " precio-fila--abierta" : ""}" data-tramite="${esc(t.id)}"><div class="precio-nombre"><div class="precio-titulo"><h3>${esc(t.nombre)}</h3>${preciosPanel.esAdmin ? `<button class="lapiz" type="button" data-texto="abrir" aria-expanded="${editandoTexto === t.id}" aria-label="Editar el texto de ${esc(t.nombre)}" title="Editar nombre, descripción y requisitos">${LAPIZ}</button>` : ""}</div><small>${t.editada ? `Precio editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Precio oficial"}</small>${t.textoEditado ? `<small class="texto-estado">Texto editado por ${esc(t.textoPor)} el ${esc(fechaLegible(t.textoEn))}</small>` : ""}<span class="precio-pendiente" hidden>Cambios sin guardar</span>${preciosPanel.esAdmin ? `<button class="btn btn--line abrir-precio" type="button" data-abrir-precio aria-expanded="${preciosAbiertos.has(t.id)}">${preciosAbiertos.has(t.id) ? "Ocultar precio" : "Editar precio"}</button>` : ""}</div>${campos}${editandoTexto === t.id ? editorTexto(t) : ""}</article>`;
+      </div><label><span class="rotulo">Unidad</span><input data-campo="unidad" placeholder="Ej.: por firma" maxlength="30" value="${esc(f.unidad)}"></label><output aria-live="polite">${esc(finalPrecio(t, tarifasEnPantalla()))}</output></div>` : `<div class="precio-consulta"><span>${esc(TIPOS_PRECIO[f.tipo])}</span><span>${esc(f.tipo === "pct" ? +(f.valor * 100).toFixed(6) + " %" : f.valor ?? "—")}</span><span>${esc(f.unidad || "—")}</span><output>${esc(finalPrecio(t, tarifasEnPantalla()))}</output><span>Solo lectura</span></div>`;
+    // Un solo Guardar por trámite: guarda el precio y el texto. Al editar el texto queda al final del formulario.
+    const acciones = preciosPanel.esAdmin && !t.borrado ? `<div class="precio-acciones"><button class="btn" disabled data-precio="guardar">Guardar</button><button class="btn btn--line" data-precio="restaurar">Volver al valor oficial</button></div>` : "";
+    return `${(t.cat || "Otros trámites") !== categoriaPrecio ? `<h3 class="precio-categoria">${esc(categoriaPrecio = t.cat || "Otros trámites")}</h3>` : ""}<article class="precio-fila${t.borrado ? " precio-fila--borrada" : ""}${editandoTexto === t.id ? " precio-fila--editando" : ""}${preciosAbiertos.has(t.id) ? " precio-fila--abierta" : ""}" data-tramite="${esc(t.id)}"><div class="precio-nombre"><div class="precio-titulo"><h3>${esc(t.nombre)}</h3>${preciosPanel.esAdmin && !t.borrado ? `<button class="lapiz" type="button" data-texto="abrir" aria-expanded="${editandoTexto === t.id}" aria-label="Editar el texto de ${esc(t.nombre)}" title="Editar nombre, descripción y requisitos">${LAPIZ}</button>` : ""}</div><small>${t.editada ? `Precio editado por ${esc(t.actualizadoPor)} el ${esc(fechaLegible(t.actualizadoEn))}` : "Precio oficial"}</small>${t.textoEditado ? `<small class="texto-estado">Texto editado por ${esc(t.textoPor)} el ${esc(fechaLegible(t.textoEn))}</small>` : ""}<span class="precio-pendiente" hidden>Cambios sin guardar</span>${t.borrado ? `<small class="texto-estado">Borrado por ${esc(t.borradoPor)} el ${esc(fechaLegible(t.borradoEn))}</small><button class="btn btn--line borrar-tramite" type="button" data-borrar="restaurar" aria-label="Restaurar ${esc(t.nombre)}">Restaurar trámite</button>` : preciosPanel.esAdmin ? `<button class="btn btn--line abrir-precio" type="button" data-abrir-precio aria-expanded="${preciosAbiertos.has(t.id)}">${preciosAbiertos.has(t.id) ? "Ocultar precio" : "Editar precio"}</button>${t.protegido ? "" : `<button class="btn btn--line borrar-tramite" type="button" data-borrar="borrar" aria-label="Borrar ${esc(t.nombre)}">Borrar trámite</button>`}` : ""}</div>${campos}${editandoTexto === t.id ? editorTexto(t) : ""}${acciones}</article>`;
   }).join("") || "<p>No hay trámites con ese nombre.</p>";
   if (!$("#preciosLista .precio-fila")) $("#preciosLista").insertAdjacentHTML("beforeend", "<p>No hay trámites con estos filtros.</p>");
   document.querySelectorAll(".precio-fila").forEach(actualizarPrecio);
@@ -518,7 +522,7 @@ function precioDeFila(fila) {
   return { tramiteId: fila.dataset.tramite, tipo, valor: tipo === "pct" ? Number(campo("valor")) / 100 : Number(campo("valor")), unidad: campo("unidad"), tabla: campo("tabla") };
 }
 function actualizarPrecio(fila) {
-  if (!preciosPanel.esAdmin) return;
+  if (!preciosPanel.esAdmin || fila.classList.contains("precio-fila--borrada")) return;
   const p = precioDeFila(fila);
   fila.querySelector('[data-campo="valor"]').disabled = !["pct", "fija"].includes(p.tipo);
   fila.querySelector('[data-campo="tabla"]').disabled = p.tipo !== "cuantia";
@@ -529,8 +533,9 @@ function actualizarPrecio(fila) {
   const original = preciosPanel.tramites.find(t => t.id === fila.dataset.tramite).tarifa;
   const cambiado = p.tipo !== original.tipo || p.unidad !== (original.unidad || "") || (["pct", "fija"].includes(p.tipo) && Math.abs(p.valor - Number(original.valor)) > 1e-10) || (p.tipo === "cuantia" && p.tabla !== original.tabla);
   fila.classList.toggle("precio-fila--cambiada", cambiado);
-  fila.querySelector(".precio-pendiente").hidden = !cambiado;
-  fila.querySelector('[data-precio="guardar"]').disabled = !cambiado;
+  const form = fila.querySelector("[data-texto-form]"), hayCambios = cambiado || (!!form && textoCambiado(form, preciosPanel.tramites.find(t => t.id === fila.dataset.tramite)));
+  fila.querySelector(".precio-pendiente").hidden = !hayCambios;
+  fila.querySelector('[data-precio="guardar"]').disabled = !hayCambios;
   if (cambiado) borradoresPrecio.set(fila.dataset.tramite, p); else borradoresPrecio.delete(fila.dataset.tramite);
   fila.querySelector("output").textContent = finalPrecio({ tarifa: p }, tarifasEnPantalla());
 }
@@ -551,6 +556,20 @@ $("#preciosV").addEventListener("click", async (e) => {
     } catch (err) { $("#preciosMensaje").textContent = err.message; b.disabled = false; }
   }
 });
+$("#preciosV").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-borrar]");
+  if (!b || !preciosPanel?.esAdmin) return;
+  const id = b.closest(".precio-fila").dataset.tramite, t = preciosPanel.tramites.find((x) => x.id === id), borrar = b.dataset.borrar === "borrar";
+  if (borrar && !confirm(`¿Borrar «${t.nombre}»?\nDejará de verse en la web, en la calculadora y en Sofía. Las citas ya agendadas conservan su nombre y podrás restaurarlo desde aquí.`)) return;
+  b.disabled = true;
+  try {
+    await api("POST", { accion: borrar ? "borrarTramite" : "restaurarTramite", tramiteId: id });
+    if (editandoTexto === id) editandoTexto = null;
+    borradoresTexto.delete(id); borradoresPrecio.delete(id);
+    $("#preciosMensaje").textContent = `${borrar ? "Trámite borrado" : "Trámite restaurado"}. La web lo refleja en 1 minuto y Sofía en hasta 5.`;
+    await cargarPreciosPanel();
+  } catch (err) { $("#preciosMensaje").textContent = err.message; b.disabled = false; }
+});
 $("#preciosV").addEventListener("click", (e) => {
   const b = e.target.closest("[data-abrir-precio]");
   if (!b) return;
@@ -563,20 +582,28 @@ $("#preciosV").addEventListener("input", (e) => {
   const form = e.target.closest("[data-texto-form]");
   if (form) borradoresTexto.set(form.closest(".precio-fila").dataset.tramite, textoDeForm(form));
 });
-$("#preciosV").addEventListener("submit", async (e) => {
+$("#preciosV").addEventListener("submit", (e) => {
   const form = e.target.closest("[data-texto-form]");
   if (!form) return;
   e.preventDefault();
-  const id = form.closest(".precio-fila").dataset.tramite, x = textoDeForm(form), boton = form.querySelector('[type="submit"]');
-  if (x.nombre.trim().length < 3) { $("#preciosMensaje").textContent = "El nombre debe tener al menos 3 caracteres."; return $("#tx-nombre").focus(); }
-  boton.disabled = true;
-  try {
-    await api("POST", { accion: "guardarTexto", tramiteId: id, nombre: x.nombre, desc: x.desc, req: lineas(x.req), pasos: lineas(x.pasos), nota: x.nota });
-    editandoTexto = null; borradoresTexto.delete(id);
-    $("#preciosMensaje").textContent = "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5.";
-    await cargarPreciosPanel();
-  } catch (err) { $("#preciosMensaje").textContent = err.message; boton.disabled = false; }
+  form.closest(".precio-fila").querySelector('[data-precio="guardar"]').click();
 });
+async function guardarFila(fila, b) {
+  const p = precioDeFila(fila), anterior = preciosPanel.tramites.find((t) => t.id === p.tramiteId), form = fila.querySelector("[data-texto-form]");
+  const cambioPrecio = fila.classList.contains("precio-fila--cambiada"), x = form && textoCambiado(form, anterior) ? textoDeForm(form) : null;
+  if (x && x.nombre.trim().length < 3) { $("#preciosMensaje").textContent = "El nombre debe tener al menos 3 caracteres."; return $("#tx-nombre").focus(); }
+  if (cambioPrecio && !confirm(`Antes → Después\n${anterior.nombre}\n${finalPrecio(anterior, preciosPanel.tarifas)} → ${finalPrecio({ tarifa: p }, preciosPanel.tarifas)}`)) return;
+  b.disabled = true;
+  try {
+    if (x) await api("POST", { accion: "guardarTexto", tramiteId: p.tramiteId, nombre: x.nombre, desc: x.desc, req: lineas(x.req), pasos: lineas(x.pasos), nota: x.nota });
+    if (cambioPrecio) await api("POST", { accion: "guardarPrecio", ...p });
+    if (editandoTexto === p.tramiteId) editandoTexto = null;
+    borradoresTexto.delete(p.tramiteId); borradoresPrecio.delete(p.tramiteId);
+    $("#preciosMensaje").textContent = cambioPrecio ? "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior." : "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5.";
+    await cargarPreciosPanel();
+  } catch (err) { $("#preciosMensaje").textContent = err.message; }
+  finally { if (b.isConnected) actualizarPrecio(fila); }
+}
 $("#preciosEditados").addEventListener("change", pintarPrecios);
 $("#preciosBuscar").addEventListener("input", pintarPrecios);
 $("#preciosV").addEventListener("input", (e) => {
@@ -588,6 +615,7 @@ $("#preciosV").addEventListener("change", (e) => { const fila = e.target.closest
 $("#preciosV").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b || !preciosPanel?.esAdmin || !(b.id || b.dataset.precio)) return;
+  if (b.dataset.precio === "guardar") return guardarFila(b.closest(".precio-fila"), b);
   try {
     let pedido;
     if (b.id === "guardarSbu") {
@@ -606,14 +634,8 @@ $("#preciosV").addEventListener("click", async (e) => {
       pedido = { accion: "restaurarFrase" };
     } else {
       const fila = b.closest(".precio-fila"), p = precioDeFila(fila);
-      if (b.dataset.precio === "restaurar") {
-        if (!confirm("¿Volver al valor oficial de este trámite?")) return;
-        pedido = { accion: "restaurarPrecio", tramiteId: p.tramiteId };
-      } else {
-        const anterior = preciosPanel.tramites.find((t) => t.id === p.tramiteId);
-        if (!confirm(`Antes → Después\n${anterior.nombre}\n${finalPrecio(anterior, preciosPanel.tarifas)} → ${finalPrecio({ tarifa: p }, preciosPanel.tarifas)}`)) return;
-        pedido = { accion: "guardarPrecio", ...p };
-      }
+      if (!confirm("¿Volver al valor oficial de este trámite?")) return;
+      pedido = { accion: "restaurarPrecio", tramiteId: p.tramiteId };
     }
     b.disabled = true;
     await api("POST", pedido);

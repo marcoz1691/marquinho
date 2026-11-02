@@ -1,6 +1,6 @@
 import { aplicarFunciones } from "./funciones.js";
 import { cargarPrecios, cargarFunciones } from "./precios.js";
-import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, HABILITANTES, AVISO_HABILITANTES, esHabilitante } from "./nucleo.js";
+import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_HABILITANTES, esHabilitante } from "./nucleo.js";
 
 (function () {
   "use strict";
@@ -62,7 +62,8 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
   /* ---------- Render ---------- */
 
   function renderChips() {
-    var items = [{ id: "destacados", nombre: "Más pedidos" }].concat(state.data.categorias);
+    // Una categoría sin trámites (por ejemplo, si se borraron en el panel) no se ofrece.
+    var items = [{ id: "destacados", nombre: "Más pedidos" }].concat(state.data.categorias.filter(function (c) { return state.data.tramites.some(function (t) { return t.cat === c.id; }); }));
     $("#chips").innerHTML = items.map(function (c) {
       return '<button class="tab" type="button" data-c="' + esc(c.id) + '" aria-pressed="' + (!state.q && state.cat === c.id) + '">' + esc(c.nombre) + "</button>";
     }).join("");
@@ -187,10 +188,10 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       var t = tramite(sel.value);
       if (!t) return;
       var f = t.tarifa, note = t.nota || "";
-      var multi = f.unidad && /por/.test(f.unidad), esCuantia = f.tipo === "cuantia";
+      var multi = cobraPorCantidad(t), esCuantia = f.tipo === "cuantia";
       $("#calcQtyWrap").hidden = !multi;
       $("#calcMontoWrap").hidden = !esCuantia;
-      $("#calcUnit").textContent = multi ? "(" + f.unidad + ")" : "";
+      $("#calcUnit").textContent = multi && f.unidad ? "(" + f.unidad + ")" : "";
       var monto = montoEscrito($("#calcMonto").value);
       // Si el trámite elegido ya es una copia o materialización, no se ofrece sumarla otra vez.
       HABILITANTES.forEach(function (h) {

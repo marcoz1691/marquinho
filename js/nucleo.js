@@ -185,7 +185,7 @@ export function urlPestana(G, gid) {
 // Devuelve { base, iva, total } en USD (null si no se puede calcular) y, para cuantía, { factor, desde, hasta }.
 export function calcularTarifa(t, T, opciones) {
   var f = t.tarifa, o = opciones || {}, r = { base: null, iva: null, total: null };
-  var multi = !!(f.unidad && /por/.test(f.unidad)), qty = Math.max(1, Math.floor(o.cantidad || 1));
+  var multi = cobraPorCantidad(t), qty = Math.max(1, Math.floor(o.cantidad || 1));
   if (f.tipo === "pct") r.base = f.valor * T.sbu * (multi ? qty : 1);
   else if (f.tipo === "fija") r.base = f.valor * (multi ? qty : 1);
   else if (f.tipo === "cuantia" && o.monto > 0) {
@@ -210,6 +210,8 @@ export const HABILITANTES = [
 ];
 // Los trámites de copias y materializaciones son en sí mismos habilitantes: el aviso no aplica a su propio precio.
 export function esHabilitante(id) { return HABILITANTES.some(function (h) { return h.tramite === id; }); }
+// La cantidad multiplica si la unidad dice «por…». Copias y materializaciones se cobran siempre por hoja, aunque el texto de su unidad se deje en blanco.
+export function cobraPorCantidad(t) { var u = t.tarifa.unidad; return esHabilitante(t.id) || !!(u && /por/.test(u)); }
 
 // Tarifa del trámite más los habilitantes que la persona agregue. extras: { copias: n, materializaciones: m }.
 // Devuelve { tramite, habilitantes: [{ id, nombre, cantidad, base, iva, total }], base, iva, total } (null si el trámite no se puede calcular).

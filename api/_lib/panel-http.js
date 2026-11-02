@@ -125,6 +125,8 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     restaurarPrecio: (b, email) => comoAdmin(email, () => panel.restaurarPrecio(b.tramiteId)),
     guardarTexto: (b, email) => comoAdmin(email, () => panel.guardarTexto(b, email), SOLO_EDITORES_TRAMITES),
     restaurarTexto: (b, email) => comoAdmin(email, () => panel.restaurarTexto(b.tramiteId), SOLO_EDITORES_TRAMITES),
+    borrarTramite: (b, email) => comoAdmin(email, () => panel.borrarTramite(b.tramiteId, email), SOLO_EDITORES_TRAMITES),
+    restaurarTramite: (b, email) => comoAdmin(email, () => panel.restaurarTramite(b.tramiteId), SOLO_EDITORES_TRAMITES),
     guardarSBU: (b, email) => comoAdmin(email, () => panel.guardarSBU(b, email)),
     restaurarSBU: (b, email) => comoAdmin(email, () => panel.restaurarSBU()),
     guardarFrase: (b, email) => comoAdmin(email, () => panel.guardarFrase(b, email), SOLO_EDITORES_TRAMITES),

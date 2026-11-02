@@ -13,6 +13,7 @@ import { NOTARIA_POR_DEFECTO } from "./notaria.js";
 // Dirección pública del sitio para los enlaces legales que Sofía comparte por WhatsApp.
 const SITIO = (process.env.SITIO_URL || "https://notaria41.vercel.app").replace(/\/$/, "");
 import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
+import { buscarTramite } from "../../js/precios.js";
 
 const MODELO = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const ESFUERZO = process.env.CLAUDE_EFFORT || "medium";
@@ -251,7 +252,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         const activas = (await almacen.solicitudesCita(conv.id)).filter((x) => (x.estado === "pendiente" || x.estado === "confirmada") &&
           (x.fecha > hoy || (x.fecha === hoy && minutos(x.hora) > ahoraMin)));
         if (activas.length && !i.reprogramar) {
-          const a = activas[0], ta = tramite(a.tramiteId);
+          const a = activas[0], ta = buscarTramite(C, a.tramiteId);
           return error(`El cliente ya tiene una cita ${a.estado}${ta ? " para " + ta.nombre : ""} el ${a.fecha} a las ${a.hora}. Pregúntale si quiere cambiarla por esta; si dice que sí, vuelve a usar solicitar_cita con reprogramar: true.`);
         }
         // Cupo por hora: cuentan las citas pendientes y confirmadas que empiezan en esa misma hora.
@@ -341,7 +342,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         return ok("Conversación derivada. No vuelvas a responder; despídete diciendo que una persona le escribirá pronto.");
 
       case "estado_de_mi_tramite": {
-        const nombreDe = (id) => (tramite(id) || {}).nombre || "trámite por definir";
+        const nombreDe = (id) => buscarTramite(C, id)?.nombre || "trámite por definir";
         const citas = (await almacen.solicitudesCita(conv.id)).filter((c) => !i.codigo || c.codigo === i.codigo).map((c) => `Solicitud de cita:${c.codigo ? " Ticket " + c.codigo + " —" : ""} ${nombreDe(c.tramiteId)} — ${c.fecha} ${c.hora} — ${c.estado}`);
         const docs = (await almacen.documentos(conv.id)).map((d) => `Documento: ${d.descripcion}${d.tramiteId ? " (" + nombreDe(d.tramiteId) + ")" : ""} — ${d.estado || "recibido"}${d.nota ? ": " + d.nota : ""}`);
         return ok([...citas, ...docs].join("\n") || "No hay solicitudes de cita ni documentos registrados.");

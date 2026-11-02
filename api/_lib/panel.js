@@ -8,7 +8,7 @@ import { Aviso } from "./errores.js";
 import { registrarEvento, TEXTOS } from "./eventos.js";
 import { NOTARIA_POR_DEFECTO } from "./notaria.js";
 import { esHabilitante } from "../../js/nucleo.js";
-import { textoValido, textosDeAjustes, fraseValida, LIMITES_FRASE } from "../../js/precios.js";
+import { textoValido, textosDeAjustes, fraseValida, buscarTramite, LIMITES_FRASE } from "../../js/precios.js";
 
 const VENTANA_MS = 24 * 60 * 60 * 1000;
 const ESTADOS_CITA = ["confirmada", "rechazada", "atendida"];
@@ -220,9 +220,11 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
         // El texto editado se muestra en lugar del de la hoja; «oficial» guarda el de la hoja para poder volver a él.
         const texto = Object.hasOwn(textos, t.id) ? textoValido(textos[t.id]) : null, d = texto && detalles.find((x) => x.clave === "tramite." + t.id);
         const oficial = { nombre: t.nombre, desc: t.desc || "", req: t.req || [], pasos: t.pasos || [], nota: t.nota || "" };
+        const b = detalles.find((x) => x.clave === "borrado." + t.id);
         return { ...t, ...(texto || {}), oficial, tarifa: p ? { tipo: p.tipo, valor: p.valor, unidad: p.unidad, tabla: p.tabla } : t.tarifa,
           editada: !!p, actualizadoPor: p?.actualizadoPor || "", actualizadoEn: p?.actualizadoEn || "",
-          textoEditado: !!texto, textoPor: d?.actualizadoPor || "", textoEn: d?.actualizadoEn || "" };
+          textoEditado: !!texto, textoPor: d?.actualizadoPor || "", textoEn: d?.actualizadoEn || "",
+          protegido: esHabilitante(t.id), borrado: !!b, borradoPor: b?.actualizadoPor || "", borradoEn: b?.actualizadoEn || "" };
       }) };
     },
     // Nombre, descripción, requisitos, pasos y nota de un trámite: se ven en la web y en Sofía sobre lo que dice la hoja.
@@ -234,6 +236,15 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       contenido.invalidar?.();
     },
     async restaurarTexto(id) { await tramitePrecio(id); await almacen.restaurarAjuste("tramite." + id); contenido.invalidar?.(); },
+    // El trámite deja de ofrecerse en la web y en Sofía; su ficha se conserva para las citas ya agendadas y para poder restaurarlo.
+    async borrarTramite(id, por) {
+      await tramitePrecio(id);
+      // La calculadora y Sofía suman copias y materializaciones al total de los demás trámites.
+      if (esHabilitante(id)) throw new Aviso("Las copias certificadas y las materializaciones son documentos habilitantes: no se pueden borrar.");
+      await almacen.guardarAjuste("borrado." + id, "1", por);
+      contenido.invalidar?.();
+    },
+    async restaurarTramite(id) { await tramitePrecio(id); await almacen.restaurarAjuste("borrado." + id); contenido.invalidar?.(); },
     async guardarPrecio(p, por) {
       const C = await tramitePrecio(p.tramiteId);
       if (!["pct", "fija", "cuantia", "consultar"].includes(p.tipo)) throw new Aviso("Tipo de precio inválido.");
@@ -242,8 +253,8 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (esHabilitante(p.tramiteId) && !["pct", "fija"].includes(p.tipo)) throw new Aviso("Las copias certificadas y las materializaciones son documentos habilitantes: deben tener un precio por hoja (valor fijo o porcentaje del SBU).");
       if (p.tipo === "pct" && !(typeof p.valor === "number" && p.valor >= 0.001 && p.valor <= 5)) throw new Aviso("El porcentaje del SBU debe estar entre 0,1 % y 500 %.");
       if (p.tipo === "fija" && !(typeof p.valor === "number" && p.valor >= 0.01 && p.valor <= 1000)) throw new Aviso("El valor fijo debe estar entre $0,01 y $1000.");
-      // Si el trámite se cobra por unidad (por hoja, por firma…), la unidad debe seguir diciéndolo: de lo contrario la cantidad deja de multiplicar.
-      if (["pct", "fija"].includes(p.tipo) && /por/.test(oficial?.tarifa?.unidad || "") && !/por/.test(p.unidad || "")) throw new Aviso("Este trámite se cobra por unidad: la unidad debe empezar con «por» (por hoja, por firma…).");
+      // En un trámite por unidad, la unidad puede quedar en blanco (precio único) o decir «por…»: otro texto parecería por unidad, pero la cantidad no multiplicaría.
+      if (["pct", "fija"].includes(p.tipo) && /por/.test(oficial?.tarifa?.unidad || "") && String(p.unidad ?? "").trim() && !/por/.test(p.unidad)) throw new Aviso("Este trámite se cobra por unidad: deja la unidad en blanco o escríbela con «por» (por hoja, por firma…).");
       if (p.tipo === "cuantia" && !Object.hasOwn(C.tarifas.tablas || {}, p.tabla)) throw new Aviso("Tabla de cuantía inválida.");
       if (typeof (p.unidad ?? "") !== "string" || !/^[\p{L}\p{N} .,/-]{0,30}$/u.test(p.unidad || "")) throw new Aviso("La unidad puede tener hasta 30 letras, números o signos simples (por ejemplo «por hoja»).");
       await almacen.guardarPrecio({ tramiteId: p.tramiteId, tipo: p.tipo, valor: ["pct", "fija"].includes(p.tipo) ? p.valor : null,
@@ -273,7 +284,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     async detalle(id) {
       const c = await conversacion(id);
       const C = await contenido();
-      const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
+      const nombreDe = (tid) => buscarTramite(C, tid)?.nombre || "Por definir";
       return {
         conversacion: c,
         canal: canalDe(c.telefono),
@@ -300,7 +311,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       fecha = fecha || new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new Aviso("Fecha inválida");
       const C = await contenido();
-      const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
+      const nombreDe = (tid) => buscarTramite(C, tid)?.nombre || "Por definir";
       return { fecha, personal: await almacen.listaPersonal(), citas: (await almacen.agenda(fecha)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: nombreDe(x.tramiteId) })) };
     },
 
@@ -308,7 +319,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (!/^[1-9]\d{3}$/.test(codigo || "")) throw new Aviso("Escribe un ticket válido de 4 dígitos.");
       const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(ahora());
       const C = await contenido();
-      return (await almacen.citasPorCodigo(codigo, hoy)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: (C.data.tramites.find((t) => t.id === x.tramiteId) || {}).nombre || "Por definir" }));
+      return (await almacen.citasPorCodigo(codigo, hoy)).map((x) => ({ ...x, canal: canalDe(x.telefonoConversacion), tramite: buscarTramite(C, x.tramiteId)?.nombre || "Por definir" }));
     },
 
     // Solo el notario o un administrador reparte citas a mano; los matriceros solo llevan las suyas.
@@ -322,7 +333,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
     // No incluye celulares ni notas del cliente.
     async miTurno(por) {
       const fecha = hoyQuito(), C = await contenido();
-      const nombreDe = (tid) => (C.data.tramites.find((t) => t.id === tid) || {}).nombre || "Por definir";
+      const nombreDe = (tid) => buscarTramite(C, tid)?.nombre || "Por definir";
       const citas = (await almacen.agenda(fecha)).filter((x) => ["confirmada", "atendida"].includes(x.estado))
         .map(({ telefono, telefonoConversacion, contacto, nota, motivo, ...x }) => ({ ...x, tramite: nombreDe(x.tramiteId) }));
       return {
@@ -406,7 +417,7 @@ export function crearPanel({ almacen, whatsapp, contenido, ahora = () => new Dat
       if (["atendida", "rechazada"].includes(estado)) await registrar(almacen, estado === "atendida" ? "cita.atendida" : "cita.cancelada", 1, ahora());
       if (estado === "atendida") return { avisado: false };
       const c = await conversacion(cita.conversacionId), C = await contenido();
-      const tramite = (C.data.tramites.find((t) => t.id === cita.tramiteId) || {}).nombre;
+      const tramite = buscarTramite(C, cita.tramiteId)?.nombre;
       const dia = new Intl.DateTimeFormat("es-EC", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(cita.fecha + "T12:00:00Z"));
       const texto = estado === "confirmada"
         ? `Hola ${cita.nombre}, tu cita${tramite ? " para " + tramite : ""} quedó confirmada para el ${dia} a las ${cita.hora} en la ${C.notaria.nombre} (${C.notaria.direccion}). Recuerda traer tus documentos originales.`

@@ -1,5 +1,6 @@
 import { leerAjustes, funcionActiva } from "./funciones.js";
 import { registrar } from "./metricas.js";
+import { buscarTramite } from "../../js/precios.js";
 // Recordatorio el día anterior a cada cita confirmada (mensaje de plantilla aprobada por Meta).
 export async function enviarRecordatorios({ almacen, whatsapp, contenido, plantilla, ahora = () => new Date() }) {
   if (!funcionActiva(await leerAjustes(almacen), "recordatorios")) return 0;
@@ -7,7 +8,7 @@ export async function enviarRecordatorios({ almacen, whatsapp, contenido, planti
   const C = await contenido();
   let enviados = 0;
   for (const c of await almacen.citasDelDia(manana)) {
-    const tramite = (C.data.tramites.find((t) => t.id === c.tramiteId) || {}).nombre || "tu trámite";
+    const tramite = buscarTramite(C, c.tramiteId)?.nombre || "tu trámite";
     try {
       await whatsapp.enviarPlantilla(c.telefono, plantilla, [c.nombre, tramite, c.hora]);
       await registrar(almacen, "recordatorio.enviado", 1, ahora());
@@ -26,7 +27,7 @@ export async function resumenDelDia({ almacen, whatsapp, contenido, plantilla, d
   const citas = (await almacen.agenda(hoy)).filter((c) => c.estado === "confirmada" || c.estado === "pendiente");
   if (!citas.length || !destino) return 0;
   const C = await contenido();
-  const nombreDe = (id) => (C.data.tramites.find((t) => t.id === id) || {}).nombre || "trámite por definir";
+  const nombreDe = (id) => buscarTramite(C, id)?.nombre || "trámite por definir";
   const lista = citas.map((c) => `${c.hora} ${c.nombre} (${nombreDe(c.tramiteId)}${c.estado === "pendiente" ? ", pendiente" : ""})`).join("; ");
   // Los parámetros de una plantilla no admiten saltos de línea.
   await whatsapp.enviarPlantilla(destino, plantilla, [`Citas de hoy (${citas.length}): ${lista}. Repártelas en el panel.`.slice(0, 1000)]);

@@ -12,6 +12,7 @@ import { validarArchivo, limpiarDescripcion, limpiarNombre, ERROR_DESCRIPCION } 
 import { celular, fechaQuito } from "./citas.js";
 import { correoCodigo } from "./correos-cliente.js";
 import { precioTexto } from "../../js/nucleo.js";
+import { buscarTramite } from "../../js/precios.js";
 
 const MINUTO = 60e3, HORA = 60 * MINUTO, DIA = 24 * HORA;
 const VIGENCIA_CODIGO = 10 * MINUTO, ESPERA_REENVIO = MINUTO;
@@ -53,7 +54,7 @@ function resumir(t, C, hoy) {
   const docs = t.documentos || [];
   const observados = docs.filter((d) => d.estado === "observado").length, recibidos = docs.filter((d) => d.estado === "recibido").length;
   const activo = VIGENTES.includes(t.estado) && t.fecha >= hoy;
-  const ficha = C?.data?.tramites?.find((x) => x.id === t.tramiteId);
+  const ficha = C?.data?.tramites ? buscarTramite(C, t.tramiteId) : undefined;
   const pago = (t.pagos || []).at(-1);
   const estadoTexto = VIGENTES.includes(t.estado) && !activo ? "La fecha de tu cita ya pasó" : ESTADO_CITA[t.estado] || "En revisión";
   const siguientePaso = !activo
