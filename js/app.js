@@ -91,8 +91,16 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
       }).join("") + "</ul></div>" +
       (t.pasos.length ? '<div><h4>Cómo es el trámite</h4><ol class="pasos">' + t.pasos.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ol></div>" : "") +
-      "</div>" + (t.nota ? '<p class="nota">' + esc(t.nota) + "</p>" : "") + sofia(t) +
+      "</div>" + formularios(t) + (t.nota ? '<p class="nota">' + esc(t.nota) + "</p>" : "") + sofia(t) +
       '<div class="acts">' + acciones.join("") + "</div>";
+  }
+
+  // Formularios oficiales del trámite: cada botón abre su PDF en otra pestaña.
+  function formularios(t) {
+    if (!(t.formularios || []).length) return "";
+    return '<div class="acts">' + t.formularios.map(function (f) {
+      return '<a class="act" target="_blank" rel="noopener" href="' + esc(f.url) + '"><i class="ph ph-files" aria-hidden="true"></i>' + esc(f.nombre) + "</a>";
+    }).join("") + "</div>";
   }
 
   // La web da lo general; el asistente resuelve el caso particular de cada persona.

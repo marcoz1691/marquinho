@@ -455,6 +455,16 @@
     "Audiencia y ratificación de los cónyuges",
     "Entrega del acta y marginación en el Registro Civil"
    ],
+   "formularios": [
+    {
+     "nombre": "Formulario de divorcio por mutuo consentimiento",
+     "url": "https://www.funcionjudicial.gob.ec/resources/pdf/Anexo%20-%20Formulario%20para%20Divorcio.pdf"
+    },
+    {
+     "nombre": "Formulario de terminación de la Unión de hecho",
+     "url": "https://www.funcionjudicial.gob.ec/resources/pdf/Anexo%20-%20Formulario%20para%20la%20terminaci%C3%B3n%20de%20la%20Uni%C3%B3n%20de%20hecho.pdf"
+    }
+   ],
    "tarifa": {
     "tipo": "pct",
     "valor": 0.39
