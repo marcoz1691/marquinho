@@ -120,6 +120,8 @@ export function desdeHoja(tabs, base) {
     // Sin la columna de revisión en la hoja, se conserva la marca local: nunca confirmar solo un trámite largo por omisión.
     var conColumna = Object.keys(o).some(function (k) { return k.indexOf("revision") === 0; });
     var local = (base.data.tramites || []).find(function (x) { return x.id === t.id; }) || {};
+    // La hoja no tiene columna de formularios: se conservan los enlaces locales.
+    if (local.formularios) t.formularios = local.formularios;
     if (conColumna ? /^s/.test(norm(o.get("revision"))) : local.revision) t.revision = true;
     return t;
   }).filter(function (t) { return t.nombre && t.cat; });
