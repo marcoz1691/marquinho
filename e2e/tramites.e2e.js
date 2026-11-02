@@ -7,18 +7,23 @@ const detalle = (page) => page.locator("#detalleTramite");
 const pestana = (page, nombre) => page.locator("#chips .tab", { hasText: nombre });
 
 test.describe("Catálogo de trámites", () => {
-  test("el divorcio ofrece sus dos formularios oficiales y otro trámite no @movil", async ({ page }) => {
+  test("divorcio y terminación de unión de hecho ofrecen cada uno su formulario oficial, y otro trámite no @movil", async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await abrirPortada(page);
     await page.locator('#menu a[href="#tramites"]').click();
     await pestana(page, "Familia").click();
+    const formularios = detalle(page).getByRole("link", { name: /^Formulario/ });
     await page.locator('[data-sel="divorcio"]').click();
-    const enlace = (nombre) => detalle(page).getByRole("link", { name: nombre, exact: true });
-    await expect(enlace("Formulario de divorcio por mutuo consentimiento")).toHaveAttribute("href", "https://www.funcionjudicial.gob.ec/resources/pdf/Anexo%20-%20Formulario%20para%20Divorcio.pdf");
-    await expect(enlace("Formulario de terminación de la Unión de hecho")).toHaveAttribute("href", "https://www.funcionjudicial.gob.ec/resources/pdf/Anexo%20-%20Formulario%20para%20la%20terminaci%C3%B3n%20de%20la%20Uni%C3%B3n%20de%20hecho.pdf");
-    await expect(enlace("Formulario de divorcio por mutuo consentimiento")).toHaveAttribute("target", "_blank");
+    await expect(formularios).toHaveCount(1);
+    await expect(formularios).toHaveText("Formulario de divorcio por mutuo consentimiento");
+    await expect(formularios).toHaveAttribute("href", "https://www.funcionjudicial.gob.ec/resources/pdf/Anexo%20-%20Formulario%20para%20Divorcio.pdf");
+    await expect(formularios).toHaveAttribute("target", "_blank");
+    await page.locator('[data-sel="terminacion-union"]').click();
+    await expect(formularios).toHaveCount(1);
+    await expect(formularios).toHaveText("Formulario de terminación de la Unión de hecho");
+    await expect(formularios).toHaveAttribute("href", "https://www.funcionjudicial.gob.ec/resources/pdf/Anexo%20-%20Formulario%20para%20la%20terminaci%C3%B3n%20de%20la%20Uni%C3%B3n%20de%20hecho.pdf");
     await page.locator('[data-sel="union-hecho"]').click();
-    await expect(detalle(page).getByRole("link", { name: /^Formulario/ })).toHaveCount(0);
+    await expect(formularios).toHaveCount(0);
   });
   test("CF-10 la pestaña inicial muestra los trámites más pedidos según el notario, en orden", async ({ page }) => {
     await abrirPortada(page);
