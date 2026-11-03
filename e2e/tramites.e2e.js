@@ -7,6 +7,26 @@ const detalle = (page) => page.locator("#detalleTramite");
 const pestana = (page, nombre) => page.locator("#chips .tab", { hasText: nombre });
 
 test.describe("Catálogo de trámites", () => {
+  test("el aviso de valor referencial sale en el trámite y en la calculadora, sin repetirse ni en trámites sin precio", async ({ page }) => {
+    const aviso = "El valor es referencial. El costo definitivo se establecerá al ingresar el trámite en el Sistema Informático Notarial";
+    // Un trámite al que el notario ya le puso ese texto en su nota desde el panel no lo muestra dos veces.
+    await page.route("**/api/precios", (r) => r.fulfill({ json: { precios: {}, funciones: {}, textos: { "poder-natural": { nombre: "Poder general o especial (persona natural)", desc: "D", req: ["Minuta"], pasos: ["Firma"], nota: "Nota. El valor es referencial. El costo definitivo se establecerá al ingresar el tramite." } } } }));
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await abrirPortada(page);
+    await page.locator('[data-sel="compraventa-vehiculo"]').click();
+    await expect(detalle(page).locator(".tp__aviso")).toHaveText(new RegExp("^" + aviso));
+    await expect(detalle(page)).not.toContainText("no incluye documentos habilitantes");
+    await page.locator('[data-sel="poder-natural"]').click();
+    await expect(detalle(page)).toContainText("valor es referencial", { ignoreCase: true });
+    await expect(detalle(page).locator(".tp__aviso")).toHaveCount(0);
+    await page.locator("#calcTramite").selectOption("compraventa-vehiculo");
+    await expect(page.locator("#calcAviso")).toContainText(aviso);
+    await page.locator("#calcTramite").selectOption("poder-natural");
+    await expect(page.locator("#calcAviso")).toBeEmpty();
+    await page.goto("/#t-arrendamiento");
+    await expect(detalle(page)).toContainText("Consultar");
+    await expect(detalle(page)).not.toContainText("valor es referencial");
+  });
   test("divorcio y terminación de unión de hecho ofrecen cada uno su formulario oficial, y otro trámite no @movil", async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await abrirPortada(page);

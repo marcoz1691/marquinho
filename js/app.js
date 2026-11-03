@@ -1,6 +1,6 @@
 import { aplicarFunciones } from "./funciones.js";
 import { cargarPrecios, cargarFunciones } from "./precios.js";
-import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_HABILITANTES, esHabilitante } from "./nucleo.js";
+import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_VALOR, muestraAvisoValor } from "./nucleo.js";
 
 (function () {
   "use strict";
@@ -86,7 +86,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     return '<button class="tp__cerrar" type="button" data-cerrar aria-label="Cerrar el trámite"><i class="ph ph-x" aria-hidden="true"></i></button>' +
       '<div class="tp__top"><p class="tp__cat">' + esc(cat) + '</p><h3 class="tp__nombre">' + esc(t.nombre) + '</h3><p class="tp__desc">' + esc(t.desc) + "</p></div>" +
       '<p class="tp__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
-      (esHabilitante(t.id) ? "" : '<p class="tp__aviso">' + esc(AVISO_HABILITANTES) + "</p>") +
+      (muestraAvisoValor(t) ? '<p class="tp__aviso">' + esc(AVISO_VALOR) + "</p>" : "") +
       '<div class="tp__cols"><div><h4>Requisitos <span class="hint">marca lo que ya tienes</span></h4><ul class="check">' +
       t.req.map(function (r, i) {
         return '<li><label><input type="checkbox" data-t="' + esc(t.id) + '" data-i="' + i + '"' + (hechos.indexOf(i) !== -1 ? " checked" : "") + "><span>" + esc(r) + "</span></label></li>";
@@ -218,7 +218,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       if (c.total === null) { $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-"; }
       else { $("#rBase").textContent = money(r.base); $("#rIva").textContent = money(c.iva); cifras($("#rTotal"), money(c.total)); }
       $("#calcNote").textContent = note;
-      $("#calcAviso").textContent = c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : esHabilitante(t.id) ? "" : AVISO_HABILITANTES;
+      $("#calcAviso").textContent = [c.habilitantes.length ? "Incluye los documentos habilitantes que agregaste; se cobran por hoja." : "", muestraAvisoValor(t) ? AVISO_VALOR : ""].filter(Boolean).join(" ");
     }
     habs.addEventListener("click", function (e) {
       var b = e.target.closest("[data-mas],[data-menos]");

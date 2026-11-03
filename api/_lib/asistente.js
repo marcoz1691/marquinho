@@ -12,7 +12,7 @@ import { emitirVinculo } from "./vinculos.js";
 import { NOTARIA_POR_DEFECTO } from "./notaria.js";
 // Dirección pública del sitio para los enlaces legales que Sofía comparte por WhatsApp.
 const SITIO = (process.env.SITIO_URL || "https://notaria41.vercel.app").replace(/\/$/, "");
-import { calcularTarifa, money, precioTexto, minutos, AVISO_HABILITANTES, HABILITANTES } from "../../js/nucleo.js";
+import { calcularTarifa, money, precioTexto, minutos, AVISO_VALOR, muestraAvisoValor, HABILITANTES } from "../../js/nucleo.js";
 import { buscarTramite } from "../../js/precios.js";
 
 const MODELO = process.env.CLAUDE_MODEL || "claude-opus-5-5";
@@ -225,7 +225,7 @@ export function crearAsistente({ claude, almacen, whatsapp, contenido, avisar, a
         if (r.total === null) return ok(`${t.nombre} se calcula según la cuantía: pide el valor del contrato o el avalúo catastral en USD.`);
         return ok(`${t.nombre}: tarifa ${money(r.base)} + IVA ${money(r.iva)} = total ${money(r.total)}` +
           (r.factor ? ` (rango hasta ${r.hasta === null ? "en adelante" : money(r.hasta)}, ${r.factor} SBU)` : "") +
-          `. ${t.nota || ""} Valores oficiales referenciales (SBU ${money(C.tarifas.sbu)}). ${HABILITANTES.some((h) => h.tramite === t.id) ? "" : AVISO_HABILITANTES}`.replace(/\s+/g, " ").trim());
+          `. ${t.nota || ""} Valores oficiales referenciales (SBU ${money(C.tarifas.sbu)}). ${muestraAvisoValor(t) ? AVISO_VALOR : ""}`.replace(/\s+/g, " ").trim());
       }
 
       case "solicitar_cita": {

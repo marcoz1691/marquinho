@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCSV, num, fecha, desdeHoja, calcularTarifa, calcularConHabilitantes, esHabilitante, HABILITANTES, AVISO_HABILITANTES, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
+import { parseCSV, num, fecha, desdeHoja, calcularTarifa, calcularConHabilitantes, esHabilitante, HABILITANTES, AVISO_VALOR, muestraAvisoValor, precioTexto, montoEscrito, estaAbierto } from "../js/nucleo.js";
 
 const TARIFAS = {
   sbu: 482, iva: 0.15, anio: 2026,
@@ -129,7 +129,10 @@ describe("calcularConHabilitantes", () => {
   const tramites = [poder, copias, electronica, compraventa];
 
   it("expone el aviso y los habilitantes con su trámite de precio", () => {
-    expect(AVISO_HABILITANTES).toMatch(/no incluye documentos habilitantes/);
+    expect(AVISO_VALOR).toMatch(/^El valor es referencial\. El costo definitivo se establecerá al ingresar el trámite en el Sistema Informático Notarial/);
+    expect(muestraAvisoValor(poder)).toBe(true);
+    expect(muestraAvisoValor({ tarifa: { tipo: "consultar" } })).toBe(false);
+    expect(muestraAvisoValor({ ...poder, nota: "Nota. El valor es referencial." })).toBe(false);
     expect(HABILITANTES.map((h) => h.tramite)).toEqual(["copias-certificadas", "certificacion-electronica"]);
   });
 

@@ -1,5 +1,5 @@
 // Resumen compartido por la tarjeta web y el mensaje de WhatsApp.
-import { calcularTarifa, money, AVISO_HABILITANTES } from "../../js/nucleo.js";
+import { calcularTarifa, money, AVISO_VALOR } from "../../js/nucleo.js";
 import { buscarTramite } from "../../js/precios.js";
 
 export function construirResumen(cita, C, { subirDocumentos = false } = {}) {
@@ -10,7 +10,7 @@ export function construirResumen(cita, C, { subirDocumentos = false } = {}) {
     .format(new Date(cita.fecha + "T12:00:00Z")).replace(",", "");
   return { tipo: "cita", codigo: cita.codigo ?? null, estado: cita.estado, fecha: cita.fecha, fechaTexto, hora: cita.hora, nombre: cita.nombre,
     tramite: tramite ? { id: tramite.id, nombre: tramite.nombre } : null, direccion: C.notaria.direccion, requisitos: [...(tramite?.req || [])],
-    costo, aviso: costo ? AVISO_HABILITANTES : null, subirDocumentos };
+    costo, aviso: costo ? AVISO_VALOR : null, subirDocumentos };
 }
 
 export function textoResumen(r) {
