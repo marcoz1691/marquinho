@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Solo lectura del repositorio: el CI no publica ni despliega (Vercel despliega al fusionar a main).
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    name: Dependencias, Vitest y Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Acciones fijadas por SHA: una etiqueta movida no cambia lo que corre aquí.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias (sin scripts de instalación)
+        run: npm ci --ignore-scripts
+
+      - name: Pruebas unitarias
+        run: npm test
+
+      - name: Navegador de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas de extremo a extremo
+        run: npm run test:e2e
+
+      # Al final, para que una vulnerabilidad nueva no oculte si las pruebas pasan.
+      - name: Dependencias sin vulnerabilidades altas
+        run: npm audit --audit-level=high
+
+      - name: Trazas de las pruebas que fallaron
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: resultados-e2e
+          path: e2e/resultados
+          retention-days: 3
