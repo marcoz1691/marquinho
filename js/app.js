@@ -1,6 +1,6 @@
 import { aplicarFunciones } from "./funciones.js";
 import { cargarPrecios, cargarFunciones } from "./precios.js";
-import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_VALOR, muestraAvisoValor, esHabilitante } from "./nucleo.js";
+import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_VALOR, muestraAvisoValor } from "./nucleo.js";
 
 (function () {
   "use strict";
