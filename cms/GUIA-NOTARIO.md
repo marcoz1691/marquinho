@@ -49,13 +49,15 @@ Abre el enlace de la hoja «Notaría 41 – Contenido web» con tu cuenta de Gma
 
 ## Cambiar un precio desde el panel
 
-Entra al panel y abre **Precios**. Busca el trámite y, con una cuenta administradora, elige el tipo, valor y unidad. Para porcentajes escribe el porcentaje (por ejemplo, 12 para el 12 % del SBU). El precio final con IVA se actualiza mientras escribes. Pulsa **Guardar** y confirma el cambio «Antes → Después». Usa **Volver al valor oficial** para quitar una edición. Arriba puedes cambiar el SBU y el año. El personal puede consultar los precios, pero solo los administradores pueden cambiarlos. La web lo muestra en un minuto y Sofía en hasta cinco; una conversación que ya estaba abierta con Sofía puede seguir citando el valor anterior.
+Entra al panel y abre **Contenido web**. Busca el trámite y, con una cuenta administradora, elige el tipo, valor y unidad. Para porcentajes escribe el porcentaje (por ejemplo, 12 para el 12 % del SBU). El precio final con IVA se actualiza mientras escribes. Pulsa **Guardar** y confirma el cambio «Antes → Después». Usa **Volver al valor oficial** para quitar una edición. Arriba puedes cambiar el SBU y el año. El personal puede consultar los precios, pero solo los administradores pueden cambiarlos. La web lo muestra en un minuto y Sofía en hasta cinco; una conversación que ya estaba abierta con Sofía puede seguir citando el valor anterior.
 
 Reglas que el panel aplica por ti, para evitar errores de dedo:
 - En los trámites que se cobran por unidad, la unidad puede decir «por…» (por hoja, por firma…) o quedar en blanco. En blanco se cobra un precio único y la calculadora ya no pide cantidad, salvo en copias certificadas y materializaciones, que siempre se calculan por hoja. Otros textos, como «hoja» o «c/u», no se aceptan.
 - Las copias certificadas y las materializaciones siempre llevan un precio por hoja: no se pueden dejar en «Consultar» o «Según cuantía».
 - El porcentaje del SBU va de 0,1 % a 500 % y un valor fijo de $0,01 a $1000.
 - Si cambias el SBU o el año aquí, los cambios de la hoja de Google dejan de verse hasta que pulses **Volver al SBU de la hoja**.
+
+**Preguntas frecuentes.** En **Contenido web**, abre «Preguntas frecuentes» arriba de la lista. Puedes cambiar cada pregunta y su respuesta, agregar, quitar y cambiar el orden en que salen en la web con **Mover arriba** y **Mover abajo**; luego pulsa **Guardar preguntas**. La web las muestra en un minuto y Sofía las usa en hasta cinco. Mientras estén editadas aquí, las de la hoja de Google no se ven; **Volver a las preguntas de la hoja** quita la edición. Lo pueden hacer el notario y los administradores.
 
 **Borrar un trámite.** Con una cuenta de notario o administrador, abre el trámite en el panel y pulsa **Borrar trámite**. Deja de verse en la web, en la calculadora y en Sofía; la web lo muestra en un minuto y Sofía en hasta cinco. Las citas ya agendadas conservan su nombre. Para recuperarlo con sus textos y precios, pulsa **Restaurar trámite** en la misma fila. Las copias certificadas y las materializaciones no se pueden borrar, porque se suman al costo de otros trámites.
 

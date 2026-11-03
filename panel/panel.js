@@ -495,8 +495,9 @@ async function cargarPreciosPanel() {
     preciosPanel = await api("GET", { accion: "precios" });
     const T = preciosPanel.tarifas;
     $("#preciosAjustes").innerHTML = preciosPanel.esAdmin
-      ? `<h3>Salario básico (SBU) y año</h3><label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}${editorFrase(preciosPanel.frasePortada)}`
+      ? `<h3>Salario básico (SBU) y año</h3><label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}${editorFrase(preciosPanel.frasePortada)}${editorFaq(preciosPanel.faq)}`
       : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>${preciosPanel.frasePortada ? `<p>Frase de la portada: «${esc(preciosPanel.frasePortada.valor)}» · Solo lectura</p>` : ""}`;
+    if ($("#faqEditor")) numerarFaq();
     pintarPrecios();
   } catch (e) { $("#preciosMensaje").textContent = e.message; }
 }
@@ -504,6 +505,44 @@ function editorFrase(f) {
   if (!f) return "";
   return `<h3>Frase de la portada</h3><label class="frase-portada">La frase grande que aparece al bajar de la portada, encima de los trámites<textarea id="fraseTexto" rows="3" maxlength="200">${esc(f.valor)}</textarea></label><button class="btn" id="guardarFrase">Guardar frase</button>${f.editada ? `<p class="aviso-sbu">Frase cambiada por ${esc(f.por)} el ${esc(fechaLegible(f.en))}. La hoja de Google dice: «${esc(f.oficial)}». <button class="btn btn--line" id="restaurarFrase">Volver a la frase de la hoja</button></p>` : ""}`;
 }
+// Preguntas frecuentes de la web: se agregan, quitan y ordenan aquí y se guardan todas juntas.
+function preguntaFaq(f = { q: "", a: "" }) {
+  return `<fieldset class="faq-item"><legend></legend><label>Pregunta<input data-faq="q" maxlength="200" value="${esc(f.q)}"></label><label>Respuesta<textarea data-faq="a" rows="3" maxlength="1000">${esc(f.a)}</textarea></label><div class="faq-item__acciones"><button class="btn btn--line" type="button" data-faq-mover="-1">Mover arriba</button><button class="btn btn--line" type="button" data-faq-mover="1">Mover abajo</button><button class="btn btn--line" type="button" data-faq-quitar>Quitar</button></div></fieldset>`;
+}
+function numerarFaq() {
+  document.querySelectorAll("#faqEditor .faq-item").forEach((el, i, todos) => {
+    el.querySelector("legend").textContent = `Pregunta ${i + 1}`;
+    el.querySelectorAll("[data-faq-mover]").forEach((b) => { b.setAttribute("aria-label", `Mover ${b.dataset.faqMover === "-1" ? "arriba" : "abajo"} la pregunta ${i + 1}`); b.disabled = b.dataset.faqMover === "-1" ? i === 0 : i === todos.length - 1; });
+    el.querySelector("[data-faq-quitar]").setAttribute("aria-label", `Quitar la pregunta ${i + 1}`);
+  });
+}
+// Plegable para no empujar la lista de trámites; se recuerda abierto al guardar.
+let faqAbierto = false;
+function editorFaq(f) {
+  if (!f) return "";
+  return `<details class="faq-editor" id="faqDetalles"${faqAbierto ? " open" : ""}><summary><h3>Preguntas frecuentes (${f.valor.length})</h3></summary><div class="faq-editor__cuerpo"><p>Se ven en la web en este orden; usa «Mover arriba» y «Mover abajo» para cambiarlo. Sofía también las usa para responder.</p><div id="faqEditor">${f.valor.map(preguntaFaq).join("")}</div><div class="faq-editor__acciones"><button class="btn btn--line" type="button" id="agregarFaq">Agregar pregunta</button><button class="btn" id="guardarFaq">Guardar preguntas</button></div>${f.editada ? `<p class="aviso-sbu">Preguntas cambiadas por ${esc(f.por)} el ${esc(fechaLegible(f.en))}; las de la hoja de Google no se ven mientras tanto. <button class="btn btn--line" id="restaurarFaq">Volver a las preguntas de la hoja</button></p>` : ""}</div></details>`;
+}
+$("#preciosV").addEventListener("toggle", (e) => { if (e.target.id === "faqDetalles") faqAbierto = e.target.open; }, true);
+function preguntasEnPantalla() {
+  return [...document.querySelectorAll("#faqEditor .faq-item")].map((el) => ({ q: el.querySelector('[data-faq="q"]').value.trim(), a: el.querySelector('[data-faq="a"]').value.trim() })).filter((f) => f.q || f.a);
+}
+$("#preciosV").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-faq-mover],[data-faq-quitar],#agregarFaq");
+  if (!b) return;
+  if (b.id === "agregarFaq") { $("#faqEditor").insertAdjacentHTML("beforeend", preguntaFaq()); numerarFaq(); return $("#faqEditor .faq-item:last-child input").focus(); }
+  const item = b.closest(".faq-item");
+  if (b.hasAttribute("data-faq-quitar")) {
+    const vecino = item.nextElementSibling || item.previousElementSibling;
+    item.remove(); numerarFaq();
+    return (vecino?.querySelector("input") || $("#agregarFaq")).focus();
+  }
+  const subir = b.dataset.faqMover === "-1", otro = subir ? item.previousElementSibling : item.nextElementSibling;
+  if (!otro) return;
+  if (subir) otro.before(item); else otro.after(item);
+  numerarFaq();
+  // Si la pregunta llegó al borde, su botón queda desactivado: el foco pasa al de la dirección contraria.
+  (b.disabled ? item.querySelector(`[data-faq-mover="${subir ? 1 : -1}"]`) : b).focus();
+});
 function tarifasEnPantalla() {
   return { ...preciosPanel.tarifas, sbu: $("#precioSbu") ? Number($("#precioSbu").value) : preciosPanel.tarifas.sbu };
 }
@@ -641,6 +680,14 @@ $("#preciosV").addEventListener("click", async (e) => {
     } else if (b.id === "restaurarFrase") {
       if (!confirm("¿Volver a la frase de la hoja de Google?")) return;
       pedido = { accion: "restaurarFrase" };
+    } else if (b.id === "guardarFaq") {
+      const preguntas = preguntasEnPantalla(), mala = preguntas.findIndex((f) => f.q.length < 5 || f.a.length < 5);
+      if (!preguntas.length) { $("#preciosMensaje").textContent = "Deja al menos una pregunta con su respuesta."; return $("#agregarFaq").focus(); }
+      if (mala > -1) { $("#preciosMensaje").textContent = `Completa la pregunta ${mala + 1}: la pregunta y la respuesta necesitan al menos 5 caracteres.`; return; }
+      pedido = { accion: "guardarFaq", preguntas };
+    } else if (b.id === "restaurarFaq") {
+      if (!confirm("¿Volver a las preguntas frecuentes de la hoja de Google?")) return;
+      pedido = { accion: "restaurarFaq" };
     } else {
       const fila = b.closest(".precio-fila"), p = precioDeFila(fila);
       if (!confirm("¿Volver al valor oficial de este trámite?")) return;
@@ -649,7 +696,7 @@ $("#preciosV").addEventListener("click", async (e) => {
     b.disabled = true;
     await api("POST", pedido);
     if (pedido.tramiteId) borradoresPrecio.delete(pedido.tramiteId);
-    $("#preciosMensaje").textContent = /Frase/.test(pedido.accion) ? "Guardado. La web muestra la frase en 1 minuto." : "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
+    $("#preciosMensaje").textContent = /Frase/.test(pedido.accion) ? "Guardado. La web muestra la frase en 1 minuto." : /Faq/.test(pedido.accion) ? "Guardado. La web muestra las preguntas en 1 minuto y Sofía en hasta 5." : "Guardado. La web lo muestra en 1 minuto y Sofía en hasta 5; una conversación ya abierta con Sofía puede seguir citando el valor anterior.";
     await cargarPreciosPanel();
   } catch (err) { $("#preciosMensaje").textContent = err.message; }
   finally { if (b.isConnected && b.closest(".precio-fila")) actualizarPrecio(b.closest(".precio-fila")); else b.disabled = false; }

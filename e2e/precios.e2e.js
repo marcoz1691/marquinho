@@ -10,7 +10,7 @@ async function preparar(page, esAdmin, editada = {}, extra = {}) {
   } : [] }));
   await page.route("**/api/panel", async (r) => { pedidos.push(r.request().postDataJSON()); await r.fulfill({ json: { ok: true } }); });
   await page.goto("/panel/");
-  await page.getByRole("button", { name: "Trámites", exact: true }).click();
+  await page.getByRole("button", { name: "Contenido web", exact: true }).click();
   return pedidos;
 }
 
@@ -215,7 +215,7 @@ test("trámites: si la sesión se cuelga al guardar, Guardar vuelve a activarse 
     esAdmin: true, tarifas: { sbu: 482, anio: "2026", iva: 0.15, tablas: {} },
     tramites: [{ id: "poder", nombre: "Poder general", desc: "D", req: ["Minuta"], pasos: ["Firma"], nota: "", tarifa: { tipo: "pct", valor: 0.12, unidad: "", tabla: "" } }] } : [] }));
   await page.goto("/panel/");
-  await page.getByRole("button", { name: "Trámites", exact: true }).click();
+  await page.getByRole("button", { name: "Contenido web", exact: true }).click();
   const fila = page.locator(".precio-fila"), guardar = fila.getByRole("button", { name: "Guardar", exact: true });
   await fila.getByRole("button", { name: "Editar el texto de Poder general" }).click();
   await fila.getByLabel("Nota").fill("Valor referencial.");
@@ -240,4 +240,45 @@ test("trámites: si el servidor no responde al guardar, Guardar vuelve a activar
   await page.clock.runFor(66000);
   await expect(page.locator("#preciosMensaje")).toContainText("El servidor tardó demasiado");
   await expect(guardar).toBeEnabled();
+});
+
+test("preguntas frecuentes: se editan, agregan, quitan y ordenan, y se guardan juntas @movil", async ({ page }) => {
+  const faq = [{ q: "¿Primera pregunta?", a: "Primera respuesta." }, { q: "¿Segunda pregunta?", a: "Segunda respuesta." }];
+  const pedidos = await preparar(page, true, {}, { faq: { valor: faq, oficial: faq, editada: false } });
+  const editor = page.locator("#faqEditor"), item = (n) => editor.locator(".faq-item").nth(n);
+  await expect(editor).toBeHidden();
+  await page.getByText("Preguntas frecuentes (2)").click();
+  await expect(editor.locator(".faq-item")).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Mover arriba la pregunta 1" })).toBeDisabled();
+  await item(0).getByLabel("Respuesta").fill("Respuesta corregida.");
+  await page.getByRole("button", { name: "Mover abajo la pregunta 1" }).click();
+  await expect(item(0).getByLabel("Pregunta", { exact: true })).toHaveValue("¿Segunda pregunta?");
+  await page.getByRole("button", { name: "Agregar pregunta" }).click();
+  await expect(item(2).getByLabel("Pregunta", { exact: true })).toBeFocused();
+  await item(2).getByLabel("Pregunta", { exact: true }).fill("¿Nueva?");
+  await page.getByRole("button", { name: "Guardar preguntas" }).click();
+  await expect(page.locator("#preciosMensaje")).toContainText("Completa la pregunta 3");
+  expect(pedidos).toHaveLength(0);
+  await page.getByRole("button", { name: "Quitar la pregunta 3" }).click();
+  await expect(editor.locator(".faq-item")).toHaveCount(2);
+  await page.getByRole("button", { name: "Guardar preguntas" }).click();
+  await expect.poll(() => pedidos[0]).toEqual({ accion: "guardarFaq", preguntas: [faq[1], { q: "¿Primera pregunta?", a: "Respuesta corregida." }] });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("preguntas frecuentes editadas: muestran quién las cambió y se puede volver a las de la hoja", async ({ page }) => {
+  const faq = [{ q: "¿Pregunta editada?", a: "Respuesta editada." }];
+  const pedidos = await preparar(page, true, {}, { faq: { valor: faq, oficial: faq, editada: true, por: "notario@test.ec", en: "2026-11-03T15:00:00Z" } });
+  await page.getByText("Preguntas frecuentes (1)").click();
+  await expect(page.locator(".faq-editor")).toContainText("Preguntas cambiadas por notario@test.ec");
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Volver a las preguntas de la hoja" }).click();
+  await expect.poll(() => pedidos[0]).toEqual({ accion: "restaurarFaq" });
+});
+
+test("preguntas frecuentes: el personal no ve el editor", async ({ page }) => {
+  const faq = [{ q: "¿Pregunta?", a: "Respuesta." }];
+  await preparar(page, false, {}, { faq: { valor: faq, oficial: faq, editada: false } });
+  await expect(page.locator(".precio-fila")).toHaveCount(1);
+  await expect(page.locator("#faqEditor")).toHaveCount(0);
 });

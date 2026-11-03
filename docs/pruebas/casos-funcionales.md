@@ -16,7 +16,7 @@ Estado: **Pasa** = funciona; **Pasa (corregido)** = defecto encontrado en la rev
 
 | ID | Caso | Resultado esperado | Estado |
 |----|------|--------------------|--------|
-| CF-10 | Abrir la portada | Pestaña "Más pedidos" activa con los 8 trámites destacados en orden | Pasa |
+| CF-10 | Abrir la portada | Pestaña "Más solicitados" activa con los 8 trámites destacados en orden | Pasa |
 | CF-11 | Abrir la portada | El primer trámite queda seleccionado y su detalle visible | Pasa |
 | CF-12 | Pulsar cada pestaña de categoría | Solo aparecen los trámites de esa categoría | Pasa |
 | CF-13 | Ver la sección Servicios | Una fila por área, con su número de trámites | Pasa |
@@ -33,7 +33,7 @@ Estado: **Pasa** = funciona; **Pasa (corregido)** = defecto encontrado en la rev
 | CF-21 | Buscar "POSESION" (sin tilde, mayúsculas) | Encuentra "Posesión efectiva" | Pasa |
 | CF-22 | Buscar texto de un requisito | Encuentra el trámite que lo pide | Pasa |
 | CF-23 | Buscar algo inexistente | Mensaje "No encontramos ese trámite…" y lista oculta | Pasa |
-| CF-24 | Borrar la búsqueda | Vuelve "Más pedidos" | Pasa |
+| CF-24 | Borrar la búsqueda | Vuelve "Más solicitados" | Pasa |
 | CF-25 | Elegir pestaña con búsqueda escrita | Se limpia la búsqueda | Pasa |
 
 ## 3. Detalle del trámite
@@ -46,7 +46,7 @@ Estado: **Pasa** = funciona; **Pasa (corregido)** = defecto encontrado en la rev
 | CF-33 | "Compartir" (móvil con menú nativo) | Comparte nombre, requisitos y enlace `#t-<id>` | Pasa |
 | CF-34 | "Compartir" sin menú nativo | Abre WhatsApp con el texto | Pasa |
 | CF-35 | "Imprimir" | Abre el diálogo de impresión en modo ficha | Pasa |
-| CF-40 | Abrir `/#t-salida-pais` | "Más pedidos" activa con ese trámite | Pasa |
+| CF-40 | Abrir `/#t-salida-pais` | "Más solicitados" activa con ese trámite | Pasa |
 | CF-41 | Abrir `/#t-hipoteca` | Pestaña "Escrituras e inmuebles" con ese trámite | Pasa |
 | CF-42 | Abrir `/#t-no-existe` | Portada normal, sin errores | Pasa |
 | CF-43 | Cambiar el hash con la página abierta | Cambia el trámite mostrado | Pasa |

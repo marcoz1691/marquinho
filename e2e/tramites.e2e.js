@@ -47,7 +47,7 @@ test.describe("Catálogo de trámites", () => {
   });
   test("CF-10 la pestaña inicial muestra los trámites más pedidos según el notario, en orden", async ({ page }) => {
     await abrirPortada(page);
-    await expect(pestana(page, "Más pedidos")).toHaveAttribute("aria-pressed", "true");
+    await expect(pestana(page, "Más solicitados")).toHaveAttribute("aria-pressed", "true");
     await expect(items(page).locator("span:first-child")).toHaveText(DESTACADOS.map((id) => tramite(id).nombre));
   });
 
@@ -123,11 +123,11 @@ test.describe("Buscador", () => {
     await expect(page.locator("#tramitesUi")).toBeHidden();
   });
 
-  test("CF-24 al borrar la búsqueda vuelve la pestaña 'Más pedidos'", async ({ page }) => {
+  test("CF-24 al borrar la búsqueda vuelve la pestaña 'Más solicitados'", async ({ page }) => {
     await abrirPortada(page);
     await page.fill("#buscar", "hipoteca");
     await page.fill("#buscar", "");
-    await expect(pestana(page, "Más pedidos")).toHaveAttribute("aria-pressed", "true");
+    await expect(pestana(page, "Más solicitados")).toHaveAttribute("aria-pressed", "true");
     await expect(items(page)).toHaveCount(DESTACADOS.length);
   });
 
@@ -205,9 +205,9 @@ test.describe("Detalle del trámite", () => {
 });
 
 test.describe("Enlaces directos a trámites", () => {
-  test("CF-40 /#t-<id> de un trámite destacado abre 'Más pedidos'", async ({ page }) => {
+  test("CF-40 /#t-<id> de un trámite destacado abre 'Más solicitados'", async ({ page }) => {
     await abrirPortada(page, "/#t-salida-pais");
-    await expect(pestana(page, "Más pedidos")).toHaveAttribute("aria-pressed", "true");
+    await expect(pestana(page, "Más solicitados")).toHaveAttribute("aria-pressed", "true");
     await expect(detalle(page).locator(".tp__nombre")).toHaveText(tramite("salida-pais").nombre);
   });
 
@@ -220,7 +220,7 @@ test.describe("Enlaces directos a trámites", () => {
 
   test("CF-42 un enlace a un trámite inexistente deja la portada normal", async ({ page }) => {
     await abrirPortada(page, "/#t-no-existe");
-    await expect(pestana(page, "Más pedidos")).toHaveAttribute("aria-pressed", "true");
+    await expect(pestana(page, "Más solicitados")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("CF-43 cambiar el hash con la página abierta cambia el trámite", async ({ page }) => {
