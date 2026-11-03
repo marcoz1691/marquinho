@@ -507,12 +507,12 @@ function editorFrase(f) {
 }
 // Preguntas frecuentes de la web: se agregan, quitan y ordenan aquí y se guardan todas juntas.
 function preguntaFaq(f = { q: "", a: "" }) {
-  return `<fieldset class="faq-item"><legend></legend><label>Pregunta<input data-faq="q" maxlength="200" value="${esc(f.q)}"></label><label>Respuesta<textarea data-faq="a" rows="3" maxlength="1000">${esc(f.a)}</textarea></label><div class="faq-item__acciones"><button class="btn btn--line" type="button" data-faq-mover="-1">Subir</button><button class="btn btn--line" type="button" data-faq-mover="1">Bajar</button><button class="btn btn--line" type="button" data-faq-quitar>Quitar</button></div></fieldset>`;
+  return `<fieldset class="faq-item"><legend></legend><label>Pregunta<input data-faq="q" maxlength="200" value="${esc(f.q)}"></label><label>Respuesta<textarea data-faq="a" rows="3" maxlength="1000">${esc(f.a)}</textarea></label><div class="faq-item__acciones"><button class="btn btn--line" type="button" data-faq-mover="-1">Mover arriba</button><button class="btn btn--line" type="button" data-faq-mover="1">Mover abajo</button><button class="btn btn--line" type="button" data-faq-quitar>Quitar</button></div></fieldset>`;
 }
 function numerarFaq() {
   document.querySelectorAll("#faqEditor .faq-item").forEach((el, i, todos) => {
     el.querySelector("legend").textContent = `Pregunta ${i + 1}`;
-    el.querySelectorAll("[data-faq-mover]").forEach((b) => { b.setAttribute("aria-label", `${b.dataset.faqMover === "-1" ? "Subir" : "Bajar"} la pregunta ${i + 1}`); b.disabled = b.dataset.faqMover === "-1" ? i === 0 : i === todos.length - 1; });
+    el.querySelectorAll("[data-faq-mover]").forEach((b) => { b.setAttribute("aria-label", `Mover ${b.dataset.faqMover === "-1" ? "arriba" : "abajo"} la pregunta ${i + 1}`); b.disabled = b.dataset.faqMover === "-1" ? i === 0 : i === todos.length - 1; });
     el.querySelector("[data-faq-quitar]").setAttribute("aria-label", `Quitar la pregunta ${i + 1}`);
   });
 }
@@ -520,7 +520,7 @@ function numerarFaq() {
 let faqAbierto = false;
 function editorFaq(f) {
   if (!f) return "";
-  return `<details class="faq-editor" id="faqDetalles"${faqAbierto ? " open" : ""}><summary><h3>Preguntas frecuentes (${f.valor.length})</h3></summary><div class="faq-editor__cuerpo"><p>Se ven en la web en este orden y Sofía también las usa para responder.</p><div id="faqEditor">${f.valor.map(preguntaFaq).join("")}</div><div class="faq-editor__acciones"><button class="btn btn--line" type="button" id="agregarFaq">Agregar pregunta</button><button class="btn" id="guardarFaq">Guardar preguntas</button></div>${f.editada ? `<p class="aviso-sbu">Preguntas cambiadas por ${esc(f.por)} el ${esc(fechaLegible(f.en))}; las de la hoja de Google no se ven mientras tanto. <button class="btn btn--line" id="restaurarFaq">Volver a las preguntas de la hoja</button></p>` : ""}</div></details>`;
+  return `<details class="faq-editor" id="faqDetalles"${faqAbierto ? " open" : ""}><summary><h3>Preguntas frecuentes (${f.valor.length})</h3></summary><div class="faq-editor__cuerpo"><p>Se ven en la web en este orden; usa «Mover arriba» y «Mover abajo» para cambiarlo. Sofía también las usa para responder.</p><div id="faqEditor">${f.valor.map(preguntaFaq).join("")}</div><div class="faq-editor__acciones"><button class="btn btn--line" type="button" id="agregarFaq">Agregar pregunta</button><button class="btn" id="guardarFaq">Guardar preguntas</button></div>${f.editada ? `<p class="aviso-sbu">Preguntas cambiadas por ${esc(f.por)} el ${esc(fechaLegible(f.en))}; las de la hoja de Google no se ven mientras tanto. <button class="btn btn--line" id="restaurarFaq">Volver a las preguntas de la hoja</button></p>` : ""}</div></details>`;
 }
 $("#preciosV").addEventListener("toggle", (e) => { if (e.target.id === "faqDetalles") faqAbierto = e.target.open; }, true);
 function preguntasEnPantalla() {

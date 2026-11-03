@@ -10,7 +10,7 @@ async function preparar(page, esAdmin, editada = {}, extra = {}) {
   } : [] }));
   await page.route("**/api/panel", async (r) => { pedidos.push(r.request().postDataJSON()); await r.fulfill({ json: { ok: true } }); });
   await page.goto("/panel/");
-  await page.getByRole("button", { name: "Trámites", exact: true }).click();
+  await page.getByRole("button", { name: "Contenido web", exact: true }).click();
   return pedidos;
 }
 
@@ -215,7 +215,7 @@ test("trámites: si la sesión se cuelga al guardar, Guardar vuelve a activarse 
     esAdmin: true, tarifas: { sbu: 482, anio: "2026", iva: 0.15, tablas: {} },
     tramites: [{ id: "poder", nombre: "Poder general", desc: "D", req: ["Minuta"], pasos: ["Firma"], nota: "", tarifa: { tipo: "pct", valor: 0.12, unidad: "", tabla: "" } }] } : [] }));
   await page.goto("/panel/");
-  await page.getByRole("button", { name: "Trámites", exact: true }).click();
+  await page.getByRole("button", { name: "Contenido web", exact: true }).click();
   const fila = page.locator(".precio-fila"), guardar = fila.getByRole("button", { name: "Guardar", exact: true });
   await fila.getByRole("button", { name: "Editar el texto de Poder general" }).click();
   await fila.getByLabel("Nota").fill("Valor referencial.");
@@ -249,9 +249,9 @@ test("preguntas frecuentes: se editan, agregan, quitan y ordenan, y se guardan j
   await expect(editor).toBeHidden();
   await page.getByText("Preguntas frecuentes (2)").click();
   await expect(editor.locator(".faq-item")).toHaveCount(2);
-  await expect(page.getByRole("button", { name: "Subir la pregunta 1" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Mover arriba la pregunta 1" })).toBeDisabled();
   await item(0).getByLabel("Respuesta").fill("Respuesta corregida.");
-  await page.getByRole("button", { name: "Bajar la pregunta 1" }).click();
+  await page.getByRole("button", { name: "Mover abajo la pregunta 1" }).click();
   await expect(item(0).getByLabel("Pregunta", { exact: true })).toHaveValue("¿Segunda pregunta?");
   await page.getByRole("button", { name: "Agregar pregunta" }).click();
   await expect(item(2).getByLabel("Pregunta", { exact: true })).toBeFocused();

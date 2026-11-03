@@ -13,7 +13,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   var funcionesLista = cargarFunciones().then(function (f) { state.funciones = f; if (!f.sitio) location.replace("mantenimiento.html"); aplicarFunciones(f); if (!f.catalogo) $("#menuTarifas").setAttribute("href", "#calculadora"); if (f.chatWeb && $("#chatAbrir").getAttribute("aria-expanded") !== "true") $("#chat").hidden = true; });
   var state = { funciones: {}, cat: "destacados", q: "", sel: null, data: null, tarifas: null, notaria: null };
-  // La pestaña inicial "Más pedidos": la lista de los trámites más pedidos que dio el notario, en su orden.
+  // La pestaña inicial "Más solicitados": la lista de los trámites más solicitados que dio el notario, en su orden.
   var DESTACADOS = ["compraventa-vehiculo", "declaracion-natural", "poder-natural", "salida-pais", "copias-certificadas", "certificacion-electronica", "posesion-efectiva", "disolucion-sociedad-conyugal", "divorcio"];
 
   /* ---------- Contenido: Google Sheets con respaldo local ---------- */
@@ -63,7 +63,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
 
   function renderChips() {
     // Una categoría sin trámites (por ejemplo, si se borraron en el panel) no se ofrece.
-    var items = [{ id: "destacados", nombre: "Más pedidos" }].concat(state.data.categorias.filter(function (c) { return state.data.tramites.some(function (t) { return t.cat === c.id; }); }));
+    var items = [{ id: "destacados", nombre: "Más solicitados" }].concat(state.data.categorias.filter(function (c) { return state.data.tramites.some(function (t) { return t.cat === c.id; }); }));
     $("#chips").innerHTML = items.map(function (c) {
       return '<button class="tab" type="button" data-c="' + esc(c.id) + '" aria-pressed="' + (!state.q && state.cat === c.id) + '">' + esc(c.nombre) + "</button>";
     }).join("");
