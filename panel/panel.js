@@ -25,13 +25,22 @@ const TRADUCCION = {
 };
 const traducir = (m) => TRADUCCION[m] || (/rate limit/i.test(m) ? "Hiciste demasiados intentos. Espera unos minutos." : /Password should be/i.test(m) ? "La contraseña es demasiado débil: usa al menos 8 caracteres." : m);
 
+// La sesión guardada puede quedarse sin responder al renovarse, y el servidor tarda como mucho 60 s: sin estos límites,
+// un botón que espera (Guardar, Borrar…) queda desactivado para siempre aunque el cambio ya se haya hecho.
+const ESPERA_SESION_MS = 8000, ESPERA_SERVIDOR_MS = 65000;
 async function api(metodo, params) {
-  const { data: { session } } = await sb.auth.getSession();
+  const lectura = await Promise.race([sb.auth.getSession(), new Promise((ok) => setTimeout(() => ok(null), ESPERA_SESION_MS))]);
+  if (!lectura) throw new Error("Tu sesión no respondió. Recarga la página e inténtalo de nuevo; lo que ya se guardó no se pierde.");
+  const { data: { session } } = lectura;
   const opts = { method: metodo, headers: { Authorization: "Bearer " + (session?.access_token || ""), "Content-Type": "application/json" } };
   if (verComo) opts.headers["X-Ver-Como"] = verComo;
   let url = "/api/panel";
   if (metodo === "GET") url += "?" + new URLSearchParams(params); else opts.body = JSON.stringify(params);
-  const r = await fetch(url, opts), data = await r.json();
+  const corte = new AbortController(), reloj = setTimeout(() => corte.abort(), ESPERA_SERVIDOR_MS);
+  let r, data;
+  try { r = await fetch(url, { ...opts, signal: corte.signal }); data = await r.json(); }
+  catch (e) { if (corte.signal.aborted) throw new Error("El servidor tardó demasiado en responder. Revisa tu conexión y recarga la página para ver si el cambio se guardó."); throw e; }
+  finally { clearTimeout(reloj); }
   if (r.status === 401) { if (data.mfa) await pasoMfa(); else vista("vEntrar"); throw Object.assign(new Error(data.error), { mfa: !!data.mfa }); }
   if (r.status === 403) { const e = new Error(data.error); e.sinPermiso = true; throw e; }
   if (!r.ok) throw new Error(data.error);
