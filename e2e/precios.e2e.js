@@ -205,3 +205,39 @@ test("trámites: copias no se pueden borrar y el personal no ve el botón", asyn
   await preparar(page, false, { borrado: true });
   await expect(page.locator(".precio-fila")).toHaveCount(0);
 });
+
+test("trámites: si la sesión se cuelga al guardar, Guardar vuelve a activarse con un aviso", async ({ page }) => {
+  await page.clock.install();
+  await page.addInitScript(() => { window.__colgarSesion = false; });
+  await page.route("**/vendor/supabase-js-*.js", (r) => r.fulfill({ contentType: "application/javascript", body: `window.supabase={createClient:()=>({auth:{getSession:()=>window.__colgarSesion?new Promise(()=>{}):Promise.resolve({data:{session:{access_token:"t"}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:"aal2",nextLevel:"aal2"}}),listFactors:async()=>({data:{totp:[]}})}}})};` }));
+  await page.route("**/api/panel-config", (r) => r.fulfill({ json: { supabaseUrl: "https://ejemplo.supabase.co", supabaseAnonKey: "publica", mfa: false } }));
+  await page.route("**/api/panel?**", (r) => r.fulfill({ json: new URL(r.request().url()).searchParams.get("accion") === "yo" ? { email: "yo@test.ec", nombre: "Yo", rol: "notario" } : new URL(r.request().url()).searchParams.get("accion") === "precios" ? {
+    esAdmin: true, tarifas: { sbu: 482, anio: "2026", iva: 0.15, tablas: {} },
+    tramites: [{ id: "poder", nombre: "Poder general", desc: "D", req: ["Minuta"], pasos: ["Firma"], nota: "", tarifa: { tipo: "pct", valor: 0.12, unidad: "", tabla: "" } }] } : [] }));
+  await page.goto("/panel/");
+  await page.getByRole("button", { name: "Trámites", exact: true }).click();
+  const fila = page.locator(".precio-fila"), guardar = fila.getByRole("button", { name: "Guardar", exact: true });
+  await fila.getByRole("button", { name: "Editar el texto de Poder general" }).click();
+  await fila.getByLabel("Nota").fill("Valor referencial.");
+  await page.evaluate(() => { window.__colgarSesion = true; });
+  await guardar.click();
+  await expect(guardar).toBeDisabled();
+  await page.clock.runFor(9000);
+  await expect(page.locator("#preciosMensaje")).toContainText("Tu sesión no respondió");
+  await expect(guardar).toBeEnabled();
+});
+
+test("trámites: si el servidor no responde al guardar, Guardar vuelve a activarse con un aviso", async ({ page }) => {
+  await page.clock.install();
+  await preparar(page, true, { desc: "D", req: ["Minuta"], pasos: ["Firma"], nota: "" });
+  await page.unroute("**/api/panel");
+  await page.route("**/api/panel", () => {});
+  const fila = page.locator(".precio-fila"), guardar = fila.getByRole("button", { name: "Guardar", exact: true });
+  await fila.getByRole("button", { name: "Editar el texto de Poder general" }).click();
+  await fila.getByLabel("Nota").fill("Valor referencial.");
+  await guardar.click();
+  await expect(guardar).toBeDisabled();
+  await page.clock.runFor(66000);
+  await expect(page.locator("#preciosMensaje")).toContainText("El servidor tardó demasiado");
+  await expect(guardar).toBeEnabled();
+});
