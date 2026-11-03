@@ -38,7 +38,7 @@ Objeto que arma `construirResumen()` en `api/_lib/resumen.js` (archivo nuevo, tr
   direccion: "Simón Bolívar Oe1-222, …",
   requisitos: ["Cédula…", "…"],   // del trámite; [] si no hay trámite
   costo: { total: "$66,52", detalle: "Tarifa $57,84 + IVA $8,68" } | null,   // null si es por cuantía o no hay trámite
-  aviso: "Este valor no incluye documentos habilitantes…" | null,           // AVISO_HABILITANTES cuando hay costo
+  aviso: "El valor es referencial. El costo definitivo…" | null,           // AVISO_VALOR cuando hay costo
   subirDocumentos: true | false   // true solo en el chat web
 }
 ```
@@ -51,7 +51,7 @@ Jueves 8 de octubre, 10:00
 Trámite: Poder general
 Lugar: Simón Bolívar Oe1-222, …
 Lleva: • Cédula… • …
-Costo referencial: $66,52 con IVA. Este valor no incluye documentos habilitantes…
+Costo referencial: $66,52 con IVA. El valor es referencial. El costo definitivo…
 Con tu ticket 4821 te atienden más rápido.
 ```
 (si está `pendiente`: «Recibimos tu solicitud. El personal la confirmará por WhatsApp. Ticket 4821».)

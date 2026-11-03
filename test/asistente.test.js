@@ -130,10 +130,10 @@ describe("herramientas", () => {
     expect(r.content).toContain("$443,44");
   });
 
-  it("calcular_costo aclara que no incluye documentos habilitantes", async () => {
+  it("calcular_costo aclara que el valor es referencial", async () => {
     const claude = claudeFalso([herramienta("calcular_costo", { tramite_id: "poder" }), texto("Son $66,52")]);
     await nuevo(claude).atender(mensaje({ texto: "cuánto cuesta un poder" }));
-    expect(resultadoDe(claude).content).toContain("no incluye documentos habilitantes");
+    expect(resultadoDe(claude).content).toContain("El valor es referencial. El costo definitivo se establecerá al ingresar el trámite");
   });
 
   it("el prompt explica que los costos no incluyen habilitantes y su precio por hoja", async () => {

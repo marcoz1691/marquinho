@@ -218,11 +218,11 @@ test.describe("Calculadora de tarifas", () => {
 
     test("CF-153 el aviso cambia cuando se agregan habilitantes", async ({ page }) => {
       await page.selectOption("#calcTramite", "poder-natural");
-      await expect(page.locator("#calcAviso")).toHaveText(/no incluye documentos habilitantes/);
+      await expect(page.locator("#calcAviso")).toContainText("El valor es referencial");
       await mas(page, "copias").click();
-      await expect(page.locator("#calcAviso")).toHaveText("Incluye los documentos habilitantes que agregaste; se cobran por hoja.");
+      await expect(page.locator("#calcAviso")).toContainText("Incluye los documentos habilitantes que agregaste; se cobran por hoja. El valor es referencial");
       await menos(page, "copias").click();
-      await expect(page.locator("#calcAviso")).toHaveText(/no incluye documentos habilitantes/);
+      await expect(page.locator("#calcAviso")).toContainText("El valor es referencial");
       await expect(page.locator("#calcNote")).toHaveText("Cada otorgante adicional suma 3% del SBU.");
     });
 
@@ -239,18 +239,18 @@ test.describe("Calculadora de tarifas", () => {
       await expect(page.locator("#rHabWrap")).toBeHidden();
     });
 
-    test("CF-155 la ficha del trámite aclara que no incluye documentos habilitantes", async ({ page }) => {
-      await expect(page.locator("#detalleTramite .tp__aviso")).toContainText("no incluye documentos habilitantes");
+    test("CF-155 la ficha del trámite aclara que el valor es referencial", async ({ page }) => {
+      await expect(page.locator("#detalleTramite .tp__aviso")).toContainText("El valor es referencial. El costo definitivo se establecerá");
     });
 
-    test("CF-156 en las propias copias certificadas no hay aviso ni se ofrece sumarlas otra vez", async ({ page }) => {
+    test("CF-156 las propias copias certificadas aclaran que el valor es referencial y no se ofrece sumarlas otra vez", async ({ page }) => {
       await page.locator('#lista [data-sel="copias-certificadas"]').click();
       await expect(page.locator("#detalleTramite .tp__nombre")).toHaveText("Copias certificadas");
-      await expect(page.locator("#detalleTramite .tp__aviso")).toHaveCount(0);
+      await expect(page.locator("#detalleTramite .tp__aviso")).toContainText("El valor es referencial");
       await page.selectOption("#calcTramite", "copias-certificadas");
       await expect(page.locator('[data-hab="copias"]')).toBeHidden();
       await expect(page.locator('[data-hab="materializaciones"]')).toBeVisible();
-      await expect(page.locator("#calcAviso")).toBeHidden();
+      await expect(page.locator("#calcAviso")).toContainText("El valor es referencial");
       await mas(page, "materializaciones").click();
       await expect(page.locator("#calcAviso")).toContainText("Incluye los documentos habilitantes");
     });

@@ -205,7 +205,10 @@ export function calcularTarifa(t, T, opciones) {
 }
 
 // Documentos habilitantes: se cobran aparte, por hoja, con el precio de su propio trámite.
-export const AVISO_HABILITANTES = "Este valor no incluye documentos habilitantes, como copias certificadas, compulsas o materializaciones de documentos electrónicos.";
+// Aviso que acompaña a cada precio: ficha del trámite, calculadora, resumen de la cita y Sofía. Texto del notario.
+export const AVISO_VALOR = "El valor es referencial. El costo definitivo se establecerá al ingresar el trámite en el Sistema Informático Notarial, considerando el Certificado de Identidad Ciudadana, los documentos habilitantes y anexos requeridos.";
+// Sin precio no hay valor que aclarar, y si la nota del trámite ya lo dice (se agregó a mano en el panel) no se repite.
+export function muestraAvisoValor(t) { return t.tarifa.tipo !== "consultar" && !/valor es referencial/i.test(t.nota || ""); }
 export const HABILITANTES = [
   { id: "copias", tramite: "copias-certificadas", nombre: "Copias certificadas o compulsas", etiqueta: "copias certificadas" },
   { id: "materializaciones", tramite: "certificacion-electronica", nombre: "Materialización de documentos electrónicos", etiqueta: "materializaciones" }
