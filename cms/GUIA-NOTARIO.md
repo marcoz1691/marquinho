@@ -57,6 +57,8 @@ Reglas que el panel aplica por ti, para evitar errores de dedo:
 - El porcentaje del SBU va de 0,1 % a 500 % y un valor fijo de $0,01 a $1000.
 - Si cambias el SBU o el año aquí, los cambios de la hoja de Google dejan de verse hasta que pulses **Volver al SBU de la hoja**.
 
+**Preguntas frecuentes.** En **Trámites**, abre «Preguntas frecuentes» arriba de la lista. Puedes cambiar cada pregunta y su respuesta, agregar, quitar y ordenarlas con **Subir** y **Bajar**; luego pulsa **Guardar preguntas**. La web las muestra en un minuto y Sofía las usa en hasta cinco. Mientras estén editadas aquí, las de la hoja de Google no se ven; **Volver a las preguntas de la hoja** quita la edición. Lo pueden hacer el notario y los administradores.
+
 **Borrar un trámite.** Con una cuenta de notario o administrador, abre el trámite en el panel y pulsa **Borrar trámite**. Deja de verse en la web, en la calculadora y en Sofía; la web lo muestra en un minuto y Sofía en hasta cinco. Las citas ya agendadas conservan su nombre. Para recuperarlo con sus textos y precios, pulsa **Restaurar trámite** en la misma fila. Las copias certificadas y las materializaciones no se pueden borrar, porque se suman al costo de otros trámites.
 
 **Quién es administrador.** Hoy lo es la cuenta del desarrollador. Para que otra persona del personal pueda cambiar precios, hay que marcarla como administradora en la tabla «personal» de Supabase (columna «rol» = admin).

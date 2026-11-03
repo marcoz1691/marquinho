@@ -131,6 +131,8 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
     restaurarSBU: (b, email) => comoAdmin(email, () => panel.restaurarSBU()),
     guardarFrase: (b, email) => comoAdmin(email, () => panel.guardarFrase(b, email), SOLO_EDITORES_TRAMITES),
     restaurarFrase: (b, email) => comoAdmin(email, () => panel.restaurarFrase(), SOLO_EDITORES_TRAMITES),
+    guardarFaq: (b, email) => comoAdmin(email, () => panel.guardarFaq(b, email), SOLO_EDITORES_TRAMITES),
+    restaurarFaq: (b, email) => comoAdmin(email, () => panel.restaurarFaq(), SOLO_EDITORES_TRAMITES),
     responder: (b) => panel.responder(b.id, b.texto),
     devolver: (b) => panel.devolverAlAsistente(b.id),
     // Marcar «atendida» por la vía de la agenda también exige ser quien la atiende (los matriceros pasan por terminarCita).
@@ -156,7 +158,7 @@ export function crearManejadorPanel({ panel, auth, exigirMfa = true, limiteDesca
       if (a.verComo) return json({ error: EN_VISTA_PREVIA }, 403);
       let b; try { b = await request.json(); } catch { return json({ error: "JSON inválido" }, 400); }
       const accion = b?.accion, fn = typeof accion === "string" && Object.hasOwn(acciones, accion) && acciones[accion];
-      return fn ? ejecutar(accion, (accion === "guardarFuncion" ? "funcion." + b.id : "") || b.email || b.tramiteId || b.id || b.fecha || (accion === "guardarCupo" ? "citas.porHora" : "") || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : "") || (accion === "guardarFrase" || accion === "restaurarFrase" ? "portada.frase" : ""), a.email, () => fn(b, a.email, request), true) : json({ error: "Acción desconocida" }, 400);
+      return fn ? ejecutar(accion, (accion === "guardarFuncion" ? "funcion." + b.id : "") || b.email || b.tramiteId || b.id || b.fecha || (accion === "guardarCupo" ? "citas.porHora" : "") || (accion === "guardarSBU" || accion === "restaurarSBU" ? "sbu" : "") || (accion === "guardarFrase" || accion === "restaurarFrase" ? "portada.frase" : "") || (accion === "guardarFaq" || accion === "restaurarFaq" ? "faq" : ""), a.email, () => fn(b, a.email, request), true) : json({ error: "Acción desconocida" }, 400);
     }
   };
 }

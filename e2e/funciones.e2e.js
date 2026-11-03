@@ -43,6 +43,12 @@ test("un trámite borrado desaparece del catálogo y de la calculadora, y su cat
   await expect(page.locator(`[data-sel="${borrados[0]}"]`)).toHaveCount(0);
   await expect(page.locator(`#calcTramite option[value="${borrados[0]}"]`)).toHaveCount(0);
 });
+test("la portada muestra las preguntas frecuentes editadas en el panel", async ({ page }) => {
+  await page.route("**/api/precios", r => r.fulfill({ json: { precios: {}, funciones: {}, faq: [{ q: "¿Atienden los sábados?", a: "Pregúntanos por WhatsApp." }] } }));
+  await abrirPortada(page);
+  await expect(page.locator("#faqList .faq__item")).toHaveCount(1);
+  await expect(page.locator("#faqList")).toContainText("¿Atienden los sábados?");
+});
 test("agenda apagada oculta accesos y ofrece contacto", async ({ page }) => {
   await configurar(page, { agenda: false });
   await abrirPortada(page);

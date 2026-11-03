@@ -50,6 +50,19 @@ export function fraseValida(v) {
   return f.length >= LIMITES_FRASE.min && f.length <= LIMITES_FRASE.max ? f : null;
 }
 
+// Preguntas frecuentes editadas en el panel: reemplazan a las de la hoja. Se guardan como JSON en el ajuste «faq».
+export const LIMITES_FAQ = { preguntas: 30, q: 200, a: 1000, min: 5 };
+export function faqValida(v) {
+  if (typeof v === "string") { try { v = JSON.parse(v); } catch { return null; } }
+  if (!Array.isArray(v) || !v.length || v.length > LIMITES_FAQ.preguntas) return null;
+  const limpio = (x, max) => {
+    const s = typeof x === "string" ? x.replace(/\s+/g, " ").trim() : "";
+    return s.length >= LIMITES_FAQ.min && s.length <= max ? s : null;
+  };
+  const faq = v.map((f) => f && typeof f === "object" ? { q: limpio(f.q, LIMITES_FAQ.q), a: limpio(f.a, LIMITES_FAQ.a) } : {});
+  return faq.every((f) => f.q && f.a) ? faq : null;
+}
+
 export function aplicarPrecios(contenido, cambios) {
   const precios = cambios?.precios || {};
   const textos = { ...textosDeAjustes(cambios), ...(cambios?.textos || {}) };
@@ -68,6 +81,8 @@ export function aplicarPrecios(contenido, cambios) {
   if (cambios?.anio != null && /^\d{4}$/.test(String(cambios.anio))) contenido.tarifas.anio = String(cambios.anio);
   const frase = fraseValida(cambios?.frasePortada);
   if (frase && contenido.notaria) contenido.notaria.frasePortada = frase;
+  const faq = faqValida(cambios?.faq);
+  if (faq) contenido.data.faq = faq;
   return contenido;
 }
 const configuraciones = new WeakMap();
