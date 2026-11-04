@@ -430,6 +430,17 @@ h2,.sub{text-align:left}
 .wa{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(40px,5vw,72px) clamp(40px,6vw,96px);align-items:start}
 .wa__cab,.wa-pasos{grid-column:1}
 .wa-ejemplo{grid-column:2;grid-row:1 / span 2;min-width:0}
+/* Rayos de luz entre cada paso y su mensaje en el chat: los dibuja js/rayos.js solo con dos columnas. */
+.wa{position:relative;isolation:isolate}
+.rayos{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:visible}
+.rayo__base{fill:none;stroke:var(--line);stroke-width:1}
+.rayo__pulso{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-dasharray:14 100;opacity:0;filter:drop-shadow(0 0 4px var(--accent));animation:rayo-viaja 4s linear infinite paused}
+.rayos--vivo .rayo__pulso{animation-play-state:running}
+.rayo__punto{fill:var(--bg-alt);stroke:var(--accent);stroke-width:1.5}
+@keyframes rayo-viaja{0%{stroke-dashoffset:14;opacity:0}4%{opacity:1}46%{opacity:1}50%,100%{stroke-dashoffset:-100;opacity:0}}
+@keyframes rayo-late{0%,100%{opacity:0}50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.rayo__pulso{stroke-dasharray:none;animation-name:rayo-late;animation-timing-function:ease-in-out}}
+@media print{.rayos{display:none}}
 .wa-cierre{grid-column:1 / -1}
 .wa__cab h2,.wa__cab .sub{text-align:left}
 .wa__cab .sub{margin-bottom:32px}
