@@ -112,18 +112,20 @@ test.describe("Calculadora de tarifas", () => {
     await resultado(page, "$5.543,00", "$4.820,00");
   });
 
-  test("CF-62 el último rango sin tope se describe como 'desde'", async ({ page }) => {
+  test("CF-62 el último rango sin tope se describe como 'desde' y suma el excedente", async ({ page }) => {
     await page.selectOption("#calcTramite", "compraventa");
     await page.fill("#calcMonto", "5000000");
-    await resultado(page, "$11.086,00", "$9.640,00");
-    await expect(page.locator("#calcNote")).toContainText("Rango desde $3.000.000,01: 20 SBU.");
+    // 20 SBU ($9.640) + 0,001 de lo que pasa de $4.000.000 ($1.000).
+    await resultado(page, "$12.236,00", "$10.640,00");
+    await expect(page.locator("#calcNote")).toContainText("Rango desde $4.000.000,01: 20 SBU + 0,001 del excedente.");
   });
 
-  test("CF-63 fuera de la tabla de sociedades pide consultar con la notaría", async ({ page }) => {
+  test("CF-63 sociedades de más de un millón usan el rango con excedente", async ({ page }) => {
     await page.selectOption("#calcTramite", "constitucion-compania");
     await page.fill("#calcMonto", "2000000");
-    await resultado(page, "-", "-", "-");
-    await expect(page.locator("#calcNote")).toHaveText("Para este valor, consulta con la notaría.");
+    // 5 SBU ($2.410) + 0,003 de lo que pasa de $1.000.000 ($3.000).
+    await resultado(page, "$6.221,50", "$5.410,00");
+    await expect(page.locator("#calcNote")).toContainText("Rango $1.000.000,01 a $2.500.000,00: 5 SBU + 0,003 del excedente.");
   });
 
   test("CF-64 usa la tabla correcta según el trámite (hipoteca)", async ({ page }) => {

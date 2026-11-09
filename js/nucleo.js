@@ -96,7 +96,8 @@ export function hhmm(v) {
 const lineas = function (v) { return String(v).split(/\n+/).map(function (s) { return s.replace(/^[\s•\-–]+/, "").trim(); }).filter(Boolean); };
 const tablaKey = function (v) {
   var n = norm(v);
-  return /transfer/.test(n) ? "transferencia" : /promesa|cesion/.test(n) ? "promesa" : /hipotec/.test(n) ? "hipoteca" : /socied/.test(n) ? "sociedades" : "";
+  return /transfer/.test(n) ? "transferencia" : /particip/.test(n) ? "cesionParticipaciones" : /promesa|cesion/.test(n) ? "promesa" : /hipotec/.test(n) ? "hipoteca" : /socied/.test(n) ? "sociedades"
+    : /inventario/.test(n) ? "bajaInventarios" : /remate/.test(n) ? "remates" : /arriend/.test(n) ? "arriendo" : /obligacion/.test(n) ? "emisionObligaciones" : "";
 };
 
 // Convierte las pestañas CSV de la hoja en { data, tarifas, notaria }, usando `base` (JSON locales) para lo que falte.
@@ -166,9 +167,9 @@ export function desdeHoja(tabs, base) {
   if (tabs.tablas) {
     var tablas = {};
     objetos(tabs.tablas).forEach(function (o) {
-      var k = tablaKey(o.get("tabla")), f = num(o.get("factor"));
+      var k = tablaKey(o.get("tabla")), f = num(o.get("factor")), x = num(o.get("excedente"));
       if (!k || f === null) return;
-      (tablas[k] = tablas[k] || []).push([num(o.get("hasta")), f]);
+      (tablas[k] = tablas[k] || []).push(x ? [num(o.get("hasta")), f, x] : [num(o.get("hasta")), f]);
     });
     Object.keys(tablas).forEach(function (k) {
       T.tablas[k] = tablas[k].sort(function (a, b) { return (a[0] === null) - (b[0] === null) || a[0] - b[0]; });
@@ -194,14 +195,30 @@ export function calcularTarifa(t, T, opciones) {
     var rows = (T.tablas || {})[f.tabla] || [];
     for (var i = 0; i < rows.length; i++) {
       if (rows[i][0] === null || o.monto <= rows[i][0]) {
-        r.factor = rows[i][1]; r.hasta = rows[i][0]; r.desde = i ? rows[i - 1][0] : 0;
-        r.base = r.factor * T.sbu;
+        r.factor = rows[i][1]; r.hasta = rows[i][0]; r.desde = i ? rows[i - 1][0] : 0; r.excedente = rows[i][2] || 0;
+        // «20 SBU + 0,001 del excedente»: la fracción se cobra sobre lo que pase del inicio del rango.
+        r.base = r.factor * T.sbu + r.excedente * (o.monto - r.desde);
         break;
       }
     }
   }
   if (r.base !== null) { r.base = redondear(r.base); r.iva = redondear(r.base * T.iva); r.total = redondear(r.base + r.iva); }
   return r;
+}
+
+// Filas de una tabla por cuantía, con su valor en dólares según el SBU vigente (página Tarifas).
+// Si la fila cobra un excedente, el valor es solo la parte fija y la página muestra «+ excedente».
+export function filasTabla(T, clave) {
+  var rows = (T.tablas || {})[clave] || [];
+  return rows.map(function (f, i) {
+    var base = redondear(f[1] * T.sbu), iva = redondear(base * T.iva);
+    return { desde: i ? rows[i - 1][0] : 0, hasta: f[0], factor: f[1], excedente: f[2] || 0, base: base, iva: iva, total: redondear(base + iva) };
+  });
+}
+// Acto de cuantía indeterminada del tarifario: { sbu } en múltiplos del SBU o { usd } si la tarifa es fija.
+export function valorActo(item, T) {
+  var base = redondear(item.usd != null ? item.usd : item.sbu * T.sbu), iva = redondear(base * T.iva);
+  return { base: base, iva: iva, total: redondear(base + iva) };
 }
 
 // Documentos habilitantes: se cobran aparte, por hoja, con el precio de su propio trámite.

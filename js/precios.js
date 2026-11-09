@@ -95,9 +95,9 @@ export function configPublica(fetch = globalThis.fetch) {
 }
 export async function cargarFunciones(fetch = globalThis.fetch) {
   const c = await configPublica(fetch);
-  // Encendidas salvo que el servidor diga false; portal y pagosEnLinea, apagadas salvo que diga true.
+  // Encendidas salvo que el servidor diga false; portal, pagosEnLinea y tarifario, apagadas salvo que diga true.
   return { ...Object.fromEntries(["sitio", "catalogo", "chatWeb", "whatsappBot", "agenda", "documentos", "recordatorios"].map(id => [id, c?.funciones?.[id] !== false])),
-    ...Object.fromEntries(["portal", "pagosEnLinea"].map(id => [id, c?.funciones?.[id] === true])) };
+    ...Object.fromEntries(["portal", "pagosEnLinea", "tarifario"].map(id => [id, c?.funciones?.[id] === true])) };
 }
 export async function cargarPrecios(contenido, fetch = globalThis.fetch) {
   const c = await configPublica(fetch);

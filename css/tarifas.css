@@ -1,0 +1,76 @@
+/* Página «Tarifas»: tarifario completo y su versión para imprimir o guardar en PDF. */
+.tarifario{max-width:960px;margin:0 auto;padding:clamp(40px,7vw,80px) 16px 80px}
+.tarifario h1{font-size:clamp(36px,6vw,60px);letter-spacing:-.02em;margin:0 0 16px}
+.tarifario h2{font-size:clamp(26px,3.4vw,34px);letter-spacing:-.015em;margin:0 0 8px}
+.tarifario h3{font-size:19px;margin:0 0 6px}
+.tarifario__lead{font-size:clamp(17px,2vw,20px);color:var(--muted);max-width:60ch;margin:0 0 24px}
+.tarifario__lead strong{color:var(--fg)}
+.tarifario__estado{color:var(--muted)}
+.tarifario__acciones{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.tarifario__aviso{font-size:15px;color:var(--muted);border-left:3px solid var(--gold);padding:4px 0 4px 14px;max-width:70ch;margin:0 0 32px}
+.tarifario__indice{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 48px}
+.tarifario__indice a{font-size:15px;padding:8px 14px;border:1px solid var(--line);border-radius:var(--radius);color:var(--fg)}
+.tarifario__indice a:hover{border-color:var(--accent);color:var(--accent)}
+.tarifario__seccion{margin-bottom:56px;scroll-margin-top:80px}
+.tarifario__seccion>p{color:var(--muted);margin:0 0 24px}
+.tarifario__buscar{display:flex;flex-direction:column;gap:6px;font-size:15px;font-weight:500;max-width:420px;margin-bottom:8px}
+.tarifario__buscar input{font:inherit;font-weight:400;font-size:17px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-input);background:var(--card);color:var(--fg)}
+.tarifario__vacio{color:var(--muted);font-size:15px;min-height:1.5em;margin:0 0 8px}
+.tarifario__pie{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;margin-top:40px}
+.tarifario__impresion{display:none}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.tarifa{margin:0 0 36px}
+.tarifa__num{display:block;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-text)}
+.tarifa__aplica{font-size:15px;color:var(--muted);margin:0 0 12px;max-width:75ch}
+.tarifa__marco{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-card);background:var(--card)}
+.tarifa table{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.tarifa th,.tarifa td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.tarifa thead th{font-size:13px;font-weight:600;color:var(--muted);background:var(--bg-alt);white-space:nowrap}
+.tarifa tbody tr:last-child>*{border-bottom:0}
+.tarifa tbody th{font-weight:400}
+.tarifa td{white-space:nowrap}
+.tarifa .num{text-align:right}
+.tarifa .total{font-weight:600}
+.tarifa__unidad{color:var(--muted)}
+.tarifa__notas{font-size:14px;color:var(--muted);margin:10px 0 0;padding-left:20px}
+.tarifa--lista table{min-width:560px}
+.tarifa--lista tbody th{min-width:260px}
+
+.exencion{border:1px solid var(--line);border-radius:var(--r-card);padding:20px 22px;margin-bottom:16px;background:var(--card)}
+.exencion p{margin:0 0 8px}
+.exencion ul{margin:0;padding-left:20px;columns:2 260px;column-gap:32px;font-size:15px}
+
+@media (max-width:600px){
+  .tarifa th,.tarifa td{padding:9px 10px;font-size:14px}
+  .tarifario__acciones .btn{flex:1 1 100%;justify-content:center}
+}
+
+/* Imprimir o «Guardar como PDF»: encabezado con el sello de la Notaría 41, sin menú ni botones, tablas sin cortes. */
+@media print{
+  @page{margin:14mm 12mm}
+  body{background:#fff;color:#000;font-size:11pt}
+  .nav,.skip,.tarifario__acciones,.tarifario__indice,.tarifario__buscar,.tarifario__vacio,.chat,.chat-lanzador{display:none!important}
+  .tarifario{max-width:none;padding:0}
+  .tarifario__impresion{display:flex;align-items:center;gap:14px;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px}
+  .tarifario__impresion div{display:flex;flex-direction:column;font-size:9pt;line-height:1.4}
+  .tarifario__impresion strong{font-size:13pt}
+  .tarifario h1{font-size:20pt;margin-bottom:6px}
+  .tarifario h2{font-size:15pt;break-after:avoid}
+  .tarifario__lead,.tarifario__aviso,.tarifario__seccion>p,.tarifa__aplica,.tarifa__notas,.tarifario__pie{color:#333;font-size:9.5pt}
+  .tarifario__seccion{margin-bottom:18px}
+  .tarifa{margin-bottom:16px;break-inside:avoid}
+  .tarifa--lista{break-inside:auto}
+  .tarifa h3{font-size:11pt;break-after:avoid}
+  .tarifa__marco{overflow:visible;border:1px solid #999;border-radius:0}
+  .tarifa table{font-size:9pt}
+  .tarifa th,.tarifa td{padding:3px 6px;border-color:#bbb}
+  .tarifa thead th{background:#eee;color:#000}
+  .tarifa thead{display:table-header-group}
+  .tarifa tr{break-inside:avoid}
+  .tarifa--lista table{min-width:0}
+  .exencion{border-color:#999;border-radius:0;break-inside:avoid}
+  .tarifa__num{color:#000}
+  [hidden]{display:none!important}
+  a{color:#000}
+}

@@ -18,10 +18,10 @@ it("oculta solo funciones apagadas y permite volver a encender", () => {
 it("conserva el fallo de configuración por página y no confunde valores inválidos con apagado", async () => {
   const fetch = vi.fn(async () => new Response("no JSON"));
   expect(await configPublica(fetch)).toBe(null);
-  // Si falla la configuración, las funciones de siempre siguen encendidas; portal y pagos en línea quedan apagados.
-  const { portal, pagosEnLinea, ...deSiempre } = await cargarFunciones(fetch);
+  // Si falla la configuración, las funciones de siempre siguen encendidas; portal, pagos en línea y tarifario quedan apagados.
+  const { portal, pagosEnLinea, tarifario, ...deSiempre } = await cargarFunciones(fetch);
   expect(Object.values(deSiempre).every(Boolean)).toBe(true);
-  expect([portal, pagosEnLinea]).toEqual([false, false]);
+  expect([portal, pagosEnLinea, tarifario]).toEqual([false, false, false]);
   expect(fetch).toHaveBeenCalledTimes(1);
   expect((await cargarFunciones(async () => Response.json({ funciones: { agenda: "0" } }))).agenda).toBe(true);
 });

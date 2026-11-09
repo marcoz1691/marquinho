@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Tarifas notariales vigentes de la Notaría 41 de Quito: tablas por cuantía, actos de cuantía indeterminada, certificaciones y exenciones, calculadas con el SBU del año." />
+    <title>Tarifas notariales | Notaría 41 de Quito</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <script src="js/tema.js"></script>
+    <link rel="stylesheet" href="assets/fonts/archivo.css" />
+    <link rel="stylesheet" href="assets/fonts/phosphor.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/tarifas.css" />
+    <script type="module" src="js/tarifas.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#tarifario">Saltar al tarifario</a>
+    <header class="nav scrolled">
+      <div class="nav__in">
+        <a class="nav__brand" href="./"
+          ><img class="brand--light" src="assets/logo/logo-notaria41-verde.svg" alt="" /><img
+            class="brand--dark"
+            src="assets/logo/logo-notaria41-blanco.svg"
+            alt=""
+          /><span>Notaría 41 de Quito</span></a
+        >
+        <a class="link legal__volver" href="./"><i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio</a>
+      </div>
+    </header>
+
+    <main class="tarifario" id="tarifario">
+      <div class="tarifario__impresion" aria-hidden="true">
+        <img src="assets/logo/logo-notaria41-negro.svg" alt="" width="72" height="72" />
+        <div>
+          <strong id="impNotaria">Notaría 41 del cantón Quito</strong>
+          <span id="impNotario"></span>
+          <span id="impContacto"></span>
+        </div>
+      </div>
+      <h1>Tarifas notariales <span id="anio">2026</span></h1>
+      <p class="tarifario__estado" id="estado" role="status">Cargando el tarifario…</p>
+      <div id="contenido" hidden></div>
+      <p class="tarifario__pie" id="pie"></p>
+    </main>
+  </body>
+</html>
