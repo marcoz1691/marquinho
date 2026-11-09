@@ -29,9 +29,9 @@ export function cargarContenido() {
     // Si la hoja falla o tarda, se usan los últimos datos válidos guardados y, si no hay, los locales.
     return Promise.race([hoja, limite]).catch(function (e) {
       if (window.console) console.warn("Google Sheets no disponible:", e.message);
-      // Los datos guardados antes de esta versión no traen el tarifario: se toma del respaldo local.
+      // Una copia guardada antes del tarifario trae las tablas viejas: se usan las locales con su SBU y año.
       var guardado = store.get("n41-hoja");
-      if (guardado && guardado.tarifas && !guardado.tarifas.tarifario) guardado.tarifas.tarifario = base.tarifas.tarifario;
+      if (guardado && guardado.tarifas && !guardado.tarifas.tarifario) guardado.tarifas = Object.assign({}, base.tarifas, { sbu: guardado.tarifas.sbu, anio: guardado.tarifas.anio });
       return guardado || base;
     });
   });
