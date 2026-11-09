@@ -357,6 +357,47 @@ test("con «Reducir movimiento» las animaciones quedan solo como desvanecidos, 
   expect(await bloque.evaluate((e) => getComputedStyle(e).transform)).toBe("none");
 });
 
+test.describe("Rayos de luz de la sección de Sofía", () => {
+  test("con dos columnas unen cada paso con su mensaje, sin tapar ni mover nada", async ({ page }) => {
+    await abrirPortada(page);
+    await page.locator("#whatsapp .wa-pasos").scrollIntoViewIfNeeded();
+    const rayos = page.locator("#whatsapp .rayos");
+    await expect(rayos).toHaveAttribute("aria-hidden", "true");
+    await expect(rayos.locator(".rayo__pulso")).toHaveCount(3);
+    await expect(rayos.locator(".rayo__punto")).toHaveCount(6);
+    expect(await rayos.evaluate((e) => getComputedStyle(e).pointerEvents)).toBe("none");
+    await expect(page.locator("#waInicio")).toBeVisible();
+    await page.locator("#waInicio").click({ trial: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    // Los puntos del chat quedan a la vista, antes de la tarjeta.
+    const final = await rayos.locator(".rayo__punto").nth(1).evaluate((e) => e.getBoundingClientRect().right);
+    expect(final).toBeLessThanOrEqual(await page.locator(".wa-tel").evaluate((e) => e.getBoundingClientRect().left) + 1);
+  });
+
+  test("en el celular, con los pasos sobre el chat, no se dibujan @movil", async ({ page }) => {
+    await abrirPortada(page);
+    await page.locator("#whatsapp .wa-pasos").scrollIntoViewIfNeeded();
+    await expect(page.locator("#whatsapp .rayos")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
+  test("con «Reducir movimiento» los rayos solo laten, sin viajar por la línea", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await abrirPortada(page);
+    const pulso = page.locator("#whatsapp .rayo__pulso").first();
+    await expect(pulso).toBeAttached();
+    expect(await pulso.evaluate((e) => [getComputedStyle(e).animationName, getComputedStyle(e).strokeDasharray])).toEqual(["rayo-late", "none"]);
+  });
+
+  test("solo se mueven mientras la sección está a la vista", async ({ page }) => {
+    await abrirPortada(page);
+    const estado = () => page.locator("#whatsapp .wa").evaluate((e) => getComputedStyle(e.querySelector(".rayo__pulso")).animationPlayState);
+    expect(await estado()).toBe("paused");
+    await page.locator("#whatsapp .wa-pasos").scrollIntoViewIfNeeded();
+    await expect.poll(estado).toBe("running");
+  });
+});
+
 test("el botón de tema cambia a oscuro y la elección se recuerda al recargar", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await abrirPortada(page);
