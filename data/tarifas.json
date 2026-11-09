@@ -1,5 +1,5 @@
 {
- "_nota": "Resolución 216-2017 del Consejo de la Judicatura. SBU 2026: Acuerdo MDT-2025-195. Tablas por cuantía según tarifario de notarías de Quito; confirmar con la notaría.",
+ "_nota": "Resolución 216-2017 del Consejo de la Judicatura y sus reformas. SBU 2026: Acuerdo MDT-2025-195. Todo se guarda en múltiplos del SBU (o en USD cuando la tarifa es fija) para que en enero baste con cambiar el SBU y el año en el panel. Filas de las tablas: [hasta, factor SBU, excedente]; el excedente se cobra sobre lo que pase del inicio del rango. Factores tomados de los tarifarios 2026 de notarías de Quito; el notario de la 41 debe confirmarlos.",
  "sbu": 482,
  "iva": 0.15,
  "anio": 2026,
@@ -46,8 +46,13 @@
     15.0
    ],
    [
+    4000000,
+    20
+   ],
+   [
     null,
-    20.0
+    20,
+    0.001
    ]
   ],
   "promesa": [
@@ -92,8 +97,13 @@
     10.5
    ],
    [
+    4000000,
+    14
+   ],
+   [
     null,
-    14.0
+    14,
+    0.001
    ]
   ],
   "hipoteca": [
@@ -138,8 +148,13 @@
     6.75
    ],
    [
+    4000000,
+    9
+   ],
+   [
     null,
-    9.0
+    9,
+    0.001
    ]
   ],
   "sociedades": [
@@ -174,7 +189,786 @@
    [
     1000000,
     5.0
+   ],
+   [
+    2500000,
+    5,
+    0.003
+   ],
+   [
+    5000000,
+    17,
+    0.0025
+   ],
+   [
+    10000000,
+    33.67,
+    0.002
+   ],
+   [
+    30000000,
+    60.34,
+    0.0015
+   ],
+   [
+    50000000,
+    140.34,
+    0.001
+   ],
+   [
+    null,
+    193.67,
+    0.001
    ]
+  ],
+  "bajaInventarios": [
+   [
+    10000,
+    0.12
+   ],
+   [
+    30000,
+    0.18
+   ],
+   [
+    60000,
+    0.25
+   ],
+   [
+    90000,
+    0.4
+   ],
+   [
+    150000,
+    0.68
+   ],
+   [
+    300000,
+    1
+   ],
+   [
+    600000,
+    2
+   ],
+   [
+    1000000,
+    2.5
+   ],
+   [
+    2000000,
+    5
+   ],
+   [
+    3000000,
+    7.5
+   ],
+   [
+    4000000,
+    10
+   ],
+   [
+    null,
+    10,
+    0.001
+   ]
+  ],
+  "remates": [
+   [
+    10000,
+    0.23
+   ],
+   [
+    30000,
+    0.38
+   ],
+   [
+    60000,
+    0.53
+   ],
+   [
+    90000,
+    0.9
+   ],
+   [
+    150000,
+    1.35
+   ],
+   [
+    300000,
+    2.25
+   ],
+   [
+    600000,
+    3
+   ],
+   [
+    1000000,
+    3.75
+   ],
+   [
+    2000000,
+    7.5
+   ],
+   [
+    3000000,
+    11.25
+   ],
+   [
+    4000000,
+    15
+   ],
+   [
+    null,
+    15,
+    0.001
+   ]
+  ],
+  "cesionParticipaciones": [
+   [
+    1000,
+    0.5
+   ],
+   [
+    2000,
+    0.6
+   ],
+   [
+    5000,
+    0.7
+   ],
+   [
+    10000,
+    0.8
+   ],
+   [
+    25000,
+    0.9
+   ],
+   [
+    50000,
+    1
+   ],
+   [
+    100000,
+    2
+   ],
+   [
+    null,
+    2,
+    0.002
+   ]
+  ],
+  "arriendo": [
+   [
+    375,
+    0,
+    0.1
+   ],
+   [
+    1500,
+    0.1
+   ],
+   [
+    5000,
+    0.15
+   ],
+   [
+    10000,
+    0.2
+   ],
+   [
+    null,
+    0.3
+   ]
+  ],
+  "emisionObligaciones": [
+   [
+    null,
+    0,
+    0.0001
+   ]
+  ]
+ },
+ "tarifario": {
+  "cuantia": [
+   {
+    "tabla": "transferencia",
+    "titulo": "Transferencia de dominio",
+    "aplica": [
+     "Compraventa, permuta y dación en pago",
+     "Liquidación de la sociedad conyugal o de bienes de la unión de hecho",
+     "Renuncia de gananciales, partición y adjudicación",
+     "Novación y transferencias del fiduciario",
+     "Transferencia de dominio con hipoteca",
+     "Aumento de capital con aporte de bienes muebles o inmuebles",
+     "Caución e inventario en el usufructo (60 % del valor de los inmuebles)",
+     "Arrendamiento por escritura pública (canon mensual por los meses del contrato)",
+     "Actos y contratos de cuantía determinada no previstos"
+    ],
+    "notas": [
+     "Constitución y transferencia de usufructo: sobre el 60 % del avalúo catastral. Nuda propiedad: sobre el 40 %. Uso o habitación: sobre el 60 %.",
+     "Vivienda con finalidad social: la tarifa se reduce en un 25 % si la cuantía no supera USD 60.000."
+    ]
+   },
+   {
+    "tabla": "promesa",
+    "titulo": "Promesa de compraventa y cesión de derechos",
+    "aplica": [
+     "Promesa de celebrar contrato",
+     "Cesión de derechos"
+    ],
+    "notas": []
+   },
+   {
+    "tabla": "hipoteca",
+    "titulo": "Hipoteca y mutuo hipotecario",
+    "aplica": [
+     "Hipoteca abierta o cerrada y mutuo hipotecario",
+     "Constitución de prenda",
+     "Comodato"
+    ],
+    "notas": [
+     "Hipoteca abierta y mutuo hipotecario abierto: sobre el avalúo catastral. Comodato: según el catastro municipal.",
+     "Hipoteca a favor de instituciones con finalidad social: 50 % de la tarifa."
+    ]
+   },
+   {
+    "tabla": "bajaInventarios",
+    "titulo": "Baja de inventarios",
+    "aplica": [
+     "Declaración de baja de inventarios",
+     "Cesión de derechos hipotecarios con cuantía determinada"
+    ],
+    "notas": []
+   },
+   {
+    "tabla": "sociedades",
+    "titulo": "Constitución de sociedades",
+    "medida": "Capital suscrito",
+    "aplica": [
+     "Constitución, aumento de capital, fusión y escisión de sociedades",
+     "Promesa o constitución de consorcios, alianzas estratégicas y convenios de asociación",
+     "Contratos de exploración y explotación de hidrocarburos y relacionados"
+    ],
+    "notas": [
+     "Incluye 3 copias y las razones o marginaciones."
+    ]
+   },
+   {
+    "tabla": "cesionParticipaciones",
+    "titulo": "Cesión de participaciones y disminución de capital",
+    "aplica": [],
+    "notas": []
+   },
+   {
+    "tabla": "arriendo",
+    "titulo": "Inscripción de contratos de arriendo",
+    "medida": "Canon mensual",
+    "aplica": [],
+    "notas": [
+     "Hasta USD 375 de canon mensual se cobra el 10 % del canon."
+    ]
+   },
+   {
+    "tabla": "remates",
+    "titulo": "Remates voluntarios",
+    "aplica": [],
+    "notas": []
+   },
+   {
+    "tabla": "emisionObligaciones",
+    "titulo": "Emisión de obligaciones",
+    "aplica": [],
+    "notas": [
+     "Se cobra la cuantía multiplicada por 0,0001."
+    ]
+   }
+  ],
+  "listas": [
+   {
+    "id": "indeterminada",
+    "titulo": "Cuantía indeterminada",
+    "items": [
+     {
+      "nombre": "Actos, contratos, convenios, acuerdos y diligencias no fijados",
+      "sbu": 0.35
+     },
+     {
+      "nombre": "Aceptación y repudio de herencia",
+      "sbu": 0.6
+     },
+     {
+      "nombre": "Aclaratoria, ampliatoria, modificatoria, rectificatoria y ratificatoria",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Acta de acuerdo de jubilación patronal",
+      "sbu": 0.03
+     },
+     {
+      "nombre": "Adosamiento",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Amojonamiento y deslinde de inmuebles",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Apertura y publicación de testamento cerrado",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Autorización de inscripción de matrículas de comercio",
+      "sbu": 0.25
+     },
+     {
+      "nombre": "Autorización de salida del país",
+      "sbu": 0.05,
+      "unidad": "por cada menor"
+     },
+     {
+      "nombre": "Autorización para trabajo de menores de edad",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "Cancelación de contrato de prenda",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Cancelación de hipoteca",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Capitulaciones matrimoniales o similares en unión de hecho",
+      "sbu": 0.4
+     },
+     {
+      "nombre": "Cesión de derechos de socios",
+      "sbu": 0.1
+     },
+     {
+      "nombre": "Cesión de derechos o créditos personales",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Cesión de derechos fiduciarios",
+      "sbu": 0.1,
+      "unidad": "por cada foja"
+     },
+     {
+      "nombre": "Cesión de derechos hipotecarios (cuantía indeterminada)",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Concesión de minas, frecuencias de radio y TV, y demás concesiones y titulaciones del Estado",
+      "sbu": 3.0
+     },
+     {
+      "nombre": "Concesión de frecuencias de radio y TV comunitarias",
+      "sbu": 0.5
+     },
+     {
+      "nombre": "Constitución de patrimonio familiar",
+      "sbu": 0.25
+     },
+     {
+      "nombre": "Contrato de mandato de personas jurídicas",
+      "sbu": 0.5
+     },
+     {
+      "nombre": "Contrato de mandato de personas naturales",
+      "sbu": 0.1
+     },
+     {
+      "nombre": "Copias certificadas de archivo",
+      "usd": 1.79,
+      "unidad": "por cada foja"
+     },
+     {
+      "nombre": "Declaración juramentada para posesión notoria de estado civil",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "Declaración juramentada de persona jurídica",
+      "sbu": 0.12
+     },
+     {
+      "nombre": "Declaración juramentada de persona natural",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "Declaración juramentada: otorgante adicional",
+      "sbu": 0.03
+     },
+     {
+      "nombre": "Declaración juramentada para extinción de patrimonio familiar",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "Declaratoria de interdicción de persona privada de libertad",
+      "sbu": 0.9
+     },
+     {
+      "nombre": "Desahucio",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Designación de administrador común",
+      "sbu": 0.24
+     },
+     {
+      "nombre": "Disolución de la sociedad conyugal o de bienes de la unión de hecho",
+      "sbu": 0.34
+     },
+     {
+      "nombre": "Divorcio por mutuo consentimiento",
+      "sbu": 0.39
+     },
+     {
+      "nombre": "Emancipación del hijo adulto",
+      "sbu": 0.45
+     },
+     {
+      "nombre": "Expropiación de Gobiernos Autónomos Descentralizados (excepto copias certificadas)",
+      "sbu": 0
+     },
+     {
+      "nombre": "Extinción de patrimonio familiar",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Extinción de usufructo, uso y habitación",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Fe de supervivencia de personas naturales",
+      "sbu": 0.02
+     },
+     {
+      "nombre": "Fideicomiso mercantil y encargos fiduciarios",
+      "sbu": 0.05,
+      "unidad": "por cada foja de matriz"
+     },
+     {
+      "nombre": "Fraccionamiento, subdivisión o desmembración de inmuebles",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Garantías económicas y acuerdos transaccionales de personas jurídicas",
+      "sbu": 0.5
+     },
+     {
+      "nombre": "Garantías económicas y acuerdos transaccionales de personas naturales",
+      "sbu": 0.15
+     },
+     {
+      "nombre": "Informaciones sumarias y de nudo hecho",
+      "sbu": 0.07
+     },
+     {
+      "nombre": "Insinuación para donar",
+      "sbu": 0.4
+     },
+     {
+      "nombre": "Levantamiento de protestos (incluida la protocolización)",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Negativa de recepción de tributos o documentos",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Notificación de revocatoria de mandato o poder",
+      "sbu": 0.12
+     },
+     {
+      "nombre": "Notificación de traspaso de créditos",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Notificación de la recepción de pleno derecho en contratación pública",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Oficios, avisos o carteles previstos en la ley",
+      "sbu": 0.013
+     },
+     {
+      "nombre": "Poder general, especial o procuración judicial de persona jurídica (y su modificatoria, ampliatoria, delegación y revocatoria)",
+      "sbu": 0.5
+     },
+     {
+      "nombre": "Poder general, especial o procuración judicial de persona natural (y su modificatoria, ampliatoria, delegación y revocatoria)",
+      "sbu": 0.12
+     },
+     {
+      "nombre": "Poderes especiales con fines sociales",
+      "sbu": 0.03
+     },
+     {
+      "nombre": "Poder: otorgante adicional",
+      "sbu": 0.03
+     },
+     {
+      "nombre": "Posesión efectiva",
+      "sbu": 0.4
+     },
+     {
+      "nombre": "Posesión efectiva de montepíos, seguridad social, cuentas de ahorro y bonos",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "Servicio notarial fuera del despacho",
+      "sbu": 0.15
+     },
+     {
+      "nombre": "Servicio notarial fuera del despacho para adultos mayores",
+      "sbu": 0.075
+     },
+     {
+      "nombre": "Servicio notarial fuera del despacho para vivienda con finalidad social",
+      "sbu": 0.082
+     },
+     {
+      "nombre": "Protocolización de documentos públicos o privados",
+      "sbu": 0.03,
+      "unidad": "por foja"
+     },
+     {
+      "nombre": "Protocolización de planos",
+      "sbu": 0.04
+     },
+     {
+      "nombre": "Ratificación o aceptación de compra a través de agencia oficiosa",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Razones y marginaciones",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "Razón marginal de revocatoria de poderes de la misma notaría",
+      "sbu": 0
+     },
+     {
+      "nombre": "Razón a partir de la tercera copia de archivo",
+      "sbu": 0.014
+     },
+     {
+      "nombre": "Reconocimiento o autenticación de firmas",
+      "sbu": 0.03,
+      "unidad": "por firma"
+     },
+     {
+      "nombre": "Registro de firmas de funcionarios y representantes legales",
+      "sbu": 0.5
+     },
+     {
+      "nombre": "Requerimiento al deudor para constituirlo en mora",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Requerimiento para cumplimiento de promesa de contrato, entrega de la cosa debida y ejecución de obligaciones",
+      "sbu": 0.5
+     },
+     {
+      "nombre": "Resciliación",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Restitución fiduciaria",
+      "sbu": 0.35
+     },
+     {
+      "nombre": "Servidumbre (constitución)",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Sorteos u otra constatación notarial (primera hora)",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Sorteos u otra constatación notarial (segunda y siguientes horas)",
+      "sbu": 0.25
+     },
+     {
+      "nombre": "Terminación de unión de hecho",
+      "sbu": 0.39
+     },
+     {
+      "nombre": "Testamento abierto",
+      "sbu": 1.2
+     },
+     {
+      "nombre": "Testamento cerrado",
+      "sbu": 1.0
+     },
+     {
+      "nombre": "Unificación de lotes",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Unión de hecho",
+      "sbu": 0.1
+     }
+    ]
+   },
+   {
+    "id": "sociedades",
+    "titulo": "Otros actos societarios",
+    "items": [
+     {
+      "nombre": "Reactivación de compañías",
+      "sbu": 0.35
+     },
+     {
+      "nombre": "Disolución, liquidación o cancelación de sociedades",
+      "sbu": 0.1
+     },
+     {
+      "nombre": "Reforma de estatutos",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Aprobación de constitución, reformas, aumento de capital, fusión y escisión de sociedades civiles y mercantiles",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "Promesa de constitución de consorcios (cuantía indeterminada)",
+      "sbu": 0.3
+     },
+     {
+      "nombre": "Reforma o disolución de consorcio, alianza estratégica o convenio de asociación",
+      "sbu": 0.15
+     }
+    ]
+   },
+   {
+    "id": "certificaciones",
+    "titulo": "Libro de certificaciones",
+    "items": [
+     {
+      "nombre": "Compulsas y copias certificadas",
+      "usd": 1.79,
+      "unidad": "por hoja"
+     },
+     {
+      "nombre": "Certificación de documentos materializados de soporte electrónico",
+      "usd": 2.0
+     },
+     {
+      "nombre": "Certificación de firma registrada de funcionarios o representantes legales",
+      "sbu": 0.04
+     },
+     {
+      "nombre": "Certificación de planos",
+      "usd": 3.0
+     },
+     {
+      "nombre": "Certificación electrónica de documentos desmaterializados",
+      "usd": 10.0
+     },
+     {
+      "nombre": "Certificación electrónica de documento electrónico",
+      "usd": 5.0
+     },
+     {
+      "nombre": "Copias certificadas o testimonios solicitados por Fiscalía o jueces",
+      "sbu": 0
+     }
+    ]
+   },
+   {
+    "id": "vivienda",
+    "titulo": "Propiedad horizontal: alícuotas de vivienda",
+    "nota": "Según el número total de alícuotas.",
+    "items": [
+     {
+      "nombre": "Hasta 20 alícuotas totales",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "De 21 a 30 alícuotas",
+      "sbu": 0.05
+     },
+     {
+      "nombre": "De 31 a 40 alícuotas",
+      "sbu": 0.06
+     },
+     {
+      "nombre": "De 41 a 50 alícuotas",
+      "sbu": 0.07
+     },
+     {
+      "nombre": "De 51 alícuotas en adelante",
+      "sbu": 0.08
+     }
+    ]
+   },
+   {
+    "id": "comerciales",
+    "titulo": "Propiedad horizontal: alícuotas comerciales",
+    "nota": "Según el número de alícuotas parciales.",
+    "items": [
+     {
+      "nombre": "De 1 a 10 alícuotas parciales",
+      "sbu": 0.2
+     },
+     {
+      "nombre": "De 11 a 20 alícuotas parciales",
+      "sbu": 0.06
+     },
+     {
+      "nombre": "De 21 a 30 alícuotas parciales",
+      "sbu": 0.07
+     },
+     {
+      "nombre": "De 31 a 40 alícuotas parciales",
+      "sbu": 0.08
+     },
+     {
+      "nombre": "De 41 a 50 alícuotas parciales",
+      "sbu": 0.09
+     },
+     {
+      "nombre": "De 51 en adelante",
+      "sbu": 0.1,
+      "unidad": "por alícuota parcial"
+     },
+     {
+      "nombre": "Protocolización de cada plano en la escritura de declaratoria",
+      "sbu": 0.02
+     },
+     {
+      "nombre": "Protocolización del reglamento interno de propiedad horizontal",
+      "sbu": 0.35
+     }
+    ]
+   }
+  ],
+  "exenciones": [
+   {
+    "titulo": "Personas adultas mayores",
+    "texto": "No pagan cuando el acto contiene únicamente su propia declaración de voluntad. Los contratos bilaterales pagan el 50 %.",
+    "items": [
+     "Extinción de patrimonio familiar",
+     "Declaración juramentada",
+     "Renuncia de gananciales",
+     "Declaración de supervivencia",
+     "Testamento abierto o cerrado",
+     "Aceptación y repudio de herencia",
+     "Extinción de usufructo",
+     "Insinuación para donar",
+     "Garantía económica",
+     "Cancelación de hipoteca, si el adulto mayor es dueño del bien",
+     "Reconocimiento o autenticación de firmas, si en el documento solo firma el adulto mayor"
+    ]
+   },
+   {
+    "titulo": "Personas con discapacidad y beneficiarios del programa Manuela Espejo",
+    "texto": "No pagan si presentan el certificado o documento vigente emitido por la autoridad sanitaria. También aplica al cónyuge, hijos, padres o hermanos que las tengan a su cargo, siempre que el acto las beneficie directamente. Los contratos bilaterales pagan el 50 %.",
+    "items": []
+   }
   ]
  }
 }

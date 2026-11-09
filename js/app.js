@@ -1,6 +1,7 @@
 import { aplicarFunciones } from "./funciones.js";
 import { cargarPrecios, cargarFunciones } from "./precios.js";
-import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_VALOR, muestraAvisoValor } from "./nucleo.js";
+import { cargarContenido } from "./contenido.js";
+import { norm, money, precioTexto, montoEscrito, estaAbierto, calcularConHabilitantes, cobraPorCantidad, HABILITANTES, AVISO_VALOR, muestraAvisoValor } from "./nucleo.js";
 
 (function () {
   "use strict";
@@ -11,40 +12,10 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   };
 
-  var funcionesLista = cargarFunciones().then(function (f) { state.funciones = f; if (!f.sitio) location.replace("mantenimiento.html"); aplicarFunciones(f); if (!f.catalogo) $("#menuTarifas").setAttribute("href", "#calculadora"); if (f.chatWeb && $("#chatAbrir").getAttribute("aria-expanded") !== "true") $("#chat").hidden = true; });
+  var funcionesLista = cargarFunciones().then(function (f) { state.funciones = f; if (!f.sitio) location.replace("mantenimiento.html"); aplicarFunciones(f); if (!f.catalogo) $("#menuTarifas").setAttribute("href", "#calculadora"); if (f.tarifario) $("#menuTarifas").setAttribute("href", "tarifas.html"); if (f.chatWeb && $("#chatAbrir").getAttribute("aria-expanded") !== "true") $("#chat").hidden = true; });
   var state = { funciones: {}, cat: "destacados", q: "", sel: null, data: null, tarifas: null, notaria: null };
   // La pestaña inicial "Más solicitados": la lista de los trámites más solicitados que dio el notario, en su orden.
   var DESTACADOS = ["compraventa-vehiculo", "declaracion-natural", "poder-natural", "salida-pais", "copias-certificadas", "certificacion-electronica", "posesion-efectiva", "disolucion-sociedad-conyugal", "divorcio"];
-
-  /* ---------- Contenido: Google Sheets con respaldo local ---------- */
-
-  function get(u, as) {
-    return fetch(u, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(u); return as === "text" ? r.text() : r.json(); });
-  }
-
-  function cargar() {
-    return Promise.all([get("data/tramites.json"), get("data/tarifas.json"), get("data/notaria.json"), get("data/config.json").catch(function () { return {}; })]).then(function (r) {
-      var base = { data: r[0], tarifas: r[1], notaria: r[2] }, G = (r[3] || {}).googleSheet || {};
-      var gids = G.pestanas || {};
-      if (!(G.documento || G.publicado) || !gids.tramites) return base;
-      // "documento": hoja compartida por enlace (lee los datos al instante).
-      // "publicado": hoja publicada en la web (Google la actualiza cada ~5 minutos).
-      var url = function (gid) { return urlPestana(G, gid); };
-      var names = Object.keys(gids).filter(function (k) { return gids[k] !== ""; });
-      var hoja = Promise.all(names.map(function (k) { return get(url(gids[k]), "text"); })).then(function (txt) {
-        var tabs = {}; names.forEach(function (k, i) { tabs[k] = txt[i]; });
-        var res = desdeHoja(tabs, base);
-        store.set("n41-hoja", res);
-        return res;
-      });
-      var limite = new Promise(function (_, no) { setTimeout(function () { no(new Error("tiempo")); }, 7000); });
-      // Si la hoja falla o tarda, se usan los últimos datos válidos guardados y, si no hay, los locales.
-      return Promise.race([hoja, limite]).catch(function (e) {
-        if (window.console) console.warn("Google Sheets no disponible:", e.message);
-        return store.get("n41-hoja") || base;
-      });
-    });
-  }
 
   /* ---------- Tarifas ---------- */
 
@@ -210,7 +181,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
       var c = calcularConHabilitantes(t, T, { cantidad: parseInt($("#calcQty").value, 10) || 1, monto: monto }, extras(), state.data.tramites), r = c.tramite;
       if (esCuantia) {
         if (r.total !== null) note = "Rango " + (r.hasta === null ? "desde " + money(r.desde + .01) : money(r.desde ? r.desde + .01 : 0) + " a " + money(r.hasta)) + ": " +
-          r.factor.toLocaleString("es-EC") + " SBU. " + note;
+          r.factor.toLocaleString("es-EC") + " SBU" + (r.excedente ? " + " + r.excedente.toLocaleString("es-EC") + " del excedente" : "") + ". " + note;
         else note = monto > 0 ? "Para este valor, consulta con la notaría." : "Ingresa el valor del contrato o del avalúo.";
       }
       $("#rHabWrap").hidden = !c.habilitantes.length;
@@ -533,7 +504,7 @@ import { norm, money, desdeHoja, urlPestana, precioTexto, montoEscrito, estaAbie
     scenes();
   }
 
-  cargar().then(cargarPrecios).then(async function (r) {
+  cargarContenido().then(cargarPrecios).then(async function (r) {
     await funcionesLista;
     state.data = r.data; state.tarifas = r.tarifas; state.notaria = r.notaria;
     renderAvisos(); renderChips(); renderLista(); renderFaq(); setupFaq(); setupCalc(); renderContacto(); setupTramites(); setupUI();

@@ -186,6 +186,7 @@ h3{font-size:19px;letter-spacing:-.01em;margin:0 0 6px}
 .calc__wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,90px);align-items:start}
 #calculadora .calc__intro h2,#calculadora .calc__intro .sub{text-align:left;margin-left:0}
 #calculadora .calc__intro .sub{max-width:38ch}
+#calculadora .calc__tarifario{margin:-32px 0 32px}
 .calc{padding:clamp(24px,4vw,40px);display:grid;gap:28px}
 .calc__fields{display:grid;gap:18px}
 .calc label{display:grid;gap:8px;color:var(--muted)}

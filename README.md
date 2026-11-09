@@ -89,9 +89,17 @@ La guía de separación entre el producto y el piloto está en [docs/despliegue-
 ### Panel del personal
 `https://<tu-dominio>/panel/`: el personal entra con su correo y su contraseña de Supabase.
 
+## Tarifario (pestaña «Tarifas»)
+
+[tarifas.html](tarifas.html) muestra el tarifario completo y permite descargarlo en PDF desde el navegador. Se enciende en el panel, en **Funciones → Pestaña Tarifas**, y viene apagada.
+
+Todos los valores se guardan en [data/tarifas.json](data/tarifas.json) como múltiplos del SBU. Las tarifas fijas en dólares van en `usd`. Una fila con excedente se escribe `[hasta, factor, excedente]`, y el excedente se cobra sobre lo que pase del inicio del rango.
+
+**Cada enero:** en el panel, en **Precios → Salario básico (SBU) y año**, pon el SBU nuevo y el año. Después de enero, el panel avisa si el año quedó atrás. La página Tarifas, la calculadora y Sofía se recalculan solas. Solo hay que tocar `data/tarifas.json` (o la pestaña `tablas` de la hoja, con su columna `Excedente`) si el Consejo de la Judicatura cambia algún factor.
+
 ## Fuentes del contenido
 - **Tarifas:** Catálogo de Servicios Notariales, Resolución 216-2017 del Consejo de la Judicatura. El SBU de 2026 es USD 482 (Acuerdo MDT-2025-195).
-- **Tablas por cuantía:** tarifario de la Notaría 39 de Quito. La tabla de hipotecas difiere entre notarías: hay que confirmarla con la Notaría 41.
+- **Tablas por cuantía y tarifario completo:** tarifarios 2026 de las Notarías 39, 37 y 8 de Quito. La tabla de hipotecas difiere entre notarías: hay que confirmarla con la Notaría 41.
 - **Requisitos:** los publicados por las Notarías 80 y 22 de Quito y la Notaría Tercera.
 - **Comparecencia telemática:** Ley Notarial, Art. 18.1 y 18.2 (R.O. Suplemento 345 del 8-12-2020, reformada por el R.O. Suplemento 245 del 7-02-2023).
 

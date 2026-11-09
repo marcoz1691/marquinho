@@ -494,9 +494,14 @@ async function cargarPreciosPanel() {
   try {
     preciosPanel = await api("GET", { accion: "precios" });
     const T = preciosPanel.tarifas;
-    $("#preciosAjustes").innerHTML = preciosPanel.esAdmin
+    // Cada enero cambia el SBU: si el año de las tarifas quedó atrás, se avisa hasta que alguien lo actualice.
+    const anioActual = Number(hoyQuito().slice(0, 4));
+    const avisoAnio = Number(T.anio) < anioActual
+      ? `<p class="aviso-sbu" role="note">Estamos en ${anioActual} y las tarifas siguen en ${esc(T.anio)}. ${preciosPanel.esAdmin ? "Actualiza el SBU y el año" : "Pide a un administrador que actualice el SBU y el año"}: la página Tarifas, la calculadora y Sofía se recalculan solas.</p>`
+      : "";
+    $("#preciosAjustes").innerHTML = avisoAnio + (preciosPanel.esAdmin
       ? `<h3>Salario básico (SBU) y año</h3><label>SBU (USD)<input id="precioSbu" type="number" min="100" max="5000" step="any" value="${esc(T.sbu)}"></label><label>Año<input id="precioAnio" inputmode="numeric" maxlength="4" value="${esc(T.anio)}"></label><button class="btn" id="guardarSbu">Guardar SBU y año</button>${preciosPanel.sbuEditado ? `<p class="aviso-sbu">El SBU y el año se cambiaron aquí en el panel. La hoja de Google dice ${esc(money(preciosPanel.sbuOficial))} y ${esc(preciosPanel.anioOficial)}; mientras no vuelvas a ese valor, los cambios de la hoja no se ven. <button class="btn btn--line" id="restaurarSbu">Volver al SBU de la hoja</button></p>` : ""}${editorFrase(preciosPanel.frasePortada)}${editorFaq(preciosPanel.faq)}`
-      : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>${preciosPanel.frasePortada ? `<p>Frase de la portada: «${esc(preciosPanel.frasePortada.valor)}» · Solo lectura</p>` : ""}`;
+      : `<p>SBU: ${esc(money(T.sbu))} · Año ${esc(T.anio)} · Solo lectura</p>${preciosPanel.frasePortada ? `<p>Frase de la portada: «${esc(preciosPanel.frasePortada.valor)}» · Solo lectura</p>` : ""}`);
     if ($("#faqEditor")) numerarFaq();
     pintarPrecios();
   } catch (e) { $("#preciosMensaje").textContent = e.message; }

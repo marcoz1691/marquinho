@@ -5,7 +5,7 @@ it("conserva valores independientes y aplica la dependencia solo en la web", () 
   const f = leerFunciones({ "funcion.sitio": "0", "funcion.agenda": "1" });
   expect(f.agenda).toBe(true); expect(funcionWebActiva(f, "agenda")).toBe(false);
   const porDefecto = leerFunciones();
-  expect(Object.entries(porDefecto).filter(([, v]) => !v).map(([k]) => k)).toEqual(["portal", "pagosEnLinea"]);
+  expect(Object.entries(porDefecto).filter(([, v]) => !v).map(([k]) => k)).toEqual(["portal", "tarifario", "pagosEnLinea"]);
   expect(decidir("https://ejemplo.test/cita.html", f)).toBe("https://ejemplo.test/mantenimiento.html");
   expect(decidir("https://ejemplo.test/panel/", f)).toBeNull();
 });
