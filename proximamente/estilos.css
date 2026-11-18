@@ -1,0 +1,35 @@
+:root{--bg:#fff;--card:#F5F5F7;--fg:#1D1D1F;--muted:#6E6E73;--line:#D2D2D7;--accent:#0E6B4F;--accent-fg:#fff;color-scheme:light dark;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue","Segoe UI",Roboto,Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#161617;--fg:#F5F5F7;--muted:#A1A1A6;--line:#2C2C2E;--accent:#5FD3A2;--accent-fg:#06140E}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-font-smoothing:antialiased}
+main{flex:1;width:min(100% - 40px,760px);margin:0 auto;padding:clamp(56px,10vh,112px) 0 clamp(40px,6vh,72px);display:flex;flex-direction:column;gap:clamp(56px,9vh,96px)}
+
+.anuncio{text-align:center}
+.sello{display:block;margin:0 auto;width:clamp(112px,20vw,140px);height:auto}
+.kicker{margin:clamp(32px,5vh,44px) 0 16px;color:var(--accent);font-size:14px;font-weight:600;letter-spacing:.02em}
+h1{margin:0 auto;max-width:640px;font-size:clamp(32px,6vw,54px);line-height:1.08;letter-spacing:-.025em;font-weight:700;text-wrap:balance}
+.lema{margin:24px auto 0;max-width:540px;font-size:clamp(17px,2.2vw,20px);line-height:1.6;color:var(--muted);text-wrap:pretty}
+
+.contacto{background:var(--card);border-radius:24px;padding:clamp(28px,5vw,48px);text-align:center}
+.contacto h2{margin:0 0 clamp(28px,4vw,36px);font-size:clamp(18px,2.4vw,21px);font-weight:600;letter-spacing:-.01em}
+dl{margin:0;display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+dl>div+div{border-left:1px solid var(--line);padding-left:28px}
+dt{margin-bottom:10px;color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+dd{margin:0;font-size:16px;line-height:1.6}
+dd a{font-variant-numeric:tabular-nums;font-size:17px}
+.boton{display:inline-block;margin-top:clamp(32px,4vw,40px);padding:14px 28px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-weight:600;text-decoration:none}
+.boton:hover{filter:brightness(1.08)}
+
+a{color:var(--accent);font-weight:600;text-underline-offset:3px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+footer{padding:0 20px 32px;text-align:center;color:var(--muted);font-size:13px}
+
+@media (max-width:640px){
+  dl{grid-template-columns:1fr;gap:0}
+  dl>div{padding:20px 0}
+  dl>div+div{border-left:0;padding-left:0;border-top:1px solid var(--line)}
+  dl>div:first-child{padding-top:0}
+  .boton{display:block}
+}

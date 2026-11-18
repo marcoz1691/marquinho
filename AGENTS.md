@@ -33,6 +33,7 @@ Antes de dar un cambio por terminado, `npm test` y `npm run test:e2e` deben pasa
 
 - Antes de desplegar los interruptores y métricas del piloto, ejecuta en Supabase el bloque «2026-10-11: métricas agregadas del piloto» de `supabase/esquema.sql`.
 
+- El dominio principal es `notaria41quito.com` (`notaria41uio.com` redirige a él). Hoy muestra la página «Muy pronto» de `proximamente/` y **no se conecta a la web real** hasta que se pida: los pasos están en [docs/lanzamiento-dominio.md](docs/lanzamiento-dominio.md).
 - Las cuentas se crean desde la pestaña **Equipo**: admin gestiona todos los perfiles y notario solo invita/da de baja a Personal. La primera cuenta admin se configura en Supabase (README).
 - Antes de usar Equipo, ejecuta el bloque «2026-10-11: perfil notario» de `supabase/esquema.sql` y permite la URL `…/panel/` en Authentication → URL Configuration.
 - Textos legales: `privacidad.html`, `terminos.html`, `cookies.html` y `reembolsos.html`, con sus versiones en `js/legal.js` (súbelas al cambiar un texto). Los formularios y el chat piden dos casillas separadas (términos y datos). Antes de desplegar, ejecuta el bloque «2026-10-16: historial de consentimientos». Pendientes legales del notario: [docs/legal/cumplimiento.md](docs/legal/cumplimiento.md).

@@ -16,3 +16,5 @@ assessment.txt
 video
 .env
 .env.*
+# Página «próximamente» del dominio: es otro proyecto de Vercel.
+proximamente
