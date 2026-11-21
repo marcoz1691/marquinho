@@ -10,6 +10,7 @@ Sitio web, asistente «Sofía» (web y WhatsApp) y panel del personal de la Nota
 - **Contenido:** una hoja de Google es la fuente única ([ADR 0001](docs/adr/0001-hoja-de-contenido-como-fuente-unica.md)). Los JSON de `data/` son el respaldo. [js/nucleo.js](js/nucleo.js) lo comparten la web y el asistente.
 - **Base de datos:** [supabase/esquema.sql](supabase/esquema.sql).
 - **Despliegue y cabeceras (CSP, caché):** [vercel.json](vercel.json).
+- **Notaría 42:** `notaria42/` es una web estática aparte (otro proyecto de Vercel), sin panel ni asistente. Reutiliza `js/nucleo.js` y `data/tarifas.json` con `node scripts/sincronizar-notaria42.mjs`. Ver [docs/notaria42/lanzamiento.md](docs/notaria42/lanzamiento.md).
 
 ## Comandos
 

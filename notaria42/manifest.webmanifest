@@ -1,0 +1,10 @@
+{
+  "name": "Notaría 42 del Cantón Quito",
+  "short_name": "Notaría 42",
+  "lang": "es-EC",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF8F2",
+  "theme_color": "#13254A",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="es-EC">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notaría 42 del Cantón Quito · Dra. María Lorena Bermúdez Pozo</title>
+<meta name="description" content="Notaría 42 del Cantón Quito, en Tumbaco. Requisitos de cada trámite, calculadora de tarifas oficiales, horario, dirección y contacto.">
+<link rel="canonical" href="https://notaria42quito.com/">
+<meta name="theme-color" content="#FBF8F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A1122" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_EC">
+<meta property="og:title" content="Notaría 42 del Cantón Quito">
+<meta property="og:description" content="Requisitos, tarifas oficiales y contacto de la Notaría 42 de Quito, en Tumbaco.">
+<meta property="og:url" content="https://notaria42quito.com/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="js/tema.js"></script>
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/fonts/archivo.css">
+<link rel="stylesheet" href="assets/fonts/phosphor.css">
+<link rel="stylesheet" href="css/sitio.css">
+<link rel="modulepreload" href="js/sitio.js">
+<link rel="modulepreload" href="js/nucleo.js">
+<link rel="preload" href="data/tramites.json" as="fetch" crossorigin="anonymous">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Notary","name":"Notaría 42 del Cantón Quito","url":"https://notaria42quito.com/","founder":{"@type":"Person","name":"María Lorena Bermúdez Pozo","jobTitle":"Notaria Cuadragésima Segunda del Cantón Quito"},"address":{"@type":"PostalAddress","streetAddress":"Av. Oswaldo Guayasamín Oe1-172 y Eugenio Espejo","addressLocality":"Tumbaco, Quito","addressRegion":"Pichincha","addressCountry":"EC"},"telephone":"+593-2-601-9691","email":"contacto@notaria42quito.com","openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"17:00"}}
+</script>
+</head>
+<body>
+<a class="saltar" href="#main">Saltar al contenido</a>
+
+<header class="isla" id="isla">
+  <nav class="isla__nav" aria-label="Principal">
+    <a class="marca" href="#inicio" aria-label="Notaría 42, inicio">
+      <img src="favicon.svg" alt="" width="30" height="30">
+      <span>Notaría <b>42</b></span>
+    </a>
+    <ul class="isla__links" id="menu">
+      <li><a href="#tramites">Trámites</a></li>
+      <li><a href="#calculadora">Calculadora</a></li>
+      <li><a href="#preguntas">Preguntas</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <button class="isla__tema" id="tema" type="button" aria-label="Cambiar a modo oscuro"><i class="ph ph-moon" aria-hidden="true"></i></button>
+    <button class="isla__burger" id="burger" type="button" aria-label="Abrir el menú" aria-expanded="false" aria-controls="menu"><span></span><span></span></button>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="hero" id="inicio">
+    <div class="hero__copy">
+      <p class="ceja">Notaría 42 · Cantón Quito</p>
+      <h1><span class="hero__nombre">Dra. María Lorena Bermúdez Pozo</span><span class="hero__cargo">Notaria Cuadragésima Segunda del Cantón Quito</span></h1>
+      <p class="hero__lema">Fe pública con atención cercana en Tumbaco. Revisa los requisitos de tu trámite y calcula su costo antes de venir.</p>
+      <div class="cta">
+        <a class="btn btn--pri" href="#tramites">Ver trámites<span class="btn__ico" aria-hidden="true"><i class="ph ph-arrow-right"></i></span></a>
+        <a class="btn" href="tel:+59326019691"><i class="ph ph-phone" aria-hidden="true"></i>02 601 9691</a>
+      </div>
+      <p class="estado" id="estado"><span class="punto"></span>Lunes a viernes, de 08:00 a 17:00</p>
+    </div>
+    <div class="hero__sello">
+      <div class="bisel bisel--redondo">
+        <div class="bisel__nucleo">
+          <img class="tema-claro" src="assets/sello-42.svg" alt="Sello de la Notaría 42 del Cantón Quito" width="400" height="400">
+          <img class="tema-oscuro" src="assets/sello-42-blanco.svg" alt="Sello de la Notaría 42 del Cantón Quito" width="400" height="400">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="tramites" aria-labelledby="tramitesTitulo">
+    <header class="seccion__cab revelar">
+      <p class="ceja">Catálogo de trámites</p>
+      <h2 id="tramitesTitulo">Cada trámite, explicado.</h2>
+      <p class="sub">Requisitos, pasos y tarifa de cada trámite, para que llegues a la notaría con la documentación completa.</p>
+    </header>
+    <div class="buscador revelar">
+      <label class="buscar">
+        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+        <input id="buscar" type="search" placeholder="Busca tu trámite" aria-label="Buscar trámite" autocomplete="off">
+      </label>
+      <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+      <p class="solo-lector" id="conteo" role="status"></p>
+    </div>
+    <div class="catalogo revelar" id="catalogo">
+      <ul class="lista" id="lista" aria-label="Trámites"></ul>
+      <div class="detalle-col" id="detalleCol">
+        <article class="bisel detalle" id="detalle"><div class="bisel__nucleo" id="detalleNucleo"></div></article>
+      </div>
+    </div>
+    <p class="vacio" id="vacio" hidden>No encontramos ese trámite. Llámanos o escríbenos y te ayudamos.</p>
+  </section>
+
+  <section class="seccion seccion--alt" id="calculadora" aria-labelledby="calcTitulo">
+    <div class="calc">
+      <header class="calc__intro revelar">
+        <p class="ceja">Calculadora</p>
+        <h2 id="calcTitulo">Calcula tu costo.</h2>
+        <p class="sub">Tarifas oficiales <span id="anio">2026</span> del Consejo de la Judicatura, sobre el Salario Básico Unificado de <span id="sbu">$482,00</span>, más IVA. Son iguales en todas las notarías del país. Para otros trámites, mira su tarifa en el catálogo o consúltanos.</p>
+      </header>
+      <form class="bisel calc__form revelar" id="calc">
+        <div class="bisel__nucleo">
+          <div class="calc__campos">
+            <label>Trámites más solicitados
+              <select id="calcTramite"></select>
+            </label>
+            <label id="calcQtyWrap"><span>Cantidad <span id="calcUnit"></span></span>
+              <input id="calcQty" type="text" inputmode="numeric" maxlength="4" value="1" autocomplete="off">
+            </label>
+          </div>
+          <div class="calc__res" aria-live="polite">
+            <p class="calc__total"><span>Total estimado</span><strong id="rTotal">-</strong></p>
+            <dl class="calc__split">
+              <div><dt>Tarifa</dt><dd id="rBase">-</dd></div>
+              <div><dt>IVA</dt><dd id="rIva">-</dd></div>
+            </dl>
+            <p class="nota" id="calcNota"></p>
+            <p class="nota" id="calcAviso"></p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="seccion" id="preguntas" aria-labelledby="faqTitulo">
+    <header class="seccion__cab revelar">
+      <p class="ceja">Antes de venir</p>
+      <h2 id="faqTitulo">Preguntas frecuentes.</h2>
+    </header>
+    <div class="faq revelar" id="faq"></div>
+  </section>
+
+  <section class="seccion seccion--alt" id="contacto" aria-labelledby="contactoTitulo">
+    <header class="seccion__cab revelar">
+      <p class="ceja">Ubicación y contacto</p>
+      <h2 id="contactoTitulo">Visítanos en Tumbaco.</h2>
+    </header>
+    <div class="bento">
+      <div class="bisel bento__dir revelar"><div class="bisel__nucleo">
+        <img class="marca-agua tema-claro" src="assets/sello-42.svg" alt="" width="300" height="300">
+        <img class="marca-agua tema-oscuro" src="assets/sello-42-blanco.svg" alt="" width="300" height="300">
+        <i class="ph ph-navigation-arrow" aria-hidden="true"></i>
+        <h3>Dirección</h3>
+        <p class="grande">Av. Oswaldo Guayasamín <span class="nw">Oe1-172</span> y Eugenio Espejo</p>
+        <p>Tumbaco, Distrito Metropolitano de Quito. Entre El Avicultor y Farmacia Medicity.</p>
+        <div class="acciones">
+          <a class="btn btn--pri" id="comoLlegar" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=Av.%20Oswaldo%20Guayasam%C3%ADn%20Oe1-172%20y%20Eugenio%20Espejo%2C%20Tumbaco%2C%20Quito">Cómo llegar<span class="btn__ico" aria-hidden="true"><i class="ph ph-arrow-right"></i></span></a>
+          <a class="btn" id="waze" target="_blank" rel="noopener" href="https://waze.com/ul?q=Av.%20Oswaldo%20Guayasam%C3%ADn%20Oe1-172%20y%20Eugenio%20Espejo%2C%20Tumbaco&amp;navigate=yes">Abrir en Waze</a>
+        </div>
+      </div></div>
+      <div class="bisel revelar"><div class="bisel__nucleo">
+        <i class="ph ph-phone" aria-hidden="true"></i>
+        <h3>Teléfono</h3>
+        <p class="grande"><a href="tel:+59326019691">02 601 9691</a></p>
+        <p id="waContacto" hidden><a id="waEnlace" target="_blank" rel="noopener" href="#">Escríbenos por WhatsApp</a></p>
+      </div></div>
+      <div class="bisel revelar"><div class="bisel__nucleo">
+        <i class="ph ph-envelope-simple" aria-hidden="true"></i>
+        <h3>Correo</h3>
+        <p class="grande correo"><a href="mailto:contacto@notaria42quito.com">contacto@<wbr>notaria42quito.com</a></p>
+        <p>Puedes enviarnos tus documentos para revisarlos antes de firmar.</p>
+      </div></div>
+      <div class="bisel revelar"><div class="bisel__nucleo">
+        <i class="ph ph-clock-countdown" aria-hidden="true"></i>
+        <h3>Horario</h3>
+        <p class="grande" id="horario">Lunes a viernes, de 08:00 a 17:00</p>
+        <p class="estado" id="estado2"></p>
+      </div></div>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <img class="tema-claro" src="assets/sello-42.svg" alt="" width="64" height="64">
+  <img class="tema-oscuro" src="assets/sello-42-blanco.svg" alt="" width="64" height="64">
+  <p>© <span id="anioPie">2026</span> Notaría 42 del Cantón Quito · Dra. María Lorena Bermúdez Pozo</p>
+  <p><a href="privacidad.html">Aviso de privacidad</a></p>
+</footer>
+
+<script type="module" src="js/sitio.js"></script>
+</body>
+</html>
