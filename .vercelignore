@@ -8,8 +8,6 @@ docs
 supabase
 scripts
 cms
-# Web de la Notaría 42: es otro proyecto de Vercel (Root Directory = notaria42).
-notaria42
 GLOSSARY.md
 README.md
 assessment.txt

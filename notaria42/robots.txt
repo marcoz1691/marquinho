@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://notaria42quito.com/sitemap.xml

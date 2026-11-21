@@ -16,7 +16,7 @@ const ESTILOS = [
 // Nombres "ph-xxx" que aparecen en el HTML, JS y CSS del sitio (sin docs ni las propias fuentes).
 export function iconosUsados() {
   const archivos = execSync("git ls-files", { cwd: RAIZ }).toString().split("\n")
-    .filter((f) => /\.(html|js|css)$/.test(f) && !/^(docs|assets\/fonts|notaria42\/assets|test|e2e|scripts)\//.test(f));
+    .filter((f) => /\.(html|js|css)$/.test(f) && !/^(docs|assets\/fonts|test|e2e|scripts)\//.test(f));
   const texto = archivos.map((f) => readFileSync(RAIZ + f, "utf8")).join("\n");
   const nombres = new Set([...texto.matchAll(/\bph-[a-z0-9]+(?:-[a-z0-9]+)*/g)].map((m) => m[0]));
   nombres.delete("ph-fill");
