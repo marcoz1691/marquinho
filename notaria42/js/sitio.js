@@ -76,7 +76,8 @@ function panel(t) {
   if (calculables().includes(t)) acciones.push('<button class="btn" type="button" data-calc="' + esc(t.id) + '"><i class="ph ph-calculator" aria-hidden="true"></i>Calcular costo</button>');
   acciones.push('<button class="btn btn--icono" type="button" data-share="' + esc(t.id) + '" aria-label="Compartir"><i class="ph ph-share-network" aria-hidden="true"></i></button>');
   acciones.push('<button class="btn btn--icono" type="button" data-print aria-label="Imprimir"><i class="ph ph-printer" aria-hidden="true"></i></button>');
-  const formularios = (t.formularios || []).length ? '<div class="acciones">' + t.formularios.filter((f) => /^https:\/\//.test(f.url)).map((f) => '<a class="btn" target="_blank" rel="noopener" href="' + esc(f.url) + '"><i class="ph ph-files" aria-hidden="true"></i>' + esc(f.nombre) + "</a>").join("") + "</div>" : "";
+  const forms = (t.formularios || []).filter((f) => /^https:\/\//.test(f.url));
+  const formularios = forms.length ? '<div class="acciones">' + forms.map((f) => '<a class="btn" target="_blank" rel="noopener" href="' + esc(f.url) + '"><i class="ph ph-files" aria-hidden="true"></i>' + esc(f.nombre) + "</a>").join("") + "</div>" : "";
   return '<p class="detalle__cat">' + esc(cat) + '</p><h3 class="detalle__nombre">' + esc(t.nombre) + '</h3><p class="detalle__desc">' + esc(t.desc) + "</p>" +
     '<p class="detalle__precio"><span>Tarifa</span><strong>' + esc(precio(t)) + "</strong></p>" +
     (muestraAvisoValor(t) ? '<p class="nota">' + esc(AVISO_VALOR) + "</p>" : "") +
@@ -113,11 +114,16 @@ function tramites() {
   det.addEventListener("click", (e) => {
     const b = e.target.closest("[data-calc],[data-share],[data-print]"); if (!b) return;
     if (b.dataset.calc) return calculadora.elegir(b.dataset.calc);
-    if (b.hasAttribute("data-print")) { document.body.dataset.imprimir = "1"; window.print(); setTimeout(() => delete document.body.dataset.imprimir, 500); return; }
+    // En el celular print() no bloquea: la marca se quita al terminar de imprimir, no con un temporizador.
+    if (b.hasAttribute("data-print")) { document.body.dataset.imprimir = "1"; addEventListener("afterprint", () => delete document.body.dataset.imprimir, { once: true }); window.print(); return; }
     const t = tramite(b.dataset.share);
     const texto = estado.notaria.nombre + "\n" + t.nombre + "\n\nRequisitos:\n" + t.req.map((r) => "• " + r).join("\n") + "\n\n" + location.href.split("#")[0] + "#t-" + t.id;
     if (navigator.share) navigator.share({ title: t.nombre, text: texto }).catch(() => {});
-    else if (navigator.clipboard) navigator.clipboard.writeText(texto).then(() => { b.innerHTML = '<i class="ph ph-check" aria-hidden="true"></i>'; b.setAttribute("aria-label", "Copiado"); }).catch(() => {});
+    else if (navigator.clipboard) navigator.clipboard.writeText(texto).then(() => {
+      b.innerHTML = '<i class="ph ph-check" aria-hidden="true"></i>'; b.setAttribute("aria-label", "Copiado");
+      setTimeout(() => { b.innerHTML = '<i class="ph ph-share-network" aria-hidden="true"></i>'; b.setAttribute("aria-label", "Compartir"); }, 2000);
+    }).catch(() => {});
+    else location.href = "mailto:?subject=" + encodeURIComponent(t.nombre) + "&body=" + encodeURIComponent(texto);
   });
   // Enlace directo: notaria42quito.com/#t-poder-natural abre ese trámite.
   const abrirHash = () => {
@@ -142,7 +148,8 @@ function calculadora() {
     const multi = cobraPorCantidad(t);
     $("#calcQtyWrap").hidden = !multi;
     $("#calcUnit").textContent = multi && t.tarifa.unidad ? "(" + t.tarifa.unidad + ")" : "";
-    const cantidad = Math.min(200, Math.max(1, parseInt($("#calcQty").value, 10) || 1));
+    const q = $("#calcQty"), cantidad = Math.min(200, Math.max(1, parseInt(q.value, 10) || 1));
+    if (q.value !== "" && +q.value !== cantidad) q.value = cantidad;   // lo que se ve es lo que se calcula (1 a 200)
     const c = calcularConHabilitantes(t, T, { cantidad: multi ? cantidad : 1, monto: 0 }, {}, estado.data.tramites);
     if (c.total === null) $("#rBase").textContent = $("#rIva").textContent = $("#rTotal").textContent = "-";
     else { $("#rBase").textContent = money(c.tramite.base); $("#rIva").textContent = money(c.iva); $("#rTotal").textContent = money(c.total); }
@@ -150,7 +157,7 @@ function calculadora() {
     $("#calcAviso").textContent = muestraAvisoValor(t) ? AVISO_VALOR : "";
   }
   sel.addEventListener("change", calc);
-  // Solo cifras: Safari y Firefox dejan escribir letras incluso en type="number".
+  // Solo cifras: el campo es de texto (inputmode numérico) para que no acepte letras ni signos.
   $("#calcQty").addEventListener("input", function () { const v = this.value.replace(/\D/g, ""); if (v !== this.value) this.value = v; calc(); });
   $("#calc").addEventListener("submit", (e) => e.preventDefault());
   calculadora.elegir = (id) => {

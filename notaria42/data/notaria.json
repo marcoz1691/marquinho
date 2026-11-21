@@ -1,24 +1,35 @@
 {
- "_nota": "Datos de la imagen enviada por la notaría (21-nov-2026) y del contrato del 19-nov-2026. La dirección es la NUEVA; la del contrato (Vía Interoceánica) es el domicilio tributario.",
- "_porConfirmar": ["horario", "whatsapp", "mapa (coordenadas exactas)", "redes"],
+ "_nota": "Datos de la imagen enviada por la notaría (21-nov-2026) y del contrato del 19-nov-2026. La dirección es la NUEVA; la del contrato (Vía Interoceánica) es el domicilio tributario. Lo visible (dirección, teléfono, correo, horario y JSON-LD) está también en index.html: cambia ambos; test/notaria42.test.js comprueba que coincidan.",
+ "_porConfirmar": [
+  "horario",
+  "whatsapp",
+  "mapa (coordenadas exactas)",
+  "redes sociales"
+ ],
  "nombre": "Notaría 42 del Cantón Quito",
- "nombreCorto": "Notaría 42",
  "notaria": "Dra. María Lorena Bermúdez Pozo",
  "cargo": "Notaria Cuadragésima Segunda del Cantón Quito",
- "eslogan": "Fe pública con atención cercana en Tumbaco.",
  "direccion": "Av. Oswaldo Guayasamín Oe1-172 y Eugenio Espejo, Tumbaco, Distrito Metropolitano de Quito",
- "referencia": "Entre El Avicultor y Farmacia Medicity",
- "telefonos": ["02 601 9691"],
+ "telefonos": [
+  "02 601 9691"
+ ],
  "whatsapp": "",
  "correo": "contacto@notaria42quito.com",
- "sitio": "https://notaria42quito.com",
  "horario": {
-  "dias": [1, 2, 3, 4, 5],
+  "dias": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
   "abre": "08:00",
   "cierra": "17:00",
   "texto": "Lunes a viernes, de 08:00 a 17:00",
   "nota": ""
  },
- "mapa": { "lat": null, "lng": null },
- "redes": { "facebook": "", "instagram": "" }
+ "mapa": {
+  "lat": null,
+  "lng": null
+ }
 }
